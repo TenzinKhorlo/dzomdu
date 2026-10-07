@@ -109,28 +109,39 @@ download the model runs fully offline.
 
 ## 6. Set up the local LLM (Ollama)
 
-Start Ollama, either by opening the **Ollama** app or by running `ollama serve` in a
-separate terminal. Then download the summary model:
+`brew install ollama` installs the command, but the Ollama **server** must also be running.
+Run it as a background service: it then starts automatically at every login.
 
-```bash
-ollama pull qwen3:14b
-```
-
-On a **24 GB Mac**, these two settings halve the memory the LLM needs while it works:
+On a **24 GB Mac**, first set these two options. They halve the memory the LLM needs while
+it works:
 
 ```bash
 launchctl setenv OLLAMA_FLASH_ATTENTION 1
 launchctl setenv OLLAMA_KV_CACHE_TYPE q8_0
 ```
 
-Quit and reopen the Ollama app afterwards. `launchctl setenv` is forgotten when the Mac
-restarts, so run these two lines again after a reboot. If you start Ollama with
-`ollama serve` instead, put the settings in `~/.zshrc` so they persist:
+Then start the service and download the summary model:
 
 ```bash
-echo 'export OLLAMA_FLASH_ATTENTION=1' >> ~/.zshrc
-echo 'export OLLAMA_KV_CACHE_TYPE=q8_0' >> ~/.zshrc
+brew services start ollama
+curl http://localhost:11434        # → Ollama is running
+ollama pull qwen3:14b              # ~9 GB
 ```
+
+Check that the memory settings were picked up:
+
+```bash
+grep "server config" $(brew --prefix)/var/log/ollama.log | tail -1 | tr ' ' '\n' | grep -E "FLASH_ATTENTION|KV_CACHE_TYPE"
+```
+
+You want to see `OLLAMA_FLASH_ATTENTION:true` and `OLLAMA_KV_CACHE_TYPE:q8_0`. If they're
+missing, run `brew services restart ollama` and check again. `launchctl setenv` is forgotten
+when the Mac restarts, so after a reboot run the two `launchctl` lines again, followed by
+`brew services restart ollama`.
+
+> Not using Homebrew's service? Run `ollama serve` in a separate terminal window and leave
+> it open. In that case put `export OLLAMA_FLASH_ATTENTION=1` and
+> `export OLLAMA_KV_CACHE_TYPE=q8_0` in `~/.zshrc`.
 
 ## 7. Configure and check
 
@@ -231,7 +242,7 @@ pip install -e ".[mac,diarize]"   # picks up any new dependencies
 | pip says the package `requires a different Python` | The environment was made with an old Python. Run `rm -rf .venv` and repeat step 3 with `python3.12`. |
 | Diarization fails with 401 / 403 / "Could not load" | Accept the model terms (step 5.2) with the **same account** as your token, then run `hf auth login` again. |
 | Diarization errors mentioning `mps` | Dzomdu retries on the CPU automatically. To always use the CPU, set `device = "cpu"` under `[diarization]` in `~/.config/dzomdu/config.toml`. |
-| Status badge says the LLM is not reachable | Start Ollama (the app or `ollama serve`), then check `ollama list` shows `qwen3:14b`. |
+| `could not connect to ollama server` / status badge says the LLM is not reachable | Start the server with `brew services start ollama` (or `ollama serve` in another window), then check `ollama list` shows `qwen3:14b`. |
 | Browser won't record | Use `http://localhost:8765` exactly, and check the macOS microphone permission (step 8). |
 | `address already in use` | Another copy is running. Close it, or run `dzomdu ui --port 8800`. |
 | VS Code shows import errors | **Python: Select Interpreter** → `./.venv/bin/python`. |
