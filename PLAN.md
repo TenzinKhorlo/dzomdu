@@ -60,10 +60,24 @@ The same tool (pyannote) does both diarization and recognition. Transcription ne
 ### 2.3 Summaries and minutes (local LLM)
 
 - **Runtime:** **Ollama** (or `mlx-lm` / LM Studio). Every backend is called through an **OpenAI-compatible HTTP API**, so models and runtimes can be swapped without code changes, including a GPU server later.
-- **Model by Mac RAM** (to confirm in the Phase 0 benchmark with real meetings):
-  - 16 GB → ~8B class (e.g. Qwen3-8B, Gemma-class 12B at 4-bit)
-  - 32 GB → ~20–30B class (e.g. Qwen3-30B-A3B MoE, gpt-oss-20b, Gemma-class 27B)
-  - 64 GB+ → larger models and longer context
+- **Target machine: 24 GB Apple Silicon Mac.** Memory budget per stage (the stages run one after another, so their peaks don't add up):
+
+  | Stage | Approx. memory |
+  |---|---|
+  | macOS + browser + app | 6–8 GB |
+  | Live mode: Parakeet + VAD + speaker embeddings | ~2–3 GB |
+  | After the meeting: diarization + full transcription | ~2–4 GB (unloaded afterwards) |
+  | LLM: 14B-class model at 4-bit (e.g. Qwen3-14B) | ~9 GB + ~1–3 GB working memory for a 1-hour transcript |
+  | LLM alternative: gpt-oss-20b | ~13 GB + working memory (tighter) |
+  | Docling (only while importing documents) | ~1–2 GB |
+
+  - **Default LLM:** a 14B-class model at 4-bit, with an 8B-class model as the fast option. 30B-class models (~17–18 GB) are **not recommended** on 24 GB. Final pick comes from the Phase 0 benchmark.
+  - **Settings:**
+    - context window of about 16k tokens, with map-reduce for longer meetings;
+    - Ollama `OLLAMA_KV_CACHE_TYPE=q8_0` with flash attention, to halve the working memory;
+    - unload models between stages (Ollama `keep_alive`).
+  - macOS only lets the GPU use about two thirds of memory by default (~16 GB here). If a model doesn't fit, raise it with `sudo sysctl iogpu.wired_limit_mb=18432`.
+  - Expected time for an LLM summary of a 1-hour meeting: about 1–3 minutes, depending on the chip.
 - **Embeddings for search/RAG:** `bge-m3` or `nomic-embed-text` (via Ollama).
 
 ### 2.4 Project documents
@@ -289,7 +303,7 @@ dzomdu/
 
 ## 9. Open questions
 
-1. **Mac RAM** (16 / 32 / 64 GB+)? This decides which LLM we use.
+1. ~~Mac RAM~~ → **24 GB** (see §2.3).
 2. **Keep the audio** after processing, or delete it once the note is approved (privacy vs being able to re-process)?
 3. **Consent policy** for storing colleagues' voiceprints: is a verbal OK enough, or does it need a written/recorded opt-in?
 4. Typical **meeting size and length** (e.g. 4 people for 30 min, or 15 people for 3 hours)?
