@@ -1,0 +1,24 @@
+# Copy to manifest.yaml. Paths are relative to this file.
+# Keep real recordings and labels OUT of git - put them in bench/data/ (ignored).
+
+meetings:
+  - id: m01
+    audio: data/m01-weekly.m4a
+    reference_text: data/m01.txt            # corrected transcript, for WER (optional)
+    reference_speakers: data/m01.labels.txt # Audacity labels or .rttm, for DER / speaker ID
+    num_speakers: 4                         # optional: also scores with the count given
+    tags: {mic: laptop, room: small, people: 4}
+
+  - id: m02
+    audio: data/m02-board.m4a
+    reference_speakers: data/m02.labels.txt
+    tags: {mic: speakerphone, room: large, people: 7}
+
+# Speech-to-text models to compare (parakeet | mlx-whisper | faster-whisper)
+asr_backends: [parakeet, mlx-whisper]
+
+# Ollama models to compare blind (each must be pulled first)
+llm_models: [qwen3:14b, gemma3:12b, qwen3:8b]
+
+# Minutes template used for the LLM comparison
+template: standard

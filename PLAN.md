@@ -229,6 +229,12 @@ YAML frontmatter works with Obsidian **Dataview/Bases**. Action items follow the
 ## 6. Phased roadmap
 
 ### Phase 0: Validation spike (1–2 weeks)
+
+> **Status:** CLI prototype and benchmark tooling are built (see `README.md` and
+> `bench/README.md`). The pipeline is covered by tests with stand-in models. **Next:**
+> install on the Mac, check the real models with `dzomdu doctor`, record and label the test
+> meetings, and run `dzomdu bench all`.
+
 - Record **5–10 real meetings** with consent, including laptop mic, speakerphone, 2–8 people, and some crosstalk. Hand-label who spoke when for 2–3 of them.
 - Benchmark on our own audio:
   - ASR: Parakeet v2 vs Whisper-turbo vs Qwen3-ASR, measured by WER and speed;

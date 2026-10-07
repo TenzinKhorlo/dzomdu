@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+bench_out/
+# never commit real meeting audio or voiceprints
+*.wav
+*.flac
+*.m4a
+*.mp3
+*.opus
+*.sqlite
+bench/data/
+bench/manifest.yaml
