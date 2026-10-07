@@ -134,6 +134,15 @@ def test_dashboard_and_meeting_endpoints(client):
     assert client.get("/api/meetings/nope").status_code == 404
 
 
+def test_meeting_audio_supports_seeking(client):
+    mid = client.get("/api/meetings").json()["meetings"][0]["id"]
+    full = client.get(f"/api/meetings/{mid}/audio")
+    assert full.status_code == 200 and full.headers["content-type"] == "audio/wav"
+    part = client.get(f"/api/meetings/{mid}/audio", headers={"Range": "bytes=100-199"})
+    assert part.status_code == 206 and len(part.content) == 100
+    assert client.get("/api/meetings/nope/audio").status_code == 404
+
+
 def test_people_and_projects(client):
     voices = {v["name"]: v for v in client.get("/api/speakers").json()}
     assert voices["Alice"]["meetings"] == 1 and voices["Alice"]["minutes"] > 0

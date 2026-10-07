@@ -256,6 +256,15 @@ YAML frontmatter works with Obsidian **Dataview/Bases**. Action items follow the
 > transcript, speaker review with voice clips, meeting notes with transcript and citations,
 > action items synced with the Obsidian Tasks lines, people profiles, projects, and system
 > status. The original plain HTML UI remains at `/classic/`.
+>
+> **Interaction pass:** applies Apple's interface guidelines:
+> - springs throughout;
+> - swipe-to-complete with momentum and rubber-banding;
+> - Undo instead of confirmation dialogs;
+> - an audio player synced to the transcript, with a scrubber;
+> - translucent bars;
+> - the system font;
+> - support for Reduce motion, Reduce transparency and Increase contrast.
 
 - Record from the mic in the browser, crash-safe audio storage, upload files.
 - **Speaker review UI** (play sample → confirm/rename/merge/split), editing People and Projects, attendee pre-selection.

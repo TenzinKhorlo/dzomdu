@@ -3,10 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { CalendarClock } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
 import { toast } from "sonner"
 
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox"
 import { SpeakerAvatar } from "@/components/common"
+import { SwipeToComplete } from "@/components/swipe-to-complete"
 import { Badge } from "@/components/ui/badge"
 import { api, type Task } from "@/lib/api"
 import { shortDate } from "@/lib/format"
@@ -24,12 +26,17 @@ function dueBadge(due: string | null) {
       className={cn("gap-1 font-normal", overdue && "border-destructive/40 text-destructive")}
     >
       <CalendarClock />
-      {iso ? shortDate(due) : due}
+      {overdue ? `Overdue · ${shortDate(due)}` : iso ? shortDate(due) : due}
     </Badge>
   )
 }
 
-/** Action items with animated checkboxes; ticking one updates the Markdown note. */
+const key = (i: Item) => `${i.meeting_id}:${i.line}`
+
+/**
+ * Action items. Complete one with the checkbox or by swiping right; either way the Obsidian
+ * note is updated, and Undo is offered instead of asking "are you sure?".
+ */
 export function ActionList({
   items,
   showMeeting = false,
@@ -41,68 +48,86 @@ export function ActionList({
 }) {
   const [done, setDone] = React.useState<Record<string, boolean>>({})
 
-  async function toggle(item: Item, value: boolean) {
-    const key = `${item.meeting_id}:${item.line}`
-    setDone((d) => ({ ...d, [key]: value }))
+  async function setTask(item: Item, value: boolean, undoable = true) {
+    setDone((d) => ({ ...d, [key(item)]: value }))
     try {
       await api(`/api/meetings/${item.meeting_id}/tasks/${item.line}`, {
         method: "POST",
         json: { done: value },
       })
-      toast.success(value ? "Marked as done" : "Marked as open", {
-        description: "The meeting note was updated too.",
-      })
+      if (undoable) {
+        toast.success(value ? "Marked as done" : "Reopened", {
+          description: item.text,
+          action: { label: "Undo", onClick: () => void setTask(item, !value, false) },
+        })
+      }
       onChange?.()
     } catch (e) {
-      setDone((d) => ({ ...d, [key]: !value }))
-      toast.error((e as Error).message)
+      setDone((d) => ({ ...d, [key(item)]: !value }))
+      toast.error("Couldn't update the note", { description: (e as Error).message })
     }
   }
 
   return (
-    <ul className="divide-y">
-      {items.map((item) => {
-        const key = `${item.meeting_id}:${item.line}:${item.text}`
-        const checked = done[`${item.meeting_id}:${item.line}`] ?? item.done
-        return (
-          <li key={key} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-            <Checkbox
-              className="mt-0.5"
-              checked={checked}
-              disabled={!item.editable}
-              onCheckedChange={(v) => toggle(item, v === true)}
-              aria-label={`Mark "${item.text}" as done`}
-            />
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <p
-                className={cn(
-                  "text-sm leading-snug transition-colors",
-                  checked && "text-muted-foreground line-through",
-                )}
+    <ul className="-mx-2 flex flex-col">
+      <AnimatePresence initial={false}>
+        {items.map((item) => {
+          const checked = done[key(item)] ?? item.done
+          return (
+            <motion.li
+              key={`${key(item)}:${item.text}`}
+              layout="position"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <SwipeToComplete
+                done={checked}
+                disabled={!item.editable}
+                onCommit={() => void setTask(item, !checked)}
               >
-                {item.text}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                {item.owner && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <SpeakerAvatar name={item.owner} size="sm" className="ring-0" />
-                    {item.owner}
-                  </span>
-                )}
-                {dueBadge(item.due)}
-                {showMeeting && item.meeting_title && (
-                  <Link
-                    href={`/meetings/view/?id=${item.meeting_id}`}
-                    className="truncate hover:text-foreground hover:underline"
-                  >
-                    {item.meeting_title}
-                  </Link>
-                )}
-              </div>
-            </div>
-          </li>
-        )
-      })}
+                <div className="flex items-start gap-3 px-2 py-2.5">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={checked}
+                    disabled={!item.editable}
+                    onCheckedChange={(v) => void setTask(item, v === true)}
+                    aria-label={`Mark "${item.text}" as ${checked ? "open" : "done"}`}
+                  />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <p
+                      className={cn(
+                        "text-sm leading-snug transition-colors duration-300",
+                        checked && "text-muted-foreground line-through",
+                      )}
+                    >
+                      {item.text}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      {item.owner && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <SpeakerAvatar name={item.owner} size="sm" className="ring-0" />
+                          {item.owner}
+                        </span>
+                      )}
+                      {dueBadge(item.due)}
+                      {showMeeting && item.meeting_title && (
+                        <Link
+                          href={`/meetings/view/?id=${item.meeting_id}`}
+                          className="truncate hover:text-foreground hover:underline"
+                        >
+                          {item.meeting_title}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </SwipeToComplete>
+            </motion.li>
+          )
+        })}
+      </AnimatePresence>
     </ul>
   )
 }

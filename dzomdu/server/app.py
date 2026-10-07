@@ -30,6 +30,21 @@ from .sessions import ACTIVE_STATES, SessionManager, SessionMeta
 STATIC = Path(__file__).parent / "static"  # the original single-page UI, kept at /classic/
 
 
+def _audio_type(path: Path) -> str:
+    types = {
+        ".wav": "audio/wav",
+        ".m4a": "audio/mp4",
+        ".mp4": "audio/mp4",
+        ".mp3": "audio/mpeg",
+        ".ogg": "audio/ogg",
+        ".opus": "audio/ogg",
+        ".webm": "audio/webm",
+        ".flac": "audio/flac",
+        ".aac": "audio/aac",
+    }
+    return types.get(path.suffix.lower(), "application/octet-stream")
+
+
 def web_dir() -> Path | None:
     """The built Next.js dashboard (`npm run build` in web/), if present."""
     env = os.environ.get("DZOMDU_WEB_DIR")
@@ -345,6 +360,18 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
             "note": note,
             "models": {"asr": r.get("asr_model"), "diarization": r.get("diarization_model")},
         }
+
+    @app.get("/api/meetings/{meeting_id}/audio")
+    def meeting_audio(meeting_id: str) -> FileResponse:
+        """The meeting recording, with range support so the player can seek."""
+        r = record_or_404(meeting_id)
+        candidates = [Path(r.get("source_audio") or "")]
+        if sha := r.get("audio_sha"):
+            candidates.append(cfg.cache_dir / sha[:16] / "audio.wav")  # normalised copy
+        for path in candidates:
+            if path.is_file():
+                return FileResponse(path, media_type=_audio_type(path))
+        raise HTTPException(404, "The recording for this meeting is no longer on disk")
 
     @app.post("/api/meetings/{meeting_id}/tasks/{line}")
     def set_task(meeting_id: str, line: int, body: TaskBody) -> dict[str, Any]:

@@ -21,6 +21,7 @@ import {
 } from "@/components/animate-ui/components/radix/dropdown-menu"
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
 import { EmptyState, PageHeader, SpeakerAvatar } from "@/components/common"
+import { useConfirm } from "@/components/confirm"
 import { useInfo } from "@/components/providers"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -167,9 +168,17 @@ export default function PeoplePage() {
   const { data, reload } = useApi<Voice[]>("/api/speakers")
   const { reload: reloadInfo } = useInfo()
   const [editing, setEditing] = React.useState<Voice | null>(null)
+  const confirm = useConfirm()
 
   async function forget(v: Voice) {
-    if (!confirm(`Forget ${v.name}'s voice? Their voiceprints and clips are deleted; meeting notes and their profile are kept.`)) return
+    const ok = await confirm({
+      title: `Forget ${v.name}'s voice?`,
+      description:
+        "Their voiceprints and clips are deleted, so they won't be recognised next time. Meeting notes and their profile are kept.",
+      confirmLabel: "Forget voice",
+      destructive: true,
+    })
+    if (!ok) return
     try {
       await api(`/api/speakers/${encodeURIComponent(v.name)}`, { method: "DELETE" })
       toast.success(`Forgot ${v.name}'s voice`)
@@ -224,7 +233,7 @@ export default function PeoplePage() {
                           Edit profile
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onClick={() => forget(v)}>
+                        <DropdownMenuItem variant="destructive" onClick={() => void forget(v)}>
                           <Trash2 />
                           Forget voice
                         </DropdownMenuItem>

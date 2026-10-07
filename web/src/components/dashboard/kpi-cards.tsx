@@ -1,6 +1,7 @@
 "use client"
 
 import { TrendingDown, TrendingUp } from "lucide-react"
+import { useReducedMotion } from "motion/react"
 
 import { CountingNumber } from "@/components/animate-ui/primitives/texts/counting-number"
 import { Badge } from "@/components/ui/badge"
@@ -43,12 +44,22 @@ function Kpi({
   footer: React.ReactNode
   hint: string
 }) {
+  const reduce = useReducedMotion()
   return (
     <Card className="@container/card bg-gradient-to-t from-primary/5 to-card shadow-xs dark:bg-card">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          <CountingNumber number={value} decimalPlaces={decimals} />
+          {reduce ? (
+            value.toFixed(decimals)
+          ) : (
+            // critically damped: arrives quickly and settles without a long creeping tail
+            <CountingNumber
+              number={value}
+              decimalPlaces={decimals}
+              transition={{ bounce: 0, duration: 0.8 }}
+            />
+          )}
           {suffix && <span className="ml-1 text-base font-medium text-muted-foreground">{suffix}</span>}
         </CardTitle>
         {trend && <CardAction>{trend}</CardAction>}

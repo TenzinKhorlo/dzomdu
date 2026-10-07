@@ -12,9 +12,11 @@ import {
   FolderOpen,
   ListChecks,
   Loader2,
+  Play,
   Search,
   Sparkles,
 } from "lucide-react"
+import { motion, useReducedMotion } from "motion/react"
 import { toast } from "sonner"
 
 import { ActionList } from "@/components/action-list"
@@ -52,6 +54,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { useApi } from "@/hooks/use-api"
 import { api, type MeetingDetail, type Session } from "@/lib/api"
+import { PlayerBar, PlayerProvider, turnAt, usePlayer } from "@/components/meeting/player"
+import { useConfirm } from "@/components/confirm"
 import { clock, colorFor, duration, longDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -61,6 +65,7 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
   const [template, setTemplate] = React.useState(info?.default_template ?? "standard")
   const [instructions, setInstructions] = React.useState("")
   const [busy, setBusy] = React.useState(false)
+  const confirm = useConfirm()
 
   async function run(force = false) {
     setBusy(true)
@@ -86,7 +91,14 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
     } catch (e) {
       const msg = (e as Error).message
       if (msg.startsWith("edited:") && !force) {
-        if (confirm("This note was edited after it was generated (e.g. in Obsidian). Replace it and lose those edits?")) {
+        const ok = await confirm({
+          title: "Replace your edited note?",
+          description:
+            "This note was changed after it was written (for example in Obsidian). Rewriting replaces it, and your edits are lost.",
+          confirmLabel: "Replace note",
+          destructive: true,
+        })
+        if (ok) {
           setBusy(false)
           return run(true)
         }
@@ -154,16 +166,42 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
 
 function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string | null }) {
   const [q, setQ] = React.useState("")
+  const player = usePlayer()
+  const reduce = useReducedMotion()
+  const lastUserScroll = React.useRef(0)
+  const playingIdx = player && (player.playing || player.time > 0) ? turnAt(meeting.turns, player.time) : -1
+  const activeId = playingIdx >= 0 ? meeting.turns[playingIdx].id : null
+
+  // the user is in control: if they scroll, stop following playback for a few seconds
+  React.useEffect(() => {
+    const mark = () => (lastUserScroll.current = Date.now())
+    window.addEventListener("wheel", mark, { passive: true })
+    window.addEventListener("touchmove", mark, { passive: true })
+    return () => {
+      window.removeEventListener("wheel", mark)
+      window.removeEventListener("touchmove", mark)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (!activeId || !player?.playing || q) return
+    if (Date.now() - lastUserScroll.current < 4000) return
+    document
+      .getElementById(`turn-${activeId}`)
+      ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" })
+  }, [activeId, player?.playing, q, reduce])
+
   React.useEffect(() => {
     if (!focus) return
     // wait for the tab transition, then bring the cited turn into view
     const t = window.setTimeout(() => {
       document
         .getElementById(`turn-${focus}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+        ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" })
     }, 350)
     return () => window.clearTimeout(t)
-  }, [focus])
+  }, [focus, reduce])
+
   const query = q.trim().toLowerCase()
   const turns = query
     ? meeting.turns.filter((t) => (t.text + " " + t.label).toLowerCase().includes(query))
@@ -177,30 +215,50 @@ function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string 
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search the transcript…"
           className="pl-9"
+          aria-label="Search the transcript"
         />
       </div>
-      <ul className="space-y-5">
-        {turns.map((t) => (
-          <li
-            key={t.id}
-            id={`turn-${t.id}`}
-            className={cn(
-              "-mx-2 flex gap-3 rounded-lg px-2 py-1 transition-colors duration-700",
-              focus === t.id && "bg-primary/10",
-            )}
-          >
-            <SpeakerAvatar name={t.label} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2 text-sm">
-                <span className="font-semibold" style={{ color: colorFor(t.label) }}>
-                  {t.label}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground">{clock(t.start)}</span>
-              </div>
-              <p className="text-sm leading-relaxed">{t.text}</p>
-            </div>
-          </li>
-        ))}
+      <ul className="space-y-1">
+        {turns.map((t) => {
+          const active = t.id === activeId
+          return (
+            <li key={t.id} id={`turn-${t.id}`}>
+              <button
+                type="button"
+                onClick={() => player?.seek(t.start, true)}
+                disabled={!player?.available}
+                aria-current={active ? "true" : undefined}
+                className={cn(
+                  "group pressable relative -mx-2 flex w-[calc(100%+1rem)] gap-3 rounded-xl px-2 py-2 text-left transition-colors duration-300",
+                  "hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-transparent",
+                  (active || focus === t.id) && "bg-primary/8 hover:bg-primary/10",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="active-turn"
+                    className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-primary"
+                  />
+                )}
+                <SpeakerAvatar name={t.label} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2 text-sm">
+                    <span className="font-semibold" style={{ color: colorFor(t.label) }}>
+                      {t.label}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {clock(t.start)}
+                    </span>
+                    {player?.available && (
+                      <Play className="size-3 self-center fill-current text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    )}
+                  </div>
+                  <p className="text-sm leading-relaxed">{t.text}</p>
+                </div>
+              </button>
+            </li>
+          )
+        })}
         {!turns.length && <li className="text-sm text-muted-foreground">No matches.</li>}
       </ul>
     </div>
@@ -212,9 +270,6 @@ function MeetingView() {
   const { data: m, error, reload } = useApi<MeetingDetail>(
     id ? `/api/meetings/${encodeURIComponent(id)}` : null,
   )
-  const [tab, setTab] = React.useState("notes")
-  const [focus, setFocus] = React.useState<string | null>(null)
-
   if (!id || error) {
     return (
       <EmptyState
@@ -230,18 +285,34 @@ function MeetingView() {
   }
   if (!m) return <Skeleton className="h-[70vh] rounded-xl" />
 
+  return (
+    <PlayerProvider key={m.id} meetingId={m.id} fallbackDuration={m.duration}>
+      <MeetingBody m={m} reload={reload} />
+    </PlayerProvider>
+  )
+}
+
+function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
+  const [tab, setTab] = React.useState("notes")
+  const [focus, setFocus] = React.useState<string | null>(null)
+  const player = usePlayer()
+
   const total = m.speakers.reduce((s, x) => s + x.talk_seconds, 0) || 1
   const openTasks = m.tasks.filter((t) => !t.done).length
 
   // the transcript has its own tab; citations in the notes jump there
   const notesHtml = m.note?.html.split("<h2>Transcript</h2>")[0] ?? ""
 
+  // a citation takes you to what was actually said, and plays it
   function onNoteClick(e: React.MouseEvent) {
     const a = (e.target as HTMLElement).closest('a[href^="#t"]')
     if (!a) return
     e.preventDefault()
-    setFocus(a.getAttribute("href")!.slice(1))
+    const id = a.getAttribute("href")!.slice(1)
+    setFocus(id)
     setTab("transcript")
+    const turn = m.turns.find((t) => t.id === id)
+    if (turn && player?.available) player.seek(turn.start, true)
   }
 
   return (
@@ -348,6 +419,7 @@ function MeetingView() {
               </CardContent>
             </Card>
           </Tabs>
+          <PlayerBar turns={m.turns} className="mt-4" />
         </div>
 
         <div className="flex flex-col gap-6">

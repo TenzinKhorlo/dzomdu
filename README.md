@@ -45,15 +45,21 @@ dzomdu ui          # opens http://localhost:8765 in your browser
 
 | Page | What it does |
 |---|---|
-| **Dashboard** | Meetings and hours over the last 30 days with trends, time in meetings per day, who talks most, recent meetings, and open action items you can tick off. |
-| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. You can also drop in an existing recording instead. |
-| **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. Clicking a timestamp jumps to that moment in the transcript. |
+| **Dashboard** | Meetings and hours over the last 30 days with trends, time in meetings per day, who talks most, recent meetings, and open action items. Tick an item off, or swipe it to the right. |
+| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record, with the timer and **Stop & process** on a floating bar at the bottom. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. If you give two voices the same name, you're told they'll be merged into one person. You can also drop in an existing recording instead. |
+| **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. A player bar plays the recording: the transcript follows along, clicking a turn or a timestamp in the notes plays from that moment, and you can drag the scrubber or use the arrow keys. |
 | **People** | Everyone whose voice is known, with role, organisation and bio. These are used as LLM context and saved in `People/` in your vault. You can also rename a person or forget their voice. |
 | **Projects** | Project folders from your vault, with their meetings. |
 | **Settings** | Model and LLM status, vault location, minutes formats. |
 
 Action items are the Obsidian Tasks lines in your notes. Ticking one in the dashboard updates
-the note, and ticking it in Obsidian shows up in the dashboard.
+the note, and ticking it in Obsidian shows up in the dashboard. Every change offers **Undo** for
+a few seconds, so only actions that can't be undone, like forgetting a voice or discarding a
+recording, ask for confirmation.
+
+The interface follows your system settings: light or dark appearance (the button in the top
+right cycles through them), **Reduce motion** (animations become instant cross-fades),
+**Reduce transparency** (translucent bars become solid) and **Increase contrast**.
 
 Audio is saved continuously while recording. If the app or the computer crashes, the recording
 is recovered the next time `dzomdu ui` starts. Everything runs on localhost; nothing is loaded

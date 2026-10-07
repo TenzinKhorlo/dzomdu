@@ -31,6 +31,29 @@ version the API is on the same origin.
 | `src/components/ui/`, `src/components/animate-ui/` | shadcn/ui and Animate UI registry code. Update it with `npx shadcn add`, not by hand. |
 | `src/lib/api.ts` | Typed API client |
 | `src/lib/recorder.ts` | Microphone capture: AudioWorklet → 16 kHz PCM → WebSocket |
+| `src/lib/motion.ts` | Motion tokens (springs), the momentum projection and rubber-band functions, haptics |
+| `src/components/meeting/player.tsx` | Meeting audio player: provider, scrubber, floating player bar |
+| `src/components/swipe-to-complete.tsx` | Swipe gesture for action items |
+| `src/components/confirm.tsx` | `useConfirm()`, an in-app dialog for irreversible actions only |
+
+## Interaction conventions
+
+- **Motion.** Use the springs in `src/lib/motion.ts`, not ad-hoc durations or curves.
+  `MotionConfig reducedMotion="user"` in `providers.tsx` already respects Reduce motion. Anything
+  that animates outside motion (CSS, scrolling, count-ups) must check `useReducedMotion()` or
+  `prefers-reduced-motion` itself.
+- **Gestures.**
+  - Track the pointer 1:1 and allow a grab mid-animation (`x.stop()`, then continue from the
+    on-screen value).
+  - Decide on release with `project(velocity)`.
+  - Hand the release velocity to the spring.
+  - Rubber-band past the edges.
+- **Undo, not "are you sure?".** Reversible changes show a toast with **Undo**. Only
+  irreversible ones use `useConfirm()`. Cancel takes focus there, so Enter is always safe.
+- **Materials.** Use `material` (bars) and `material-thick` (floating controls) for translucent
+  surfaces. They become solid under Reduce transparency.
+- **Backdrop filter.** Write only `backdrop-filter` and let the build add the `-webkit-` prefix.
+  A hand-written prefixed pair gets collapsed to the prefixed form only, which Chromium ignores.
 
 Add components with the shadcn CLI. Animate UI is configured as the `@animate-ui` registry in
 `components.json`:

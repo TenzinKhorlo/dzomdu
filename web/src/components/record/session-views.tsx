@@ -1,13 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Check, Loader2, Pause, Play, Square, Trash2 } from "lucide-react"
-import { motion } from "motion/react"
+import { Check, Loader2, Merge, Pause, Play, Square, Trash2 } from "lucide-react"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { toast } from "sonner"
 
 import { Progress } from "@/components/animate-ui/components/radix/progress"
 import { ShimmeringText } from "@/components/animate-ui/primitives/texts/shimmering"
 import { SpeakerAvatar } from "@/components/common"
+import { useConfirm } from "@/components/confirm"
 import { useInfo } from "@/components/providers"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { api, apiUrl, type LiveSegment, type Session } from "@/lib/api"
 import { clock, colorFor, duration } from "@/lib/format"
+import { springSnappy } from "@/lib/motion"
 import { recorder, useRecorder } from "@/lib/recorder"
 import { cn } from "@/lib/utils"
 
@@ -22,13 +24,13 @@ import { cn } from "@/lib/utils"
 
 function Waveform({ levels }: { levels: number[] }) {
   return (
-    <div className="flex h-16 flex-1 items-center gap-[3px]" aria-hidden>
+    <div className="flex h-10 min-w-24 flex-1 items-center gap-[3px]" aria-hidden>
       {levels.map((l, i) => (
         <motion.span
           key={i}
           className="w-full rounded-full bg-primary"
           animate={{ height: `${Math.max(6, l * 100)}%`, opacity: 0.35 + l * 0.65 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={springSnappy}
         />
       ))}
     </div>
@@ -40,16 +42,19 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
   const local = rec.sessionId === session.id
   const [now, setNow] = React.useState(() => Date.now())
   const [stopping, setStopping] = React.useState(false)
-  const box = React.useRef<HTMLDivElement>(null)
+  const confirm = useConfirm()
+  const reduce = useReducedMotion()
 
   React.useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 250)
     return () => window.clearInterval(t)
   }, [])
+  // follow the newest words, but only while the reader is already at the end of the page
   React.useEffect(() => {
-    const el = box.current
-    if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 120) el.scrollTop = el.scrollHeight
-  }, [live.length])
+    const doc = document.scrollingElement
+    if (!doc || doc.scrollHeight - doc.scrollTop - doc.clientHeight > 160) return
+    window.scrollTo({ top: doc.scrollHeight, behavior: reduce ? "auto" : "smooth" })
+  }, [live.length, reduce])
 
   const elapsed = local ? (now - rec.startedAt) / 1000 : session.elapsed
 
@@ -69,48 +74,63 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
     await recorder.stop()
   }
   async function discard() {
-    if (!confirm("Discard this recording? The audio will be deleted.")) return
+    const ok = await confirm({
+      title: "Discard this recording?",
+      description: "The audio and live transcript are deleted. This can't be undone.",
+      confirmLabel: "Discard",
+      destructive: true,
+    })
+    if (!ok) return
     await api(`/api/sessions/${session.id}/cancel`, { method: "POST" }).catch(() => {})
     recorder.release()
   }
 
+  // Controls float on a translucent bar at the bottom; the transcript scrolls underneath.
+  const controls = (
+    <div className="sticky bottom-4 z-20">
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="material-thick mx-auto flex max-w-3xl flex-wrap items-center gap-4 rounded-2xl border p-3 pl-5 shadow-lg sm:flex-nowrap"
+      >
+        <div className="flex items-center gap-3">
+          <span className="relative flex size-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-recording opacity-60" />
+            <span className="relative inline-flex size-3 rounded-full bg-recording" />
+          </span>
+          <span className="font-mono text-2xl font-semibold tabular-nums" aria-label="Elapsed">
+            {clock(elapsed)}
+          </span>
+        </div>
+        {local ? (
+          <Waveform levels={rec.levels} />
+        ) : (
+          <p className="flex-1 text-sm text-muted-foreground">
+            Recording in another browser tab or window.
+          </p>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          {local && (
+            <Button variant="ghost" onClick={discard} disabled={stopping}>
+              <Trash2 />
+              Discard
+            </Button>
+          )}
+          <Button
+            onClick={stop}
+            disabled={!local || stopping}
+            className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+          >
+            {stopping ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}
+            Stop &amp; process
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-6">
-      <Card className="py-5">
-        <CardContent className="flex flex-wrap items-center gap-5">
-          <div className="flex items-center gap-3">
-            <span className="relative flex size-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-recording opacity-60" />
-              <span className="relative inline-flex size-3 rounded-full bg-recording" />
-            </span>
-            <span className="font-mono text-3xl font-semibold tabular-nums">{clock(elapsed)}</span>
-          </div>
-          {local ? (
-            <Waveform levels={rec.levels} />
-          ) : (
-            <p className="flex-1 text-sm text-muted-foreground">
-              Recording in another browser tab or window.
-            </p>
-          )}
-          <div className="flex items-center gap-2">
-            {local && (
-              <Button variant="ghost" onClick={discard} disabled={stopping}>
-                <Trash2 />
-                Discard
-              </Button>
-            )}
-            <Button
-              onClick={stop}
-              disabled={!local || stopping}
-              className="bg-foreground text-background hover:bg-foreground/90"
-            >
-              {stopping ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}
-              Stop &amp; process
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {session.warning && (
         <p className="rounded-lg bg-warning/10 px-4 py-2 text-sm text-warning">{session.warning}</p>
       )}
@@ -123,7 +143,7 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
             each speaker.
           </CardDescription>
         </CardHeader>
-        <CardContent ref={box} className="max-h-[52vh] overflow-y-auto pt-4">
+        <CardContent className="min-h-[40vh] pt-4">
           {!session.meta.live ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Live transcript is off for this meeting.
@@ -162,6 +182,7 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
           )}
         </CardContent>
       </Card>
+      {controls}
     </div>
   )
 }
@@ -279,11 +300,19 @@ export function ReviewView({ session }: { session: Session }) {
     }
   }
 
+  // the same name on two cards means one person was split into two voices; say so as they type
+  const counts = new Map<string, number>()
+  for (const s of speakers) {
+    const n = names[s.cluster]?.trim()
+    if (n) counts.set(n, (counts.get(n) ?? 0) + 1)
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 @3xl/main:grid-cols-2">
         {speakers.map((s, i) => {
           const name = names[s.cluster] ?? ""
+          const shared = (counts.get(name.trim()) ?? 0) > 1
           return (
             <motion.div
               key={s.cluster}
@@ -342,6 +371,20 @@ export function ReviewView({ session }: { session: Session }) {
                       Voice
                     </Button>
                   </div>
+                  <AnimatePresence initial={false}>
+                    {shared && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex items-center gap-1.5 overflow-hidden text-xs text-muted-foreground"
+                      >
+                        <Merge className="size-3.5 shrink-0" />
+                        Another voice is also named {name.trim()}. They&apos;ll be merged into one
+                        person.
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </CardContent>
               </Card>
             </motion.div>
