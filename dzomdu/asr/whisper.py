@@ -30,7 +30,7 @@ class MLXWhisperBackend(ASRBackend):
             import mlx_whisper
         except ImportError as exc:  # pragma: no cover - depends on platform
             raise RuntimeError(
-                "mlx-whisper is not installed. On an Apple Silicon Mac run: uv sync --extra mac"
+                "mlx-whisper is not installed. On an Apple Silicon Mac run: pip install -e '.[mac]'"
             ) from exc
         result = mlx_whisper.transcribe(
             str(audio.path),
@@ -71,7 +71,7 @@ class FasterWhisperBackend(ASRBackend):
                 from faster_whisper import WhisperModel
             except ImportError as exc:
                 raise RuntimeError(
-                    "faster-whisper is not installed. Run: uv sync --extra whisper"
+                    "faster-whisper is not installed. Run: pip install -e '.[whisper]'"
                 ) from exc
             self._model = WhisperModel(self._model_id, device="auto", compute_type="default")
         segments, _info = self._model.transcribe(

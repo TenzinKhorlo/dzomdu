@@ -54,7 +54,7 @@ class PyannoteDiarizer(Diarizer):
                 from pyannote.audio import Pipeline
             except ImportError as exc:
                 raise RuntimeError(
-                    "pyannote.audio is not installed. Run: uv sync --extra diarize"
+                    "pyannote.audio is not installed. Run: pip install -e '.[diarize]'"
                 ) from exc
             token = os.environ.get(self.token_env) or None
             pipeline = Pipeline.from_pretrained(self.model, token=token)

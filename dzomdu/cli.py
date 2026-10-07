@@ -413,35 +413,37 @@ def doctor(config: ConfigOpt = None) -> None:
     console.print(f"Config: {default_config_path() if config is None else config}")
     mac = sys.platform == "darwin" and platform.machine() == "arm64"
     check("Apple Silicon Mac", mac, platform.platform(), required=False)
-    check("ffmpeg", shutil.which("ffmpeg") is not None, "brew install ffmpeg")
+    has_ffmpeg = shutil.which("ffmpeg") is not None
+    check("ffmpeg", has_ffmpeg, "" if has_ffmpeg else "brew install ffmpeg")
 
     asr_pkg = ASR_PACKAGES.get(cfg.asr.backend)
     if asr_pkg:
         check(
             f"ASR backend '{cfg.asr.backend}'",
             is_installed(asr_pkg),
-            "uv sync --extra mac" if asr_pkg != "faster_whisper" else "uv sync --extra whisper",
+            "pip install -e '.[mac]'"
+            if asr_pkg != "faster_whisper"
+            else "pip install -e '.[whisper]'",
         )
     check(
         "Diarization (pyannote.audio)",
         is_installed("pyannote.audio"),
-        "uv sync --extra diarize",
+        "pip install -e '.[diarize]'",
     )
-    hub = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
-    cached = (hub / ("models--" + cfg.diarization.model.replace("/", "--"))).exists()
-    token = bool(os.environ.get(cfg.diarization.hf_token_env))
-    check(
-        "Diarization model downloaded",
-        cached or token,
-        "cached"
-        if cached
-        else (
-            f"will download using ${cfg.diarization.hf_token_env}"
-            if token
-            else f"accept terms at huggingface.co/{cfg.diarization.model} and set "
-            f"${cfg.diarization.hf_token_env} for the first run"
-        ),
-    )
+    hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
+    cached = (hf_home / "hub" / ("models--" + cfg.diarization.model.replace("/", "--"))).exists()
+    # a token in the environment, or one saved by `hf auth login`
+    token = bool(os.environ.get(cfg.diarization.hf_token_env)) or (hf_home / "token").exists()
+    if cached:
+        detail = "cached"
+    elif token:
+        detail = "will download on first use with your Hugging Face token"
+    else:
+        detail = (
+            f"accept the terms at huggingface.co/{cfg.diarization.model}, then run "
+            "`hf auth login` once"
+        )
+    check("Diarization model downloaded", cached or token, detail)
 
     reachable, detail = LLMClient(cfg.llm).ping()
     check(f"LLM ({cfg.llm.api} @ {cfg.llm.base_url})", reachable, detail, required=False)

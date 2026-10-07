@@ -33,7 +33,7 @@ class ParakeetMLXBackend(ASRBackend):
             except ImportError as exc:  # pragma: no cover - depends on platform
                 raise RuntimeError(
                     "parakeet-mlx is not installed. On an Apple Silicon Mac run: "
-                    "uv sync --extra mac"
+                    "pip install -e '.[mac]'"
                 ) from exc
             self._model = from_pretrained(self._model_id)
         return self._model

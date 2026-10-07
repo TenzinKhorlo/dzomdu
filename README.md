@@ -18,33 +18,24 @@ CLI plus benchmark tools.
 
 ## Install (Apple Silicon Mac)
 
-```bash
-brew install ffmpeg uv ollama
-git clone https://github.com/TenzinKhorlo/dzomdu && cd dzomdu
-uv sync --extra mac --extra diarize --extra bench
-
-# One-time model downloads
-#  1. Accept the terms at https://huggingface.co/pyannote/speaker-diarization-community-1
-#  2. Create a read token at https://huggingface.co/settings/tokens
-export HF_TOKEN=hf_...            # only needed for the first run; models are cached after
-ollama pull qwen3:14b             # ~9 GB; fits a 24 GB Mac
-
-uv run dzomdu init --vault ~/DzomduVault
-uv run dzomdu doctor
-```
-
-For a 24 GB Mac, also set these before starting Ollama. They halve the LLM's working
-memory:
+**Step-by-step guide: [SETUP.md](SETUP.md)**. It installs everything into a Python virtual
+environment (`.venv`), not globally. In short:
 
 ```bash
-launchctl setenv OLLAMA_FLASH_ATTENTION 1
-launchctl setenv OLLAMA_KV_CACHE_TYPE q8_0
+brew install python@3.12 ffmpeg git ollama
+git clone https://github.com/TenzinKhorlo/dzomdu.git && cd dzomdu
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -e ".[mac,diarize]"
+hf auth login                  # after accepting the pyannote model terms on Hugging Face
+ollama pull qwen3:14b
+dzomdu init --vault ~/Documents/DzomduVault
+dzomdu doctor
 ```
 
 ## Use: web interface
 
 ```bash
-uv run dzomdu ui          # opens http://localhost:8765 in your browser
+dzomdu ui          # opens http://localhost:8765 in your browser
 ```
 
 1. **New meeting**: optionally fill in a title, project, attendees and minutes format,
@@ -73,7 +64,7 @@ it listens on localhost, and nothing is loaded from the internet.
 
 ```bash
 # Process a recording (any format: m4a, mp3, wav, mp4…)
-uv run dzomdu process ~/Recordings/kickoff.m4a \
+dzomdu process ~/Recordings/kickoff.m4a \
     --project "Solar Microgrid" -a "Karma Wangmo" -a "Tenzin Dorji"
 ```
 
@@ -148,7 +139,7 @@ See [bench/README.md](bench/README.md). Record a few real meetings, label who sp
 Audacity, then:
 
 ```bash
-uv run dzomdu bench all -m bench/manifest.yaml
+dzomdu bench all -m bench/manifest.yaml
 ```
 
 This measures word error rate (WER) for each speech-to-text model and diarization error rate
@@ -158,9 +149,10 @@ notes from several LLMs.
 ## Development
 
 ```bash
-uv sync
-uv run pytest
-uv run ruff check .
+source .venv/bin/activate
+pip install pytest ruff
+pytest
+ruff check .
 ```
 
 The test suite runs the whole pipeline with stand-in models and synthetic audio, so it needs

@@ -40,7 +40,7 @@ correct the output of a model you are *not* comparing.
 
 ```bash
 cp bench/manifest.example.yaml bench/manifest.yaml   # edit paths
-uv run dzomdu bench all -m bench/manifest.yaml -o bench_out
+dzomdu bench all -m bench/manifest.yaml -o bench_out
 # or one at a time: asr | diarization | speaker-id | llm
 ```
 
