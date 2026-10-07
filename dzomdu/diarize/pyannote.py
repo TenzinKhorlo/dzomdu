@@ -1,8 +1,8 @@
 """pyannote.audio 4 with the `speaker-diarization-community-1` pipeline.
 
 The model is downloaded once from Hugging Face (accept its terms at
-https://huggingface.co/pyannote/speaker-diarization-community-1 and set HF_TOKEN), then runs
-fully offline from the local cache.
+https://huggingface.co/pyannote/speaker-diarization-community-1 and run `hf auth login`), then
+runs fully offline from the local cache.
 """
 
 from __future__ import annotations
@@ -16,6 +16,39 @@ import numpy as np
 from ..audio import Audio
 from ..models import SpeakerSegment
 from . import Diarizer, l2_normalize
+
+
+def access_problem(model: str, token: str | None = None) -> str | None:
+    """Ask Hugging Face whether this account may download `model`. Returns a plain-language
+    explanation of what to fix, or None when access is fine (or can't be checked)."""
+    try:
+        from huggingface_hub import auth_check, get_token
+        from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
+    except ImportError:
+        return None
+    if not (token or get_token()):
+        return (
+            "No Hugging Face token found. With the virtual environment active, run "
+            "`hf auth login` and paste a Read token from https://huggingface.co/settings/tokens."
+        )
+    try:
+        auth_check(model, token=token)
+    except GatedRepoError:
+        return (
+            f"Your Hugging Face account has not been given access to {model}. Open "
+            f"https://huggingface.co/{model} while logged in as the account your token belongs "
+            "to, and accept the conditions. If your token is fine-grained, edit it and tick "
+            "'Read access to contents of all public gated repos you can access' (or create a "
+            "classic Read token and run `hf auth login` again)."
+        )
+    except RepositoryNotFoundError:
+        return (
+            "Hugging Face rejected your token (it may be mistyped, expired or deleted). Create "
+            "a new Read token at https://huggingface.co/settings/tokens and run `hf auth login`."
+        )
+    except Exception as exc:  # network problems, proxies, outages
+        return f"Could not reach huggingface.co to check access ({exc.__class__.__name__}: {exc})"
+    return None
 
 
 class PyannoteDiarizer(Diarizer):
@@ -32,6 +65,7 @@ class PyannoteDiarizer(Diarizer):
         self.token_env = token_env
         self._pipeline: Any = None
         self._device: Any = None
+        self._load_error: str | None = None
 
     @property
     def model_id(self) -> str:
@@ -56,13 +90,19 @@ class PyannoteDiarizer(Diarizer):
                 raise RuntimeError(
                     "pyannote.audio is not installed. Run: pip install -e '.[diarize]'"
                 ) from exc
+            if self._load_error:  # don't retry the download on every live chunk
+                raise RuntimeError(self._load_error)
             token = os.environ.get(self.token_env) or None
-            pipeline = Pipeline.from_pretrained(self.model, token=token)
-            if pipeline is None:
-                raise RuntimeError(
-                    f"Could not load {self.model}. Accept the model terms on Hugging Face and "
-                    f"set {self.token_env} for the first download."
+            try:
+                pipeline = Pipeline.from_pretrained(self.model, token=token)
+                if pipeline is None:
+                    raise RuntimeError("the pipeline could not be loaded")
+            except Exception as exc:
+                reason = access_problem(self.model, token) or f"{exc.__class__.__name__}: {exc}"
+                self._load_error = (
+                    f"Cannot download the speaker model {self.model}. {reason} Then restart Dzomdu."
                 )
+                raise RuntimeError(self._load_error) from exc
             self._device = self._torch_device()
             pipeline.to(self._device)
             self._pipeline = pipeline

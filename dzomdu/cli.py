@@ -431,19 +431,25 @@ def doctor(config: ConfigOpt = None) -> None:
         "pip install -e '.[diarize]'",
     )
     hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
-    cached = (hf_home / "hub" / ("models--" + cfg.diarization.model.replace("/", "--"))).exists()
-    # a token in the environment, or one saved by `hf auth login`
-    token = bool(os.environ.get(cfg.diarization.hf_token_env)) or (hf_home / "token").exists()
-    if cached:
-        detail = "cached"
-    elif token:
-        detail = "will download on first use with your Hugging Face token"
+    repo_dir = hf_home / "hub" / ("models--" + cfg.diarization.model.replace("/", "--"))
+    # a failed download can leave an empty folder behind, so look for the actual config
+    if any(repo_dir.glob("snapshots/*/config.yaml")):
+        available, detail = True, "downloaded"
+    elif is_installed("pyannote.audio"):
+        from .diarize.pyannote import access_problem
+
+        token = os.environ.get(cfg.diarization.hf_token_env) or None
+        problem = access_problem(cfg.diarization.model, token)
+        available, detail = problem is None, problem or "access confirmed; downloads on first use"
     else:
-        detail = (
-            f"accept the terms at huggingface.co/{cfg.diarization.model}, then run "
-            "`hf auth login` once"
+        available, detail = (
+            False,
+            (
+                f"accept the terms at huggingface.co/{cfg.diarization.model}, then run "
+                "`hf auth login` once"
+            ),
         )
-    check("Diarization model downloaded", cached or token, detail)
+    check("Diarization model available", available, detail)
 
     reachable, detail = LLMClient(cfg.llm).ping()
     check(f"LLM ({cfg.llm.api} @ {cfg.llm.base_url})", reachable, detail, required=False)

@@ -95,7 +95,10 @@ you can download it.
 1. Create a free account at [huggingface.co](https://huggingface.co/join).
 2. Open [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
    and accept the conditions.
-3. Create a **Read** token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+3. Create a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+   and choose the token type **Read**. If you pick **Fine-grained** instead, you must tick
+   *"Read access to contents of all public gated repos you can access"*. Otherwise the
+   download is refused even after accepting the terms.
 4. Save the token on this Mac. Run this with the environment active:
 
    ```bash
@@ -105,7 +108,8 @@ you can download it.
    Paste the token when asked. Answer **n** to "Add token as git credential?".
 
 The token is stored in `~/.cache/huggingface/token`, never in the project. After the first
-download the model runs fully offline.
+download the model runs fully offline. `dzomdu doctor` (step 7) asks Hugging Face whether
+your account has access and tells you exactly what to fix if not.
 
 ## 6. Set up the local LLM (Ollama)
 
@@ -240,7 +244,7 @@ pip install -e ".[mac,diarize]"   # picks up any new dependencies
 | `zsh: no matches found: .[mac,diarize]` | Put quotes around it: `pip install -e ".[mac,diarize]"` |
 | `python3.12: command not found` | Run `eval "$(/opt/homebrew/bin/brew shellenv)"`, or open a new terminal after installing Homebrew. |
 | pip says the package `requires a different Python` | The environment was made with an old Python. Run `rm -rf .venv` and repeat step 3 with `python3.12`. |
-| Diarization fails with 401 / 403 / "Could not load" | Accept the model terms (step 5.2) with the **same account** as your token, then run `hf auth login` again. |
+| `Could not download Pipeline from pyannote/speaker-diarization-community-1` | Run `dzomdu doctor`: the "Diarization model available" line names the cause. Usually the terms weren't accepted with the **same account** as the token (step 5.2), or a fine-grained token lacks gated-repo access (step 5.3). Fix it, then restart `dzomdu ui`. |
 | Diarization errors mentioning `mps` | Dzomdu retries on the CPU automatically. To always use the CPU, set `device = "cpu"` under `[diarization]` in `~/.config/dzomdu/config.toml`. |
 | `could not connect to ollama server` / status badge says the LLM is not reachable | Start the server with `brew services start ollama` (or `ollama serve` in another window), then check `ollama list` shows `qwen3:14b`. |
 | Browser won't record | Use `http://localhost:8765` exactly, and check the macOS microphone permission (step 8). |
