@@ -34,13 +34,19 @@ function SessionFlow({ id }: { id: string }) {
   React.useEffect(() => {
     let timer: number | undefined
     let stopped = false
+    since.current = 0
     const poll = async () => {
       try {
-        const s = await api<Session>(`/api/sessions/${id}?live_since=${since.current}`)
+        const s = await api<Session>(`/api/sessions/${id}?live_rev=${since.current}`)
         if (stopped) return
+        since.current = s.live_rev
         if (s.live.length) {
-          since.current = Math.max(since.current, ...s.live.map((l) => l.id))
-          setLive((prev) => [...prev, ...s.live])
+          // a segment comes back with the same id as it improves (interim → final → labelled)
+          setLive((prev) => {
+            const byId = new Map(prev.map((seg) => [seg.id, seg]))
+            for (const seg of s.live) byId.set(seg.id, seg)
+            return [...byId.values()].filter((seg) => seg.text).sort((a, b) => a.id - b.id)
+          })
         }
         setSession(s)
         if (s.state === "done" && s.meeting_id) {
@@ -54,7 +60,9 @@ function SessionFlow({ id }: { id: string }) {
           return
         }
         if (s.state !== "error") {
-          timer = window.setTimeout(poll, s.state === "review" ? 2500 : 900)
+          // while recording, ask often: words should appear as they are spoken
+          const wait = { new: 250, recording: 250, review: 2500 }[s.state as string] ?? 900
+          timer = window.setTimeout(poll, wait)
         }
       } catch (e) {
         if (stopped) return
@@ -113,11 +121,21 @@ function SessionFlow({ id }: { id: string }) {
 }
 
 function RecordPageInner() {
+  const session = useSearchParams().get("session")
+
+  return session ? <SessionFlow id={session} /> : <NewMeeting />
+}
+
+function NewMeeting() {
   const params = useSearchParams()
   const router = useRouter()
-  const session = params.get("session")
 
-  if (session) return <SessionFlow id={session} />
+  // load the speech models now, while the form is filled in, so the first words of the
+  // recording are transcribed at once instead of waiting for a model to load
+  React.useEffect(() => {
+    api("/api/warmup", { method: "POST" }).catch(() => {})
+  }, [])
+
   return (
     <>
       <PageHeader

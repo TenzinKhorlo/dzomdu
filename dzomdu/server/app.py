@@ -225,8 +225,14 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
         return {"id": s.id}
 
     @app.get("/api/sessions/{sid}")
-    def get_session(sid: str, live_since: int = 0) -> dict[str, Any]:
-        return manager.snapshot(session_or_404(sid), live_since)
+    def get_session(sid: str, live_since: int = 0, live_rev: int | None = None) -> dict[str, Any]:
+        return manager.snapshot(session_or_404(sid), live_since, live_rev)
+
+    @app.post("/api/warmup")
+    def warmup() -> dict[str, bool]:
+        """Called when the Record page opens, so models are ready before the first word."""
+        manager.warm_up()
+        return {"ok": True}
 
     @app.post("/api/sessions/{sid}/cancel")
     def cancel(sid: str) -> dict[str, str]:

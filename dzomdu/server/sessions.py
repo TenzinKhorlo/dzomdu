@@ -17,7 +17,7 @@ from typing import Any, BinaryIO
 
 import numpy as np
 
-from ..audio import SAMPLE_RATE, write_wav
+from ..audio import SAMPLE_RATE, Audio, write_wav
 from ..config import Config
 from ..live import LiveSpeakerTracker, LiveTranscriber
 from ..llm.client import LLMError
@@ -69,6 +69,8 @@ class Session:
         self.error: str | None = None
         self.warning: str | None = None
         self.live_segments: list[dict[str, Any]] = []
+        self.live_rev = 0  # bumped on every change, so clients can fetch only what changed
+        self._live_index: dict[int, int] = {}  # segment id → position in live_segments
         self.created = datetime.now()
         self.started_at: datetime | None = None
         self.audio_path: Path | None = None
@@ -80,6 +82,18 @@ class Session:
         self._pcm: BinaryIO | None = None
         self._live: LiveTranscriber | None = None
         self.lock = threading.Lock()
+
+    def put_live(self, seg: dict[str, Any]) -> None:
+        """Add a live segment, or replace an earlier version of it (same id)."""
+        with self.lock:
+            self.live_rev += 1
+            seg = seg | {"rev": self.live_rev}
+            i = self._live_index.get(seg["id"])
+            if i is None:
+                self._live_index[seg["id"]] = len(self.live_segments)
+                self.live_segments.append(seg)
+            else:
+                self.live_segments[i] = seg
 
     def log(self, message: str) -> None:
         with self.lock:
@@ -100,6 +114,30 @@ class SessionManager:
         self.recordings_dir = cfg.data_dir / "recordings"
         self.recordings_dir.mkdir(parents=True, exist_ok=True)
         self.recovered = self._recover_orphans()
+        self._warm: Future[Any] | None = None
+
+    def warm_up(self) -> None:
+        """Load the speech and voice models in the background, so the first words of a
+        recording are transcribed straight away instead of waiting for models to load."""
+        w = self._warm
+        if w is not None and not (w.done() and (w.cancelled() or w.exception() is not None)):
+            return  # loading, or already loaded (a failed attempt is retried)
+        self._warm = self.submit(self._warm_job)
+
+    def _warm_job(self) -> None:
+        work = self.cfg.cache_dir / "live"
+        work.mkdir(parents=True, exist_ok=True)
+        path = work / "warm-up.wav"
+        quiet = np.random.default_rng(0).normal(0, 0.003, SAMPLE_RATE * 2).astype(np.float32)
+        try:
+            write_wav(path, quiet, SAMPLE_RATE)
+            self.pipeline.asr.transcribe(Audio(quiet, SAMPLE_RATE, path))
+        finally:
+            path.unlink(missing_ok=True)
+        try:
+            self.pipeline.diarizer.embed([quiet], SAMPLE_RATE)
+        except Exception:  # live labels are optional; recording reports the problem itself
+            pass
 
     def shutdown(self) -> None:
         self.worker.shutdown(wait=False, cancel_futures=True)
@@ -126,6 +164,7 @@ class SessionManager:
         s.started_at = datetime.now()
         s.state = "recording"
         if s.meta.live:
+            self.warm_up()
             try:
                 s._live = self._live_transcriber(s)
             except Exception as exc:  # live preview is optional
@@ -138,15 +177,11 @@ class SessionManager:
         work = self.cfg.cache_dir / "live" / s.id
         work.mkdir(parents=True, exist_ok=True)
 
-        def on_segment(seg: dict[str, Any]) -> None:
-            with s.lock:
-                s.live_segments.append(seg)
-
         def on_error(msg: str) -> None:
             s.warning = msg
 
         return LiveTranscriber(
-            pipe.asr, pipe.diarizer, tracker, work, self.submit, on_segment, on_error
+            pipe.asr, pipe.diarizer, tracker, work, self.submit, s.put_live, on_error
         )
 
     def add_audio(self, s: Session, pcm: bytes) -> None:
@@ -309,8 +344,20 @@ class SessionManager:
 
     # -- views ------------------------------------------------------------------------------
 
-    def snapshot(self, s: Session, live_since: int = 0) -> dict[str, Any]:
+    def snapshot(
+        self, s: Session, live_since: int = 0, live_rev: int | None = None
+    ) -> dict[str, Any]:
+        """`live_rev`: return live segments changed since that revision, interim text
+        included. `live_since` (older clients): final segments with a higher id."""
         with s.lock:
+            if live_rev is not None:
+                live = [seg for seg in s.live_segments if seg["rev"] > live_rev]
+            else:
+                live = [
+                    seg
+                    for seg in s.live_segments
+                    if seg["id"] > live_since and not seg.get("partial")
+                ]
             data: dict[str, Any] = {
                 "id": s.id,
                 "kind": s.kind,
@@ -320,7 +367,8 @@ class SessionManager:
                 "error": s.error,
                 "warning": s.warning,
                 "elapsed": round(s.elapsed, 1),
-                "live": [seg for seg in s.live_segments if seg["id"] > live_since],
+                "live": live,
+                "live_rev": s.live_rev,
             }
         if s.record is not None:
             data["meeting_id"] = s.record.id

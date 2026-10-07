@@ -4,6 +4,11 @@ Incoming audio is cut into utterances at pauses (a simple energy-based voice act
 detector), each utterance is transcribed, and a provisional speaker label is given by
 matching its voice against known people and against the voices heard so far in this meeting.
 
+So words appear while someone is still talking, the utterance in progress is re-transcribed
+every ~0.7 s and sent as an interim ("partial") segment. It is replaced by the final segment,
+with the same id, once the speaker pauses. A final segment is sent as soon as its text is
+known and sent again once its speaker label is known, because the voice match takes longer.
+
 The live transcript is a preview. When recording stops, the full pipeline (pass 2) runs on
 the complete recording and its result is the one that is kept.
 """
@@ -77,6 +82,14 @@ class Segmenter:
         self._buf = self._buf[n * self.frame :]
         return out
 
+    def current(self) -> Utterance | None:
+        """The utterance in progress so far, once it contains enough speech to transcribe."""
+        if self._utt_start is None or self._speech < self.min_speech:
+            return None
+        samples = np.concatenate(self._utt)
+        start = max(0.0, self._utt_start)
+        return Utterance(round(start, 3), round(start + len(samples) / self.sr, 3), samples)
+
     def flush(self) -> list[Utterance]:
         utt = self._close() if self._utt_start is not None else None
         return [utt] if utt is not None else []
@@ -138,7 +151,8 @@ class LiveSpeakerTracker:
         self.cluster_threshold = cluster_threshold
         self._clusters: list[tuple[np.ndarray, str]] = []  # (sum of embeddings, label)
 
-    def label(self, embedding: np.ndarray | None) -> str | None:
+    def label(self, embedding: np.ndarray | None, learn: bool = True) -> str | None:
+        """`learn=False` only looks: an interim guess must not add a voice to the meeting."""
         if embedding is None or not np.all(np.isfinite(embedding)):
             return None
         best_name, best = None, self.match_threshold
@@ -153,6 +167,8 @@ class LiveSpeakerTracker:
             score = float(l2_normalize(total) @ embedding)
             if score >= best:
                 best_i, best = i, score
+        if not learn:
+            return self._clusters[best_i][1] if best_i is not None else None
         if best_i is None:
             label = f"Speaker {len(self._clusters) + 1}"
             self._clusters.append((embedding.copy(), label))
@@ -164,7 +180,11 @@ class LiveSpeakerTracker:
 
 class LiveTranscriber:
     """Feeds audio to the segmenter and schedules transcription of each utterance on the
-    model worker (`run`), so model calls never overlap with other pipeline work."""
+    model worker (`run`), so model calls never overlap with other pipeline work.
+
+    Segments are reported through `on_segment` as dicts with an `id`. The same id is reported
+    again whenever it improves: interim text → final text → final text with a speaker.
+    """
 
     def __init__(
         self,
@@ -177,6 +197,7 @@ class LiveTranscriber:
         on_error: Callable[[str], None] | None = None,
         sample_rate: int = SAMPLE_RATE,
         min_embed_seconds: float = 1.5,
+        partial_every: float | None = 0.7,
     ):
         self.asr = asr
         self.embedder = embedder
@@ -187,14 +208,21 @@ class LiveTranscriber:
         self.on_error = on_error or (lambda _msg: None)
         self.sr = sample_rate
         self.min_embed = min_embed_seconds
+        self.partial_every = partial_every
         # short chunks keep the preview responsive and its speaker labels finer-grained
         self.segmenter = Segmenter(sample_rate, min_silence=0.45, max_utterance=8.0)
         self._futures: list[Future[Any]] = []
         self._n = 0
+        self._open_id: int | None = None  # id given to the utterance in progress
+        self._partial_len = 0.0  # its length when it was last sent for an interim transcript
+        self._partial: Future[Any] | None = None
+        self._guess: dict[int, str] = {}  # interim speaker guesses, by segment id
+        self._shown: set[int] = set()  # ids whose interim text is on screen
 
     def feed(self, samples: np.ndarray) -> None:
         for utt in self.segmenter.feed(samples):
             self._submit(utt)
+        self._maybe_partial()
 
     def finish(self) -> None:
         for utt in self.segmenter.flush():
@@ -205,30 +233,80 @@ class LiveTranscriber:
         for fut in self._futures:
             fut.cancel()
 
-    def _submit(self, utt: Utterance) -> None:
-        self._n += 1
-        n = self._n
+    def _schedule(self, job: Callable[[], None]) -> Future[Any]:
         self._futures = [f for f in self._futures if not f.done()]
-        self._futures.append(self.run(lambda: self._process(n, utt)))
+        fut = self.run(job)
+        self._futures.append(fut)
+        return fut
 
-    def _process(self, n: int, utt: Utterance) -> None:
-        path = self.work_dir / f"live-{n}.wav"
+    def _submit(self, utt: Utterance) -> None:
+        if self._open_id is None:
+            self._n += 1
+            n = self._n
+        else:
+            n, self._open_id = self._open_id, None
+        self._partial_len = 0.0
+        self._schedule(lambda: self._process(n, utt))
+
+    def _maybe_partial(self) -> None:
+        if not self.partial_every:
+            return
+        utt = self.segmenter.current()
+        if utt is None or utt.end - utt.start - self._partial_len < self.partial_every:
+            return
+        if self._partial is not None and not self._partial.done():
+            return  # the worker is behind: skip this one rather than queue up stale work
+        if self._open_id is None:
+            self._n += 1
+            self._open_id = self._n
+        n = self._open_id
+        self._partial_len = utt.end - utt.start
+        self._partial = self._schedule(lambda: self._process(n, utt, final=False))
+
+    def _transcribe(self, n: int, utt: Utterance, tag: str) -> str:
+        path = self.work_dir / f"live-{n}-{tag}.wav"
         try:
             write_wav(path, utt.samples, self.sr)
-            words = self.asr.transcribe(Audio(utt.samples, self.sr, path))
-            text = join_words([w.text for w in words])
-            if not text:
-                return
-            speaker = None
-            if self.embedder is not None and utt.end - utt.start >= self.min_embed:
-                try:
-                    speaker = self.tracker.label(self.embedder.embed([utt.samples], self.sr)[0])
-                except Exception:  # a preview label is optional; never break the transcript
-                    speaker = None
-            self.on_segment(
-                {"id": n, "start": utt.start, "end": utt.end, "speaker": speaker, "text": text}
+            return join_words(
+                [w.text for w in self.asr.transcribe(Audio(utt.samples, self.sr, path))]
             )
+        finally:
+            path.unlink(missing_ok=True)
+
+    def _embed(self, utt: Utterance) -> np.ndarray | None:
+        if self.embedder is None or utt.end - utt.start < self.min_embed:
+            return None
+        try:
+            return self.embedder.embed([utt.samples], self.sr)[0]
+        except Exception:  # a preview label is optional; never break the transcript
+            return None
+
+    def _process(self, n: int, utt: Utterance, final: bool = True) -> None:
+        seg: dict[str, Any] = {"id": n, "start": utt.start, "end": utt.end, "partial": not final}
+        try:
+            text = self._transcribe(n, utt, "final" if final else "partial")
+            if not final:
+                if not text:
+                    return
+                if n not in self._guess:
+                    guess = self.tracker.label(self._embed(utt), learn=False)
+                    if guess:
+                        self._guess[n] = guess
+                self._shown.add(n)
+                self.on_segment(seg | {"speaker": self._guess.get(n), "text": text})
+                return
+            if not text:
+                if n in self._shown:  # interim words turned out to be nothing: take them back
+                    self.on_segment(seg | {"speaker": None, "text": ""})
+                return
+            # the words first; the voice match takes longer
+            guess = self._guess.pop(n, None)
+            self.on_segment(seg | {"speaker": guess, "text": text})
+            speaker = self.tracker.label(self._embed(utt))
+            if speaker != guess:
+                self.on_segment(seg | {"speaker": speaker, "text": text})
         except Exception as exc:
             self.on_error(f"Live transcription failed: {exc}")
         finally:
-            path.unlink(missing_ok=True)
+            if final:
+                self._shown.discard(n)

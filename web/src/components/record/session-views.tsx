@@ -50,20 +50,27 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
     return () => window.clearInterval(t)
   }, [])
   // follow the newest words, but only while the reader is already at the end of the page
+  const lastRev = live.reduce((m, seg) => Math.max(m, seg.rev ?? 0), 0)
   React.useEffect(() => {
     const doc = document.scrollingElement
     if (!doc || doc.scrollHeight - doc.scrollTop - doc.clientHeight > 160) return
     window.scrollTo({ top: doc.scrollHeight, behavior: reduce ? "auto" : "smooth" })
-  }, [live.length, reduce])
+  }, [lastRev, reduce])
 
   const elapsed = local ? (now - rec.startedAt) / 1000 : session.elapsed
 
-  // merge consecutive segments from the same speaker into one paragraph
-  const turns = live.reduce<{ speaker: string | null; start: number; text: string }[]>(
+  // Merge consecutive segments from the same speaker into one paragraph. Interim words that
+  // haven't been matched to a voice yet most likely continue the current speaker, so they join
+  // the paragraph above until their own label arrives.
+  type Part = { id: number; text: string; partial: boolean }
+  type Turn = { key: number; speaker: string | null; start: number; parts: Part[] }
+  const turns = live.reduce<Turn[]>(
     (acc, seg) => {
       const last = acc[acc.length - 1]
-      if (last && seg.speaker && last.speaker === seg.speaker) last.text += " " + seg.text
-      else acc.push({ speaker: seg.speaker, start: seg.start, text: seg.text })
+      const part = { id: seg.id, text: seg.text, partial: seg.partial }
+      const same = last && seg.speaker && last.speaker === seg.speaker
+      if (last && (same || (seg.partial && !seg.speaker))) last.parts.push(part)
+      else acc.push({ key: seg.id, speaker: seg.speaker, start: seg.start, parts: [part] })
       return acc
     },
     [],
@@ -151,15 +158,15 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
           ) : turns.length === 0 ? (
             <div className="py-8 text-center">
               <ShimmeringText
-                text="Listening… the transcript appears after the first pause"
+                text="Listening… words appear as people speak"
                 className="text-sm"
               />
             </div>
           ) : (
             <ul className="space-y-4">
-              {turns.map((t, i) => (
+              {turns.map((t) => (
                 <motion.li
-                  key={`${t.start}-${i}`}
+                  key={t.key}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex gap-3"
@@ -174,7 +181,27 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
                         {clock(t.start)}
                       </span>
                     </div>
-                    <p className="text-sm leading-relaxed">{t.text}</p>
+                    <p className="text-sm leading-relaxed">
+                      {t.parts.map((p, j) => (
+                        <span
+                          key={p.id}
+                          // interim words are lighter until the pause confirms them
+                          className={cn(
+                            "transition-colors duration-300",
+                            p.partial && "text-muted-foreground",
+                          )}
+                        >
+                          {j > 0 && " "}
+                          {p.text}
+                        </span>
+                      ))}
+                      {t.parts[t.parts.length - 1].partial && (
+                        <span
+                          aria-hidden
+                          className="ml-1 inline-block size-1.5 animate-pulse rounded-full bg-primary align-middle"
+                        />
+                      )}
+                    </p>
                   </div>
                 </motion.li>
               ))}

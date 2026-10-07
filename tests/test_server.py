@@ -10,6 +10,7 @@ from dzomdu.models import Word
 from dzomdu.pipeline import Pipeline
 from dzomdu.server.app import create_app
 from dzomdu.server.markdown import note_to_html
+from dzomdu.server.sessions import Session, SessionManager, SessionMeta
 
 SCRIPT = [
     ("Alice", 0.0, 4.0, "Good morning, let's review the budget."),
@@ -163,3 +164,35 @@ def test_note_html_translates_obsidian_syntax():
     assert '<p id="t1"><strong>Alice</strong>' in html
     assert "<script>" not in html and "type: meeting" not in html
     assert html.count("<td>") == 2
+
+
+def test_live_segments_update_in_place_by_revision():
+    s = Session("x", SessionMeta(), "recording")
+    s.put_live(
+        {"id": 1, "start": 0.0, "end": 0.8, "partial": True, "speaker": None, "text": "Let's"}
+    )
+    s.put_live(
+        {
+            "id": 1,
+            "start": 0.0,
+            "end": 2.0,
+            "partial": False,
+            "speaker": None,
+            "text": "Let's start.",
+        }
+    )
+    s.put_live(
+        {"id": 2, "start": 2.5, "end": 3.1, "partial": True, "speaker": None, "text": "Good"}
+    )
+    snap = SessionManager.snapshot(None, s, live_rev=0)  # type: ignore[arg-type]
+    assert [(seg["id"], seg["text"]) for seg in snap["live"]] == [(1, "Let's start."), (2, "Good")]
+    assert snap["live_rev"] == 3
+    assert SessionManager.snapshot(None, s, live_rev=2)["live"][0]["id"] == 2  # type: ignore[arg-type]
+    # older clients that page by id only get final segments
+    assert [seg["id"] for seg in SessionManager.snapshot(None, s)["live"]] == [1]  # type: ignore[arg-type]
+
+
+def test_warmup_loads_models_once(setup):
+    client, _ = setup
+    assert client.post("/api/warmup").json() == {"ok": True}
+    assert client.post("/api/warmup").json() == {"ok": True}  # already loading or loaded

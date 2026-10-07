@@ -104,9 +104,24 @@ def test_live_transcriber_end_to_end(tmp_path):
             live.feed(audio[i : i + 4000])
         live.finish()
     assert errors == []
-    assert [(s["text"], s["speaker"]) for s in segments] == [
-        ("Alice speaking.", "Speaker 1"),
-        ("Bob speaking.", "Speaker 2"),
-        ("Alice speaking.", "Speaker 1"),
+    latest = {s["id"]: s for s in segments}  # each id is re-sent as it improves
+    assert [(s["text"], s["speaker"], s["partial"]) for s in latest.values()] == [
+        ("Alice speaking.", "Speaker 1", False),
+        ("Bob speaking.", "Speaker 2", False),
+        ("Alice speaking.", "Speaker 1", False),
     ]
+    first = [s for s in segments if s["id"] == 1]
+    # words appear while the person is still talking, before the pause closes the utterance
+    assert first[0]["partial"] and first[0]["end"] < first[-1]["end"]
+    # the final text is sent before the (slower) voice match labels it
+    finals = [s for s in first if not s["partial"]]
+    assert [s["speaker"] for s in finals] == [None, "Speaker 1"]
     assert list(tmp_path.iterdir()) == []  # temporary chunk files are removed
+
+
+def test_interim_guess_does_not_create_speakers():
+    tracker = LiveSpeakerTracker([], 0.6)
+    assert tracker.label(unit(1, 0, 0), learn=False) is None
+    assert tracker.label(unit(1, 0, 0)) == "Speaker 1"
+    assert tracker.label(unit(1, 0.1, 0), learn=False) == "Speaker 1"
+    assert tracker.label(unit(0, 1, 0)) == "Speaker 2"  # the guess didn't add a voice

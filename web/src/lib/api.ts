@@ -142,10 +142,13 @@ export type ReviewSpeaker = {
 
 export type LiveSegment = {
   id: number
+  rev: number
   start: number
   end: number
   speaker: string | null
   text: string
+  /** interim words while the person is still talking; replaced (same id) after the pause */
+  partial: boolean
 }
 
 export type Session = {
@@ -167,6 +170,7 @@ export type Session = {
   warning: string | null
   elapsed: number
   live: LiveSegment[]
+  live_rev: number
   meeting_id?: string
   title?: string
   duration?: number
