@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import shutil
 import subprocess
 import wave
@@ -57,14 +58,20 @@ def read_wav(path: Path) -> tuple[np.ndarray, int]:
         return data, wf.getframerate()
 
 
-def write_wav(path: Path, samples: np.ndarray, sample_rate: int = SAMPLE_RATE) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def wav_bytes(samples: np.ndarray, sample_rate: int = SAMPLE_RATE) -> bytes:
+    buf = io.BytesIO()
     pcm = (np.clip(samples, -1.0, 1.0) * 32767).astype(np.int16)
-    with wave.open(str(path), "wb") as wf:
+    with wave.open(buf, "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(sample_rate)
         wf.writeframes(pcm.tobytes())
+    return buf.getvalue()
+
+
+def write_wav(path: Path, samples: np.ndarray, sample_rate: int = SAMPLE_RATE) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(wav_bytes(samples, sample_rate))
 
 
 def file_sha256(path: Path) -> str:

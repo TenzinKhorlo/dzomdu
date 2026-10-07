@@ -11,7 +11,6 @@ dzomdu doctor
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import platform
 import shutil
@@ -28,7 +27,14 @@ from rich.markup import escape
 from rich.table import Table
 
 from .audio import write_wav
-from .config import Config, default_config_path, dump_config, load_config
+from .config import (
+    ASR_PACKAGES,
+    Config,
+    default_config_path,
+    dump_config,
+    is_installed,
+    load_config,
+)
 from .llm.client import LLMClient, LLMError
 from .models import format_duration, format_timestamp
 from .pipeline import Analysis, Pipeline
@@ -409,20 +415,16 @@ def doctor(config: ConfigOpt = None) -> None:
     check("Apple Silicon Mac", mac, platform.platform(), required=False)
     check("ffmpeg", shutil.which("ffmpeg") is not None, "brew install ffmpeg")
 
-    asr_pkg = {
-        "parakeet": "parakeet_mlx",
-        "mlx-whisper": "mlx_whisper",
-        "faster-whisper": "faster_whisper",
-    }.get(cfg.asr.backend)
+    asr_pkg = ASR_PACKAGES.get(cfg.asr.backend)
     if asr_pkg:
         check(
             f"ASR backend '{cfg.asr.backend}'",
-            importlib.util.find_spec(asr_pkg) is not None,
+            is_installed(asr_pkg),
             "uv sync --extra mac" if asr_pkg != "faster_whisper" else "uv sync --extra whisper",
         )
     check(
         "Diarization (pyannote.audio)",
-        importlib.util.find_spec("pyannote.audio") is not None,
+        is_installed("pyannote.audio"),
         "uv sync --extra diarize",
     )
     hub = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
@@ -445,6 +447,42 @@ def doctor(config: ConfigOpt = None) -> None:
     check(f"LLM ({cfg.llm.api} @ {cfg.llm.base_url})", reachable, detail, required=False)
     check("Vault", cfg.vault.exists(), str(cfg.vault))
     raise typer.Exit(0 if ok else 1)
+
+
+# -- web UI -----------------------------------------------------------------------------------
+
+
+@app.command()
+def ui(
+    port: Annotated[int, typer.Option()] = 8765,
+    host: Annotated[
+        str, typer.Option(help="127.0.0.1 keeps it private to this computer")
+    ] = "127.0.0.1",
+    open_browser: Annotated[bool, typer.Option("--open/--no-open")] = True,
+    config: ConfigOpt = None,
+) -> None:
+    """Start the web interface: record, review speakers and read notes in the browser."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from .server.app import create_app
+
+    cfg = _cfg(config)
+    if not cfg.vault.exists():
+        console.print(f"Creating vault at [bold]{cfg.vault}[/] (run `dzomdu init` to change it)")
+    app_ = create_app(cfg)
+    # browsers only allow microphone access on https or "localhost"
+    url = (
+        f"http://localhost:{port}"
+        if host in ("127.0.0.1", "localhost")
+        else f"http://{host}:{port}"
+    )
+    console.print(f"Dzomdu is running at [bold]{url}[/]  (Ctrl+C to stop)")
+    if open_browser:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    uvicorn.run(app_, host=host, port=port, log_level="warning")
 
 
 # -- bench ------------------------------------------------------------------------------------

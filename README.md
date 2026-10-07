@@ -41,7 +41,35 @@ launchctl setenv OLLAMA_FLASH_ATTENTION 1
 launchctl setenv OLLAMA_KV_CACHE_TYPE q8_0
 ```
 
-## Use
+## Use: web interface
+
+```bash
+uv run dzomdu ui          # opens http://localhost:8765 in your browser
+```
+
+1. **New meeting**: optionally fill in a title, project, attendees and minutes format,
+   then press **Start recording**. Allow microphone access when the browser asks.
+   Attendees narrow voice matching to those people.
+2. While you record, a **live transcript** appears with provisional speaker labels. It is a
+   preview only.
+3. Press **Stop**. The whole recording is processed properly: speaker separation,
+   transcription and voice matching.
+4. **Who said what?** Each speaker is shown with quotes and a **▶ Play voice** button.
+   Recognised people are already filled in. Type names for new voices; they are remembered
+   for next time.
+5. **Notes**: the summary, decisions, action items and minutes are shown with clickable
+   timestamps that jump to the transcript. Use **Rewrite these notes in another format** to
+   pick a different template or add instructions. Use **Open in Obsidian** to open the
+   saved note.
+
+You can also **upload a recording** instead of recording live. **Meetings** lists past
+notes, and **Voices** lets you rename or forget remembered voices.
+
+The audio is saved continuously while recording. If the app or the computer crashes, the
+recording is recovered the next time `dzomdu ui` starts. The UI runs only on this computer:
+it listens on localhost, and nothing is loaded from the internet.
+
+## Use: command line
 
 ```bash
 # Process a recording (any format: m4a, mp3, wav, mp4…)

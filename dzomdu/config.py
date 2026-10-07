@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
 import tomllib
@@ -156,3 +157,15 @@ def dump_config(cfg: Config) -> str:
             else:
                 lines.append(f"{key} = {_toml_value(value)}")
     return "\n".join(lines) + "\n"
+
+
+def is_installed(module: str) -> bool:
+    """True if `module` can be imported (find_spec raises when a parent package is missing)."""
+    try:
+        return importlib.util.find_spec(module) is not None
+    except ModuleNotFoundError:
+        return False
+
+
+ASR_PACKAGES = {"parakeet": "parakeet_mlx", "mlx-whisper": "mlx_whisper",
+                "faster-whisper": "faster_whisper"}  # fmt: skip

@@ -250,12 +250,23 @@ YAML frontmatter works with Obsidian **Dataview/Bases**. Action items follow the
 - Tests on a fixed golden audio set (regression for WER/DER/ID accuracy).
 
 ### Phase 2: Local web app (3–4 weeks)
+
+> **Status:** a first version is built: `dzomdu ui` gives record / upload, speaker review
+> with voice clips, notes with rewrite, meeting history and voice management. It is plain
+> HTML/JS served by FastAPI, with no build step. It can move to SvelteKit later if the UI
+> grows.
+
 - Record from the mic in the browser, crash-safe audio storage, upload files.
 - **Speaker review UI** (play sample → confirm/rename/merge/split), editing People and Projects, attendee pre-selection.
 - Template picker and "regenerate with instructions".
 - Background job queue with progress, and loading models sequentially so ASR and the LLM fit in RAM together.
 
 ### Phase 3: Live transcription (2–3 weeks)
+
+> **Status:** a first version is built: energy-based pause detection, chunked transcription
+> on the model worker, and provisional speaker labels (known voices plus online
+> clustering), refined by the full pass on stop.
+
 - Streaming VAD + Parakeet over WebSocket, provisional speaker labels, then automatic Pass 2 refinement on stop.
 - Live bookmarks ("mark decision", "mark action") that the LLM step uses.
 - Optional Core ML diarization/embeddings (FluidAudio/speakrs-style) to free the GPU for the LLM.

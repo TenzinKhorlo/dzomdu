@@ -6,11 +6,15 @@ alongside short reference clips so everyone can be re-embedded if the model chan
 
 from __future__ import annotations
 
+import functools
 import shutil
 import sqlite3
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import TypeVar
 
 import numpy as np
 
@@ -48,6 +52,20 @@ CREATE TABLE IF NOT EXISTS feedback (
 """
 
 
+F = TypeVar("F", bound=Callable)
+
+
+def _locked(method: F) -> F:
+    """The web UI and the model worker use the store from different threads."""
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper  # type: ignore[return-value]
+
+
 def _now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
@@ -64,28 +82,33 @@ class VoiceprintStore:
     def __init__(self, db_path: Path, clips_dir: Path):
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self.clips_dir = clips_dir
-        self.conn = sqlite3.connect(db_path)
+        self._lock = threading.RLock()
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA)
 
+    @_locked
     def close(self) -> None:
         self.conn.close()
 
     # -- speakers ---------------------------------------------------------------------------
 
+    @_locked
     def get(self, name: str) -> Speaker | None:
         row = self.conn.execute(
             "SELECT id, name, consent FROM speakers WHERE name = ?", (name.strip(),)
         ).fetchone()
         return Speaker(row["id"], row["name"], bool(row["consent"])) if row else None
 
+    @_locked
     def get_by_id(self, speaker_id: int) -> Speaker | None:
         row = self.conn.execute(
             "SELECT id, name, consent FROM speakers WHERE id = ?", (speaker_id,)
         ).fetchone()
         return Speaker(row["id"], row["name"], bool(row["consent"])) if row else None
 
+    @_locked
     def get_or_create(self, name: str, consent: bool = False) -> Speaker:
         name = name.strip()
         if not name:
@@ -103,6 +126,7 @@ class VoiceprintStore:
             )
         return Speaker(int(cur.lastrowid), name, consent)
 
+    @_locked
     def set_consent(self, speaker_id: int, consent: bool) -> None:
         with self.conn:
             self.conn.execute(
@@ -110,6 +134,7 @@ class VoiceprintStore:
                 (int(consent), _now(), speaker_id),
             )
 
+    @_locked
     def list(self, model: str | None = None) -> list[Speaker]:
         sql = """
             SELECT s.id, s.name, s.consent, COUNT(e.id) AS n
@@ -120,6 +145,7 @@ class VoiceprintStore:
         rows = self.conn.execute(sql, (model, model)).fetchall()
         return [Speaker(r["id"], r["name"], bool(r["consent"]), r["n"]) for r in rows]
 
+    @_locked
     def rename(self, old: str, new: str) -> None:
         speaker = self.get(old)
         if speaker is None:
@@ -132,6 +158,7 @@ class VoiceprintStore:
                 (new.strip(), _now(), speaker.id),
             )
 
+    @_locked
     def forget(self, name: str) -> bool:
         """Delete a person's voiceprints and reference clips ("forget this voice")."""
         speaker = self.get(name)
@@ -151,6 +178,7 @@ class VoiceprintStore:
 
     # -- embeddings -------------------------------------------------------------------------
 
+    @_locked
     def add_embedding(
         self,
         speaker_id: int,
@@ -211,6 +239,7 @@ class VoiceprintStore:
             if clips[emb_id]:
                 Path(clips[emb_id]).unlink(missing_ok=True)
 
+    @_locked
     def embeddings(self, model: str, speaker_ids: list[int] | None = None) -> dict[int, np.ndarray]:
         """speaker_id -> (k, dim) matrix of that speaker's embeddings in `model`'s space."""
         sql = "SELECT speaker_id, vector FROM embeddings WHERE model = ?"
@@ -234,6 +263,7 @@ class VoiceprintStore:
 
     # -- feedback ---------------------------------------------------------------------------
 
+    @_locked
     def log_feedback(
         self,
         meeting_id: str,
