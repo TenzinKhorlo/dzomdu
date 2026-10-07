@@ -59,6 +59,15 @@ def test_rendering_details():
     assert "**Unknown speaker 2** `00:00:15`" in body
 
 
+def test_known_people_are_linked_even_if_absent():
+    notes = MeetingNotes.model_validate(notes_reply(["t1", "t2"]))
+    notes.action_items[1].owner = "dechen yangzom"
+    body = render_note(
+        record(), notes, load_template("standard", None), known_people=["Dechen Yangzom"]
+    )
+    assert "- [ ] [[Dechen Yangzom]] Book the venue" in body
+
+
 def test_board_table_escapes_pipes():
     notes = MeetingNotes.model_validate(notes_reply(["t1", "t2"]))
     body = render_note(record(), notes, load_template("board", None))

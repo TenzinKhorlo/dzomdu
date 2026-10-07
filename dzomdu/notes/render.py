@@ -36,11 +36,14 @@ def wikilink(name: str) -> str:
 
 
 class _Helpers:
-    def __init__(self, record: MeetingRecord):
+    def __init__(self, record: MeetingRecord, known_people: list[str] | None = None):
         self.turn_start = {t.id: t.start for t in record.turns}
-        self.people = {a.name.casefold(): a.name for a in record.assignments.values() if a.name} | {
-            name.casefold(): name for name in record.attendees
-        }
+        # anyone known (in the vault or with a voiceprint) is linked, e.g. an owner who was absent
+        self.people = (
+            {name.casefold(): name for name in known_people or []}
+            | {a.name.casefold(): a.name for a in record.assignments.values() if a.name}
+            | {name.casefold(): name for name in record.attendees}
+        )
 
     def cite(self, item: Cited, wrap: bool = True) -> str:
         links = [
@@ -102,6 +105,7 @@ def render_note(
     notes: MeetingNotes | None,
     template: MinutesTemplate | None,
     llm_model: str | None = None,
+    known_people: list[str] | None = None,
 ) -> str:
     ctx = meeting_context(record)
     when = datetime.fromisoformat(record.date)
@@ -136,7 +140,7 @@ def render_note(
 
     parts = [dump_frontmatter(meta), f"# {record.title}\n"]
     if notes and template:
-        helpers = _Helpers(record)
+        helpers = _Helpers(record, known_people)
         body = (
             _env()
             .from_string(template.body)

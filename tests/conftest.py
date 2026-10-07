@@ -135,6 +135,12 @@ def ollama_transport(
     return httpx.MockTransport(handler)
 
 
+@pytest.fixture(autouse=True)
+def _no_built_dashboard(monkeypatch, tmp_path_factory):
+    """Tests use the classic UI unless they opt into a built dashboard."""
+    monkeypatch.setenv("DZOMDU_WEB_DIR", str(tmp_path_factory.mktemp("no-web")))
+
+
 @pytest.fixture
 def cfg(tmp_path: Path) -> Config:
     return Config(vault=tmp_path / "vault", data_dir=tmp_path / "data")

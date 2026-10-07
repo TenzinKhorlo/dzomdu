@@ -135,4 +135,5 @@ def match_clusters(
             )
         else:
             current.unknown_label = label
-    return assignments
+    # in order of first speech, however they were matched
+    return {c: assignments[c] for c in clusters if c in assignments}

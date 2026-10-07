@@ -167,5 +167,8 @@ def is_installed(module: str) -> bool:
         return False
 
 
-ASR_PACKAGES = {"parakeet": "parakeet_mlx", "mlx-whisper": "mlx_whisper",
-                "faster-whisper": "faster_whisper"}  # fmt: skip
+ASR_PACKAGES = {
+    "parakeet": "parakeet_mlx",
+    "mlx-whisper": "mlx_whisper",
+    "faster-whisper": "faster_whisper",
+}

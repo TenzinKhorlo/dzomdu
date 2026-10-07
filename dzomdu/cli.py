@@ -475,9 +475,14 @@ def ui(
 
     import uvicorn
 
-    from .server.app import create_app
+    from .server.app import create_app, web_dir
 
     cfg = _cfg(config)
+    if web_dir() is None:
+        console.print(
+            "[yellow]Dashboard not built yet[/] - showing the classic interface. "
+            "Build it once with: [bold]cd web && npm install && npm run build[/]"
+        )
     if not cfg.vault.exists():
         console.print(f"Creating vault at [bold]{cfg.vault}[/] (run `dzomdu init` to change it)")
     app_ = create_app(cfg)

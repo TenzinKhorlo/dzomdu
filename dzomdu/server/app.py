@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,11 +12,13 @@ from typing import Annotated, Any
 from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.websockets import WebSocketDisconnect
 
+from .. import dashboard
 from ..audio import wav_bytes
 from ..config import ASR_PACKAGES, Config, is_installed
 from ..llm.client import LLMClient
@@ -24,9 +27,32 @@ from ..pipeline import Pipeline
 from .markdown import note_to_html
 from .sessions import ACTIVE_STATES, SessionManager, SessionMeta
 
-STATIC = Path(__file__).parent / "static"
-UPLOAD_SUFFIXES = {".wav", ".m4a", ".mp3", ".mp4", ".mov", ".aac", ".flac", ".ogg", ".opus",
-                   ".webm", ".mkv", ".wma", ".aiff", ".aif"}  # fmt: skip
+STATIC = Path(__file__).parent / "static"  # the original single-page UI, kept at /classic/
+
+
+def web_dir() -> Path | None:
+    """The built Next.js dashboard (`npm run build` in web/), if present."""
+    env = os.environ.get("DZOMDU_WEB_DIR")
+    path = Path(env) if env else Path(__file__).resolve().parents[2] / "web" / "out"
+    return path if (path / "index.html").exists() else None
+
+
+UPLOAD_SUFFIXES = {
+    ".wav",
+    ".m4a",
+    ".mp3",
+    ".mp4",
+    ".mov",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".opus",
+    ".webm",
+    ".mkv",
+    ".wma",
+    ".aiff",
+    ".aif",
+}
 
 
 class ReviewBody(BaseModel):
@@ -37,6 +63,17 @@ class RegenerateBody(BaseModel):
     template: str | None = None
     instructions: str = ""
     force: bool = False
+
+
+class TaskBody(BaseModel):
+    done: bool
+
+
+class PersonBody(BaseModel):
+    name: str
+    role: str | None = None
+    organisation: str | None = None
+    bio: str | None = None
 
 
 class RenameBody(BaseModel):
@@ -56,6 +93,14 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
 
     app = FastAPI(title="Dzomdu", lifespan=lifespan, docs_url=None, redoc_url=None)
     app.state.manager = manager
+    # `next dev` runs the dashboard on :3000 during development and calls this API directly
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    web = web_dir()
 
     def session_or_404(sid: str):
         try:
@@ -65,9 +110,15 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
 
     # -- app shell --------------------------------------------------------------------------
 
-    @app.get("/")
-    def index() -> FileResponse:
+    @app.get("/classic/")
+    def classic() -> FileResponse:
         return FileResponse(STATIC / "index.html")
+
+    if web is None:  # dashboard not built: the classic UI is the home page
+
+        @app.get("/")
+        def index() -> FileResponse:
+            return FileResponse(STATIC / "index.html")
 
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
@@ -212,30 +263,127 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
 
     @app.get("/api/meetings")
     def meetings() -> dict[str, list[dict[str, Any]]]:
-        done = []
-        for path in cfg.meetings_dir.glob("*.json") if cfg.meetings_dir.is_dir() else []:
-            try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
-                continue
-            assignments = data.get("assignments", {}).values()
-            done.append(
-                {
-                    "id": data["id"],
-                    "title": data.get("title") or "Untitled",
-                    "date": data.get("date"),
-                    "project": data.get("project"),
-                    "duration": data.get("duration"),
-                    "people": sorted({a["name"] for a in assignments if a.get("name")}),
-                }
-            )
+        rows = [dashboard.meeting_row(r) for r in dashboard.load_records(cfg.meetings_dir)]
         active = [
             {"id": s.id, "title": s.meta.title or "New meeting", "state": s.state}
             for s in manager.sessions.values()
             if s.state in ACTIVE_STATES | {"review"}
         ]
-        done.sort(key=lambda m: m["date"] or "", reverse=True)
-        return {"meetings": done, "active": active}
+        return {"meetings": rows, "active": active}
+
+    @app.get("/api/dashboard")
+    def dashboard_data(days: int = 30) -> dict[str, Any]:
+        records = dashboard.load_records(cfg.meetings_dir)
+        data = dashboard.build_dashboard(records, len(pipeline.store.list()), days=days)
+        data["active"] = [
+            {"id": s.id, "title": s.meta.title or "New meeting", "state": s.state}
+            for s in manager.sessions.values()
+            if s.state in ACTIVE_STATES | {"review"}
+        ]
+        return data
+
+    def record_or_404(meeting_id: str) -> dict[str, Any]:
+        path = cfg.meetings_dir / f"{meeting_id}.json"
+        if not path.exists():
+            raise HTTPException(404, f"No meeting with id {meeting_id}")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    @app.get("/api/meetings/{meeting_id}")
+    def meeting_detail(meeting_id: str) -> dict[str, Any]:
+        r = record_or_404(meeting_id)
+        talk: dict[str, float] = {}
+        for t in r.get("turns", []):
+            talk[t["speaker"]] = talk.get(t["speaker"], 0.0) + t["end"] - t["start"]
+
+        def label(a: dict[str, Any]) -> str:
+            if a.get("name"):
+                return a["name"]
+            return f"{a['suggestion']}?" if a.get("suggestion") else a["unknown_label"]
+
+        assignments = r.get("assignments", {})
+        speakers = [
+            {
+                "cluster": c,
+                "label": label(a),
+                "name": a.get("name"),
+                "status": a.get("status"),
+                "talk_seconds": round(talk.get(c, 0.0), 1),
+                "turns": sum(1 for t in r.get("turns", []) if t["speaker"] == c),
+            }
+            for c, a in assignments.items()
+            if talk.get(c)
+        ]
+        speakers.sort(key=lambda x: x["talk_seconds"], reverse=True)
+        note = None
+        note_path = r.get("note_path")
+        if note_path and Path(note_path).exists():
+            text = Path(note_path).read_text(encoding="utf-8")
+            note = {
+                "path": note_path,
+                "markdown": text,
+                "html": note_to_html(text),
+                "obsidian_url": "obsidian://open?path=" + quote(note_path),
+            }
+        notes = r.get("_notes") or {}
+        return {
+            **dashboard.meeting_row(r),
+            "attendees": r.get("attendees", []),
+            "speakers": speakers,
+            "turns": [
+                {
+                    **t,
+                    "label": label(assignments[t["speaker"]])
+                    if t["speaker"] in assignments
+                    else t["speaker"],
+                }
+                for t in r.get("turns", [])
+            ],
+            "decisions": notes.get("decisions", []),
+            "topics": notes.get("topics", []),
+            "open_questions": notes.get("open_questions", []),
+            "tasks": [vars(t) for t in dashboard.meeting_tasks(r)],
+            "note": note,
+            "models": {"asr": r.get("asr_model"), "diarization": r.get("diarization_model")},
+        }
+
+    @app.post("/api/meetings/{meeting_id}/tasks/{line}")
+    def set_task(meeting_id: str, line: int, body: TaskBody) -> dict[str, Any]:
+        r = record_or_404(meeting_id)
+        note_path = r.get("note_path")
+        if not note_path or not Path(note_path).exists():
+            raise HTTPException(404, "This meeting has no note")
+        try:
+            dashboard.set_task_done(Path(note_path), line, body.done)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        pipeline.note_changed_by_app(meeting_id)
+        return {"done": body.done}
+
+    @app.get("/api/projects")
+    def projects() -> list[dict[str, Any]]:
+        stats = {
+            p["name"]: p
+            for p in dashboard.build_dashboard(dashboard.load_records(cfg.meetings_dir), 0)[
+                "projects"
+            ]
+        }
+        vault = pipeline.vault
+        names = set(stats)
+        if vault.projects_dir.is_dir():
+            names |= {p.name for p in vault.projects_dir.iterdir() if p.is_dir()}
+        out = []
+        for name in names:
+            st = stats.get(name, {"meetings": 0, "minutes": 0.0, "last": None})
+            out.append(
+                {
+                    "name": name,
+                    "meetings": st["meetings"],
+                    "minutes": round(st["minutes"], 1),
+                    "last": st["last"],
+                    "overview": vault.project_context(name),
+                }
+            )
+        return sorted(out, key=lambda p: (p["last"] or "", p["name"]), reverse=True)
 
     @app.post("/api/meetings/{meeting_id}/open")
     def open_meeting(meeting_id: str) -> dict[str, str]:
@@ -246,10 +394,32 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
 
     @app.get("/api/speakers")
     def speakers() -> list[dict[str, Any]]:
+        talk: dict[str, float] = {}
+        meetings_with: dict[str, int] = {}
+        for r in dashboard.load_records(cfg.meetings_dir):
+            for name, seconds in dashboard.speaking_by_name(r).items():
+                talk[name] = talk.get(name, 0.0) + seconds
+                meetings_with[name] = meetings_with.get(name, 0) + 1
         return [
-            {"name": s.name, "samples": s.samples, "consent": s.consent}
+            {
+                "name": s.name,
+                "samples": s.samples,
+                "consent": s.consent,
+                "minutes": round(talk.get(s.name, 0.0) / 60, 1),
+                "meetings": meetings_with.get(s.name, 0),
+                **pipeline.vault.person_profile(s.name),
+            }
             for s in pipeline.store.list()
         ]
+
+    @app.post("/api/people")
+    def save_person(body: PersonBody) -> dict[str, Any]:
+        if not body.name.strip():
+            raise HTTPException(400, "A name is required")
+        pipeline.vault.ensure_person(
+            body.name.strip(), role=body.role, organisation=body.organisation, bio=body.bio
+        )
+        return {"name": body.name.strip(), **pipeline.vault.person_profile(body.name.strip())}
 
     @app.post("/api/speakers/rename")
     def rename_speaker(body: RenameBody) -> dict[str, str]:
@@ -267,5 +437,9 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
         if not pipeline.store.forget(name):
             raise HTTPException(404, f"No voice called {name}")
         return {"forgotten": True}
+
+    # mounted last so the API routes above take precedence
+    if web is not None:
+        app.mount("/", StaticFiles(directory=web, html=True), name="web")
 
     return app

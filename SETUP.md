@@ -6,7 +6,8 @@ system Python. To remove every Python package Dzomdu installed, delete that fold
 
 | What | Where it goes | Size |
 |---|---|---|
-| Python 3.12, ffmpeg, git, Ollama | Homebrew (`/opt/homebrew`) | ~1 GB |
+| Python 3.12, ffmpeg, git, Ollama, Node.js | Homebrew (`/opt/homebrew`) | ~1.2 GB |
+| Dashboard build tools (Next.js, only needed to build it) | `dzomdu/web/node_modules/` | ~600 MB |
 | Dzomdu and its Python libraries (PyTorch, pyannote, Parakeet…) | `dzomdu/.venv/` | ~3 GB |
 | Speech and speaker models (downloaded on first use) | `~/.cache/huggingface/` | ~1.5 GB |
 | LLM for summaries (`qwen3:14b`) | `~/.ollama/` | ~9 GB |
@@ -25,10 +26,11 @@ If you don't have [Homebrew](https://brew.sh) yet, install it first:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Then install Python 3.12, ffmpeg, git and Ollama:
+Then install Python 3.12, ffmpeg, git, Ollama and Node.js. Node.js is only needed to build
+the dashboard:
 
 ```bash
-brew install python@3.12 ffmpeg git ollama
+brew install python@3.12 ffmpeg git ollama node
 python3.12 --version        # should print Python 3.12.x
 ```
 
@@ -172,7 +174,19 @@ download is allowed):
 
 In Obsidian, use **Open folder as vault** and pick the vault folder.
 
-## 8. First run
+## 8. Build the dashboard (once)
+
+```bash
+cd ~/dzomdu/web        # or wherever you cloned it
+npm install
+npm run build
+cd ..
+```
+
+This writes `web/out/`, which `dzomdu ui` serves. Run it again after a `git pull` that
+changes the dashboard. Without a build, `dzomdu ui` shows the simpler classic interface.
+
+## 9. First run
 
 ```bash
 dzomdu ui
@@ -219,6 +233,7 @@ cd ~/dzomdu
 source .venv/bin/activate
 git pull
 pip install -e ".[mac,diarize]"   # picks up any new dependencies
+(cd web && npm install && npm run build)   # rebuild the dashboard
 ```
 
 ## Starting over or uninstalling
@@ -248,6 +263,7 @@ pip install -e ".[mac,diarize]"   # picks up any new dependencies
 | Diarization errors mentioning `mps` | Dzomdu retries on the CPU automatically. To always use the CPU, set `device = "cpu"` under `[diarization]` in `~/.config/dzomdu/config.toml`. |
 | `could not connect to ollama server` / status badge says the LLM is not reachable | Start the server with `brew services start ollama` (or `ollama serve` in another window), then check `ollama list` shows `qwen3:14b`. |
 | Browser won't record | Use `http://localhost:8765` exactly, and check the macOS microphone permission (step 8). |
+| `dzomdu ui` says "Dashboard not built yet" | Run `cd web && npm install && npm run build` (step 8). |
 | `address already in use` | Another copy is running. Close it, or run `dzomdu ui --port 8800`. |
 | VS Code shows import errors | **Python: Select Interpreter** → `./.venv/bin/python`. |
 

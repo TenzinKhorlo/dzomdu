@@ -167,6 +167,17 @@ class Vault:
             dst.write_text(text, encoding="utf-8")
             src.unlink()
 
+    def person_profile(self, name: str) -> dict[str, str]:
+        path = self.person_path(name)
+        if not path.exists():
+            return {"role": "", "organisation": "", "bio": ""}
+        meta, body = split_frontmatter(path.read_text(encoding="utf-8"))
+        return {
+            "role": str(meta.get("role") or ""),
+            "organisation": str(meta.get("organisation") or ""),
+            "bio": section(body, "Bio"),
+        }
+
     def person_context(self, name: str) -> str:
         path = self.person_path(name)
         if not path.exists():

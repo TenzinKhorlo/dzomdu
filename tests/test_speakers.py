@@ -95,6 +95,7 @@ def test_match_is_one_to_one_with_thresholds():
     assert out["S2"].display_name == "B?" and out["S2"].unknown_label == "Unknown speaker 2"
     assert out["S3"].display_name == "Unknown speaker 3"
     assert out["S1"].score == pytest.approx(0.9535, abs=1e-3)  # best score kept for review
+    assert list(out) == ["S0", "S1", "S2", "S3"]  # order of first speech, not of matching
 
 
 def test_match_handles_missing_embeddings():

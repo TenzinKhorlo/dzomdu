@@ -22,7 +22,7 @@ CLI plus benchmark tools.
 environment (`.venv`), not globally. In short:
 
 ```bash
-brew install python@3.12 ffmpeg git ollama
+brew install python@3.12 ffmpeg git ollama node
 git clone https://github.com/TenzinKhorlo/dzomdu.git && cd dzomdu
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -e ".[mac,diarize]"
@@ -30,35 +30,37 @@ hf auth login                  # after accepting the pyannote model terms on Hug
 ollama pull qwen3:14b
 dzomdu init --vault ~/Documents/DzomduVault
 dzomdu doctor
+(cd web && npm install && npm run build)   # the dashboard
+dzomdu ui
 ```
 
-## Use: web interface
+## Use: dashboard
+
+Build the dashboard once. This needs Node.js (`brew install node`):
 
 ```bash
+cd web && npm install && npm run build && cd ..
 dzomdu ui          # opens http://localhost:8765 in your browser
 ```
 
-1. **New meeting**: optionally fill in a title, project, attendees and minutes format,
-   then press **Start recording**. Allow microphone access when the browser asks.
-   Attendees narrow voice matching to those people.
-2. While you record, a **live transcript** appears with provisional speaker labels. It is a
-   preview only.
-3. Press **Stop**. The whole recording is processed properly: speaker separation,
-   transcription and voice matching.
-4. **Who said what?** Each speaker is shown with quotes and a **▶ Play voice** button.
-   Recognised people are already filled in. Type names for new voices; they are remembered
-   for next time.
-5. **Notes**: the summary, decisions, action items and minutes are shown with clickable
-   timestamps that jump to the transcript. Use **Rewrite these notes in another format** to
-   pick a different template or add instructions. Use **Open in Obsidian** to open the
-   saved note.
+| Page | What it does |
+|---|---|
+| **Dashboard** | Meetings and hours over the last 30 days with trends, time in meetings per day, who talks most, recent meetings, and open action items you can tick off. |
+| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. You can also drop in an existing recording instead. |
+| **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. Clicking a timestamp jumps to that moment in the transcript. |
+| **People** | Everyone whose voice is known, with role, organisation and bio. These are used as LLM context and saved in `People/` in your vault. You can also rename a person or forget their voice. |
+| **Projects** | Project folders from your vault, with their meetings. |
+| **Settings** | Model and LLM status, vault location, minutes formats. |
 
-You can also **upload a recording** instead of recording live. **Meetings** lists past
-notes, and **Voices** lets you rename or forget remembered voices.
+Action items are the Obsidian Tasks lines in your notes. Ticking one in the dashboard updates
+the note, and ticking it in Obsidian shows up in the dashboard.
 
-The audio is saved continuously while recording. If the app or the computer crashes, the
-recording is recovered the next time `dzomdu ui` starts. The UI runs only on this computer:
-it listens on localhost, and nothing is loaded from the internet.
+Audio is saved continuously while recording. If the app or the computer crashes, the recording
+is recovered the next time `dzomdu ui` starts. Everything runs on localhost; nothing is loaded
+from the internet. The original single-page interface is still at `/classic/`, and it is used
+automatically if the dashboard isn't built.
+
+To work on the dashboard itself, see [web/README.md](web/README.md).
 
 ## Use: command line
 

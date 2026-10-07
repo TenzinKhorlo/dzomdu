@@ -341,22 +341,43 @@ class Pipeline:
             path = self.vault.meeting_path(
                 datetime.fromisoformat(record.date), record.title, record.project
             )
-        text = render_note(record, notes, template, self.llm.model if notes else None)
+        text = render_note(
+            record, notes, template, self.llm.model if notes else None, self.known_people()
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
         record.note_path = str(path)
-        self.save_record(record, note_sha=hashlib.sha256(text.encode()).hexdigest())
+        self.save_record(record, note_sha=hashlib.sha256(text.encode()).hexdigest(), notes=notes)
         return path
+
+    def known_people(self) -> list[str]:
+        names = {s.name for s in self.store.list()}
+        if self.vault.people_dir.is_dir():
+            names |= {p.stem for p in self.vault.people_dir.glob("*.md")}
+        return sorted(names)
 
     # -- persistence -------------------------------------------------------------------------
 
-    def save_record(self, record: MeetingRecord, note_sha: str | None = None) -> Path:
+    def save_record(
+        self, record: MeetingRecord, note_sha: str | None = None, notes: MeetingNotes | None = None
+    ) -> Path:
         self.cfg.meetings_dir.mkdir(parents=True, exist_ok=True)
         path = self.cfg.meetings_dir / f"{record.id}.json"
         data = record.to_dict()
         data["_note_sha"] = note_sha
+        # the structured notes (summary, decisions, actions) feed the dashboard
+        data["_notes"] = notes.model_dump() if notes else None
         path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         return path
+
+    def note_changed_by_app(self, meeting_id: str) -> None:
+        """After the app itself edits a note (e.g. ticking a task), record the new version so
+        it doesn't count as a user edit that blocks regenerating."""
+        path = self.cfg.meetings_dir / f"{meeting_id}.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        note = Path(data["note_path"])
+        data["_note_sha"] = hashlib.sha256(note.read_bytes()).hexdigest()
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
     def load_record(self, meeting_id: str) -> tuple[MeetingRecord, str | None]:
         path = self.cfg.meetings_dir / f"{meeting_id}.json"
@@ -364,6 +385,7 @@ class Pipeline:
             raise FileNotFoundError(f"No processed meeting with id {meeting_id}")
         data = json.loads(path.read_text(encoding="utf-8"))
         note_sha = data.pop("_note_sha", None)
+        data.pop("_notes", None)
         return MeetingRecord.from_dict(data), note_sha
 
     def note_was_edited(self, record: MeetingRecord, note_sha: str | None) -> bool:

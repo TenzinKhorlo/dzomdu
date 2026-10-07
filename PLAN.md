@@ -251,10 +251,11 @@ YAML frontmatter works with Obsidian **Dataview/Bases**. Action items follow the
 
 ### Phase 2: Local web app (3–4 weeks)
 
-> **Status:** a first version is built: `dzomdu ui` gives record / upload, speaker review
-> with voice clips, notes with rewrite, meeting history and voice management. It is plain
-> HTML/JS served by FastAPI, with no build step. It can move to SvelteKit later if the UI
-> grows.
+> **Status:** built. A Next.js 16 + shadcn/ui + Animate UI dashboard (`web/`), exported as
+> static files and served by FastAPI. It covers KPIs and charts, record / upload with a live
+> transcript, speaker review with voice clips, meeting notes with transcript and citations,
+> action items synced with the Obsidian Tasks lines, people profiles, projects, and system
+> status. The original plain HTML UI remains at `/classic/`.
 
 - Record from the mic in the browser, crash-safe audio storage, upload files.
 - **Speaker review UI** (play sample → confirm/rename/merge/split), editing People and Projects, attendee pre-selection.

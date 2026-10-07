@@ -89,10 +89,17 @@ def test_live_transcriber_end_to_end(tmp_path):
             segments.append,
             errors.append,
         )
-        audio = np.concatenate([
-            quiet(0.5), tone(2, PITCH["Alice"]), quiet(1), tone(2, PITCH["Bob"]),
-            quiet(1), tone(2, PITCH["Alice"]), quiet(0.3),
-        ])  # fmt: skip
+        audio = np.concatenate(
+            [
+                quiet(0.5),
+                tone(2, PITCH["Alice"]),
+                quiet(1),
+                tone(2, PITCH["Bob"]),
+                quiet(1),
+                tone(2, PITCH["Alice"]),
+                quiet(0.3),
+            ]
+        )
         for i in range(0, len(audio), 4000):
             live.feed(audio[i : i + 4000])
         live.finish()
