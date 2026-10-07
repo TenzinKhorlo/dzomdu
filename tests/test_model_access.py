@@ -88,3 +88,11 @@ def test_failed_load_explains_and_does_not_retry(fake_hub, monkeypatch):
         with pytest.raises(RuntimeError, match="accept the conditions"):
             diarizer._load()
     assert attempts == [MODEL]
+
+
+def test_env_token_override_is_pointed_out(fake_hub, monkeypatch):
+    fake_hub["error"] = RepositoryNotFoundError("401")
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    assert "unset HF_TOKEN" not in access_problem(MODEL)
+    monkeypatch.setenv("HF_TOKEN", "hf_...")
+    assert "unset HF_TOKEN" in access_problem(MODEL)

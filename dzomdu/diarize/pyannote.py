@@ -31,10 +31,18 @@ def access_problem(model: str, token: str | None = None) -> str | None:
             "No Hugging Face token found. With the virtual environment active, run "
             "`hf auth login` and paste a Read token from https://huggingface.co/settings/tokens."
         )
+    # HF_TOKEN in the environment silently overrides the token saved by `hf auth login`
+    env_note = (
+        " Note: the HF_TOKEN environment variable is set, and it takes priority over "
+        "`hf auth login`. If it is old or a placeholder, run `unset HF_TOKEN` (and remove it "
+        "from ~/.zshrc if you added it there)."
+        if os.environ.get("HF_TOKEN")
+        else ""
+    )
     rejected = (
-        "Hugging Face did not accept your login (the saved token may be mistyped, expired or "
+        "Hugging Face did not accept your login (the token may be mistyped, expired or "
         "deleted). Create a new Read token at https://huggingface.co/settings/tokens and run "
-        "`hf auth login` again."
+        "`hf auth login` again." + env_note
     )
     try:
         auth_check(model, token=token)
@@ -47,7 +55,7 @@ def access_problem(model: str, token: str | None = None) -> str | None:
             f"https://huggingface.co/{model} while logged in as the account your token belongs "
             "to, and accept the conditions. If your token is fine-grained, edit it and tick "
             "'Read access to contents of all public gated repos you can access' (or create a "
-            "classic Read token and run `hf auth login` again)."
+            "classic Read token and run `hf auth login` again)." + env_note
         )
     except RepositoryNotFoundError:
         return rejected
