@@ -42,7 +42,11 @@ cd ~
 git clone https://github.com/TenzinKhorlo/dzomdu.git
 cd dzomdu
 git checkout claude/tender-edison-lzi890   # the code lives on this branch until it is merged
+ls                                         # you should see pyproject.toml, SETUP.md, dzomdu/
 ```
+
+If you already had a `dzomdu` folder from earlier, update it instead of cloning:
+`git fetch origin && git checkout claude/tender-edison-lzi890`.
 
 ## 3. Create and activate the virtual environment
 
@@ -219,6 +223,8 @@ pip install -e ".[mac,diarize]"   # picks up any new dependencies
 
 | Problem | Fix |
 |---|---|
+| `pip install` says `does not appear to be a Python project` | The folder has no code yet (`ls` shows no `pyproject.toml`). Run `git fetch origin && git checkout claude/tender-edison-lzi890`. |
+| `zsh: command not found: hf` | `hf` is installed by step 4, so finish that first. On older versions use `huggingface-cli login`. |
 | `zsh: command not found: dzomdu` | The environment isn't active. Run `source ~/dzomdu/.venv/bin/activate`. |
 | `zsh: no matches found: .[mac,diarize]` | Put quotes around it: `pip install -e ".[mac,diarize]"` |
 | `python3.12: command not found` | Run `eval "$(/opt/homebrew/bin/brew shellenv)"`, or open a new terminal after installing Homebrew. |
