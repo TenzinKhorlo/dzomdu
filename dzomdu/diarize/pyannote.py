@@ -31,9 +31,17 @@ def access_problem(model: str, token: str | None = None) -> str | None:
             "No Hugging Face token found. With the virtual environment active, run "
             "`hf auth login` and paste a Read token from https://huggingface.co/settings/tokens."
         )
+    rejected = (
+        "Hugging Face did not accept your login (the saved token may be mistyped, expired or "
+        "deleted). Create a new Read token at https://huggingface.co/settings/tokens and run "
+        "`hf auth login` again."
+    )
     try:
         auth_check(model, token=token)
-    except GatedRepoError:
+    except GatedRepoError as exc:
+        # 401 = not authenticated at all; 403 = authenticated but no access to this model
+        if getattr(getattr(exc, "response", None), "status_code", None) == 401:
+            return rejected
         return (
             f"Your Hugging Face account has not been given access to {model}. Open "
             f"https://huggingface.co/{model} while logged in as the account your token belongs "
@@ -42,10 +50,7 @@ def access_problem(model: str, token: str | None = None) -> str | None:
             "classic Read token and run `hf auth login` again)."
         )
     except RepositoryNotFoundError:
-        return (
-            "Hugging Face rejected your token (it may be mistyped, expired or deleted). Create "
-            "a new Read token at https://huggingface.co/settings/tokens and run `hf auth login`."
-        )
+        return rejected
     except Exception as exc:  # network problems, proxies, outages
         return f"Could not reach huggingface.co to check access ({exc.__class__.__name__}: {exc})"
     return None

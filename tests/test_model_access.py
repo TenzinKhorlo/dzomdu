@@ -56,7 +56,11 @@ def test_terms_not_accepted(fake_hub):
 
 def test_bad_token(fake_hub):
     fake_hub["error"] = RepositoryNotFoundError("401")
-    assert "rejected your token" in access_problem(MODEL)
+    assert "did not accept your login" in access_problem(MODEL)
+    unauthenticated = GatedRepoError("401 Client Error ... Please log in.")
+    unauthenticated.response = types.SimpleNamespace(status_code=401)
+    fake_hub["error"] = unauthenticated
+    assert "did not accept your login" in access_problem(MODEL)
 
 
 def test_offline(fake_hub):
