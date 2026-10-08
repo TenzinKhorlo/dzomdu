@@ -1,7 +1,8 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, ListChecks, Mic, Radio, Upload } from "lucide-react"
+import { ArrowRight, CalendarDays, ListChecks, Mic, Radio, Upload } from "lucide-react"
 
 import { ActionList } from "@/components/action-list"
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
@@ -19,6 +20,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { useMounted } from "@/hooks/use-mounted"
@@ -33,15 +41,33 @@ const STATE_LABEL: Record<string, string> = {
 }
 
 export default function DashboardPage() {
-  const { data, error, reload } = useApi<Dashboard>("/api/dashboard", { interval: 15000 })
+  const [days, setDays] = React.useState("30")
+  const { data, error, reload } = useApi<Dashboard>(`/api/dashboard?days=${days}`, {
+    interval: 15000,
+  })
   const mounted = useMounted()
 
   return (
-    <div className="@container/main flex flex-col gap-6">
+    <div className="@container/main flex flex-col gap-5">
       <PageHeader
-        title={mounted ? greeting() : "Welcome back"}
-        description="Your meetings, decisions and action items, all processed on this computer."
+        title="Overview"
+        description={
+          mounted
+            ? `${greeting()}. Your meetings, decisions and action items, processed on this computer.`
+            : "Your meetings, decisions and action items, processed on this computer."
+        }
       >
+        <Select value={days} onValueChange={setDays}>
+          <SelectTrigger aria-label="Period" className="gap-1.5">
+            <CalendarDays className="text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="7">Last 7 days</SelectItem>
+            <SelectItem value="30">Last 30 days</SelectItem>
+            <SelectItem value="90">Last 90 days</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="outline" asChild>
           <Link href="/record/?upload=1">
             <Upload />
@@ -71,9 +97,9 @@ export default function DashboardPage() {
         <Fade key={s.id}>
           <Link
             href={`/record/?session=${s.id}`}
-            className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition-colors hover:bg-primary/10"
+            className="flex items-center gap-3 rounded-xl border border-brand/25 bg-brand/[0.05] px-4 py-3 text-[13px] transition-colors hover:bg-brand/10"
           >
-            <Radio className="size-4 text-primary" />
+            <Radio className="size-4 text-brand" />
             <span className="font-medium">{s.title}</span>
             <Badge variant="secondary">{STATE_LABEL[s.state] ?? s.state}</Badge>
             <ArrowRight className="ml-auto size-4 text-muted-foreground" />
@@ -90,19 +116,19 @@ export default function DashboardPage() {
             <NoActivity />
           ) : (
             <>
-              <div className="grid gap-4 @5xl/main:grid-cols-3">
+              <div className="grid gap-3 @5xl/main:grid-cols-3">
                 <div className="@5xl/main:col-span-2">
                   <ActivityChart data={data.activity} />
                 </div>
                 <SpeakersChart data={data.speakers} />
               </div>
-              <div className="grid gap-4 @5xl/main:grid-cols-3">
+              <div className="grid gap-3 @5xl/main:grid-cols-3">
                 <Card className="gap-0 overflow-hidden pb-0 @5xl/main:col-span-2">
                   <CardHeader className="pb-4">
                     <CardTitle>Recent meetings</CardTitle>
                     <CardDescription>Click a meeting to read its notes</CardDescription>
                     <CardAction>
-                      <Button variant="ghost" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild>
                         <Link href="/meetings/">
                           View all
                           <ArrowRight />
@@ -124,7 +150,7 @@ export default function DashboardPage() {
                   <CardContent>
                     {data.actions.length ? (
                       <ActionList
-                        items={data.actions.slice(0, 6)}
+                        items={data.actions.slice(0, 4)}
                         showMeeting
                         onChange={reload}
                       />
@@ -150,12 +176,12 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 @5xl/main:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-36 rounded-xl" />
+          <Skeleton key={i} className="h-[118px] rounded-xl" />
         ))}
       </div>
-      <div className="grid gap-4 @5xl/main:grid-cols-3">
+      <div className="grid gap-3 @5xl/main:grid-cols-3">
         <Skeleton className="h-80 rounded-xl @5xl/main:col-span-2" />
         <Skeleton className="h-80 rounded-xl" />
       </div>

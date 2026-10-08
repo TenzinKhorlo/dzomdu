@@ -273,7 +273,7 @@ export function MeetingForm({
         <Card
           className={cn(
             "cursor-pointer border-dashed py-8 text-center transition-colors",
-            dragging && "border-primary bg-primary/5",
+            dragging && "border-brand bg-brand/5",
             focusUpload && "ring-2 ring-primary/40",
           )}
           onClick={() => fileRef.current?.click()}
@@ -294,7 +294,7 @@ export function MeetingForm({
               {busy === "upload" ? (
                 <Loader2 className="size-5 animate-spin" />
               ) : dragging ? (
-                <FileAudio className="size-5 text-primary" />
+                <FileAudio className="size-5 text-brand" />
               ) : (
                 <Upload className="size-5 text-muted-foreground" />
               )}

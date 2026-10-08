@@ -36,6 +36,23 @@ version the API is on the same origin.
 | `src/components/swipe-to-complete.tsx` | Swipe gesture for action items |
 | `src/components/confirm.tsx` | `useConfirm()`, an in-app dialog for irreversible actions only |
 
+## Visual style
+
+- **Surfaces.** A grey sidebar canvas, white cards with a hairline border and
+  `shadow-[var(--shadow-card)]`, 12px card corners (`rounded-xl`) and 8px controls
+  (`rounded-lg`).
+- **Type.** Inter (bundled via `@fontsource-variable/inter`) for the interface, Geist Mono for
+  timestamps. Page titles are `text-xl`; labels, table text and descriptions are 13px.
+- **Colour.**
+  - Primary actions are near-black (`bg-primary`).
+  - The one accent, `brand` (orange #ea580c), is for highlights only: the "New recording"
+    button (`variant="brand"`), the activity chart and open-item chips.
+  - Speaker and project colours come from `colorFor()`.
+- **Charts.**
+  - One hue on the neutral `track` colour, with 2px gaps between marks.
+  - A dark tooltip on hover and keyboard focus.
+  - Values sit at the bar tips. Text is never drawn in a data colour.
+
 ## Interaction conventions
 
 - **Motion.** Use the springs in `src/lib/motion.ts`, not ad-hoc durations or curves.

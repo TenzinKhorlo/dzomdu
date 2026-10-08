@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { MeetingRow } from "@/lib/api"
-import { duration, relative } from "@/lib/format"
+import { colorFor, duration, relative } from "@/lib/format"
 
 export function MeetingTable({
   meetings,
@@ -56,7 +56,12 @@ export function MeetingTable({
             {!compact && (
               <TableCell>
                 {m.project ? (
-                  <Badge variant="secondary" className="font-normal">
+                  <Badge variant="outline" className="gap-1.5 font-normal">
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ backgroundColor: colorFor(m.project) }}
+                      aria-hidden
+                    />
                     {m.project}
                   </Badge>
                 ) : (
@@ -77,8 +82,8 @@ export function MeetingTable({
             </TableCell>
             <TableCell className="pr-4 text-right">
               {m.open_actions > 0 ? (
-                <Badge variant="outline" className="gap-1 tabular-nums">
-                  <CircleDot className="text-warning" />
+                <Badge className="gap-1 bg-brand/10 text-brand tabular-nums dark:bg-brand/15">
+                  <CircleDot />
                   {m.open_actions} open
                 </Badge>
               ) : (

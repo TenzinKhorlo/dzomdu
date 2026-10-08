@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Layers } from "lucide-react"
+import { ArrowRight, Folder, Layers } from "lucide-react"
 
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
 import { EmptyState, PageHeader } from "@/components/common"
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import type { Project } from "@/lib/api"
-import { relative } from "@/lib/format"
+import { colorFor, relative } from "@/lib/format"
 
 export default function ProjectsPage() {
   const { data } = useApi<Project[]>("/api/projects")
@@ -36,10 +36,13 @@ export default function ProjectsPage() {
           {data.map((p, i) => (
             <Fade key={p.name} delay={i * 40}>
               <Link href={`/meetings/?project=${encodeURIComponent(p.name)}`} className="group block h-full">
-                <Card className="h-full transition-colors group-hover:border-primary/40">
+                <Card className="h-full transition-colors group-hover:border-foreground/20">
                   <CardHeader>
-                    <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Layers className="size-4" />
+                    <div
+                      className="mb-2 flex size-8 items-center justify-center rounded-lg text-white"
+                      style={{ backgroundColor: colorFor(p.name) }}
+                    >
+                      <Folder className="size-4 fill-current" />
                     </div>
                     <CardTitle>{p.name}</CardTitle>
                     <CardDescription>
@@ -47,11 +50,11 @@ export default function ProjectsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1">
-                    <p className="line-clamp-3 text-sm text-muted-foreground">
+                    <p className="line-clamp-3 text-[13px] text-muted-foreground">
                       {p.overview || "Add goals, scope and a glossary in the project's overview note."}
                     </p>
                   </CardContent>
-                  <CardFooter className="justify-between text-sm">
+                  <CardFooter className="justify-between border-t text-[13px]">
                     <span className="tabular-nums text-muted-foreground">
                       {p.meetings} meeting{p.meetings === 1 ? "" : "s"} · {Math.round(p.minutes)} min
                     </span>

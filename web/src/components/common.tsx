@@ -14,10 +14,10 @@ export function PageHeader({
   children?: React.ReactNode
 }) {
   return (
-    <Fade className="flex flex-wrap items-end justify-between gap-4">
+    <Fade className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div className="min-w-0 space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-xl font-semibold">{title}</h1>
+        {description && <p className="text-[13px] text-muted-foreground">{description}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </Fade>
@@ -88,17 +88,17 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/30 px-6 py-12 text-center",
         className,
       )}
     >
-      <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+      <div className="flex size-10 items-center justify-center rounded-lg border bg-background shadow-[var(--shadow-card)]">
         <Icon className="size-5 text-muted-foreground" />
       </div>
       <div className="space-y-1">
-        <p className="font-medium">{title}</p>
+        <p className="text-sm font-medium">{title}</p>
         {description && (
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>
+          <p className="mx-auto max-w-sm text-[13px] text-muted-foreground">{description}</p>
         )}
       </div>
       {children}

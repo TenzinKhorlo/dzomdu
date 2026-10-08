@@ -38,7 +38,7 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="icon"
       onClick={change}
       aria-label={`Appearance: ${LABEL[current]}. Switch to ${LABEL[next]}`}

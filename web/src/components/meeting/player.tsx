@@ -374,7 +374,7 @@ export function PlayerBar({ turns, className }: { turns: Turn[]; className?: str
         variant="ghost"
         size="sm"
         onClick={p.cycleRate}
-        className={cn("w-12 shrink-0 font-mono text-xs tabular-nums", p.rate !== 1 && "text-primary")}
+        className={cn("w-12 shrink-0 font-mono text-xs tabular-nums", p.rate !== 1 && "text-brand")}
         aria-label={`Playback speed ${p.rate}×`}
       >
         {p.rate}×

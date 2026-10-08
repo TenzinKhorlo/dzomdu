@@ -30,8 +30,15 @@ function MeetingsInner() {
   const { data } = useApi<{ meetings: MeetingRow[]; active: ActiveSession[] }>("/api/meetings", {
     interval: 10000,
   })
-  const [query, setQuery] = React.useState("")
+  const query = params.get("q") ?? ""
   const project = params.get("project") ?? ALL
+  const setParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(params.toString())
+    if (value) next.set(key, value)
+    else next.delete(key)
+    const qs = next.toString()
+    router.replace(qs ? `/meetings/?${qs}` : "/meetings/")
+  }
 
   const projects = React.useMemo(
     () => [...new Set((data?.meetings ?? []).map((m) => m.project).filter(Boolean))] as string[],
@@ -63,9 +70,9 @@ function MeetingsInner() {
         <Link
           key={s.id}
           href={`/record/?session=${s.id}`}
-          className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm hover:bg-primary/10"
+          className="flex items-center gap-3 rounded-xl border border-brand/25 bg-brand/[0.05] px-4 py-3 text-[13px] hover:bg-brand/10"
         >
-          <Radio className="size-4 text-primary" />
+          <Radio className="size-4 text-brand" />
           <span className="font-medium">{s.title}</span>
           <Badge variant="secondary">{s.state}</Badge>
         </Link>
@@ -76,16 +83,14 @@ function MeetingsInner() {
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => setParam("q", e.target.value || null)}
             placeholder="Search titles, summaries, people…"
             className="pl-9"
           />
         </div>
         <Select
           value={project}
-          onValueChange={(v) =>
-            router.replace(v === ALL ? "/meetings/" : `/meetings/?project=${encodeURIComponent(v)}`)
-          }
+          onValueChange={(v) => setParam("project", v === ALL ? null : v)}
         >
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All projects" />
