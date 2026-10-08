@@ -1,0 +1,23 @@
+.git
+.github
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+bench
+tests
+PLAN.md
+web/node_modules
+web/.next
+web/out
+web/tsconfig.tsbuildinfo
+# never bake personal data into an image
+vault
+*.wav
+*.flac
+*.m4a
+*.mp3
+*.opus
+*.sqlite
+.env

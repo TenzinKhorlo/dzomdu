@@ -1,0 +1,48 @@
+# Dzomdu in Docker. Quick start: see DOCKER.md.
+#
+#   cp .env.example .env      # then fill in HF_TOKEN
+#   docker compose up -d      # open http://localhost:8765
+#
+# Summaries need a language model. Pick one in .env: Ollama Cloud (an API key, nothing to
+# download), Ollama on your computer (the default), or `--profile local-llm` to run Ollama in
+# Docker as well.
+services:
+  dzomdu:
+    build: .
+    image: dzomdu:latest
+    restart: unless-stopped
+    ports:
+      # Only this computer can reach it. The app has no login, so don't publish it wider
+      # than 127.0.0.1 unless it sits behind something that authenticates.
+      - "127.0.0.1:${DZOMDU_PORT:-8765}:8765"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # read once, when the config file is first created
+      DZOMDU_ASR_MODEL: ${DZOMDU_ASR_MODEL:-small}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Linux; Docker Desktop provides it already
+    volumes:
+      - ./vault:/vault
+      - dzomdu-config:/config
+      - dzomdu-data:/data
+      - dzomdu-models:/models
+
+  # Optional: a language model inside Docker (CPU only, so slow on a Mac: prefer Ollama on the
+  # host or Ollama Cloud there). Start with:  docker compose --profile local-llm up -d
+  # then set LLM_BASE_URL=http://ollama:11434 in .env and pull a model:
+  #   docker compose exec ollama ollama pull qwen3:14b
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local-llm"]
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  dzomdu-config:
+  dzomdu-data:
+  dzomdu-models:
+  ollama:

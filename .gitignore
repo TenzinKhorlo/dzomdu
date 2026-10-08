@@ -16,3 +16,7 @@ bench_out/
 *.sqlite
 bench/data/
 bench/manifest.yaml
+
+# Docker: your config and notes
+.env
+/vault/

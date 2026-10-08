@@ -16,6 +16,16 @@ Everything runs locally with open-source models:
 See [PLAN.md](PLAN.md) for the full design and roadmap. This is the **Phase 0 prototype**: a
 CLI plus benchmark tools.
 
+## Quick start with Docker
+
+Works on Mac, Windows and Linux. See **[DOCKER.md](DOCKER.md)** for the details.
+
+```bash
+cp .env.example .env     # add your Hugging Face token and language model choice
+docker compose up -d --build
+# open http://localhost:8765
+```
+
 ## Install (Apple Silicon Mac)
 
 **Step-by-step guide: [SETUP.md](SETUP.md)**. It installs everything into a Python virtual
