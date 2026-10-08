@@ -409,6 +409,20 @@ class Pipeline:
         data.pop("_notes", None)
         return MeetingRecord.from_dict(data), note_sha
 
+    def delete_record(self, meeting_id: str, recordings_dir: Path | None = None) -> None:
+        """Remove a meeting: its record, its note and the app's own copy of the recording.
+        Audio the user uploaded from elsewhere on disk is never touched."""
+        path = self.cfg.meetings_dir / f"{meeting_id}.json"
+        if not path.exists():
+            raise FileNotFoundError(f"No processed meeting with id {meeting_id}")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if data.get("note_path"):
+            Path(data["note_path"]).unlink(missing_ok=True)
+        source = Path(data.get("source_audio") or "")
+        if recordings_dir is not None and source.is_file() and source.parent == recordings_dir:
+            source.unlink(missing_ok=True)
+        path.unlink()
+
     def note_was_edited(self, record: MeetingRecord, note_sha: str | None) -> bool:
         if not record.note_path or not Path(record.note_path).exists() or not note_sha:
             return False

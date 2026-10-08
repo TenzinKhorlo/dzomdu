@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
   CalendarDays,
@@ -17,6 +17,7 @@ import {
   Play,
   Search,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
@@ -299,8 +300,31 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
   const [tab, setTab] = React.useState("notes")
   const [focus, setFocus] = React.useState<string | null>(null)
   const player = usePlayer()
+  const router = useRouter()
+  const confirm = useConfirm()
+  const [deleting, setDeleting] = React.useState(false)
 
-  const total = m.speakers.reduce((s, x) => s + x.talk_seconds, 0) || 1
+  async function deleteMeeting() {
+    const ok = await confirm({
+      title: `Delete "${m.title}"?`,
+      description:
+        "The meeting, its note in your vault and the saved recording are deleted. This can't be undone. Voiceprints and people profiles are kept.",
+      confirmLabel: "Delete meeting",
+      destructive: true,
+    })
+    if (!ok) return
+    setDeleting(true)
+    try {
+      await api(`/api/meetings/${encodeURIComponent(m.id)}`, { method: "DELETE" })
+      toast.success("Meeting deleted")
+      router.push("/meetings/")
+    } catch (e) {
+      toast.error((e as Error).message)
+      setDeleting(false)
+    }
+  }
+
+  const total =m.speakers.reduce((s, x) => s + x.talk_seconds, 0) || 1
   const openTasks = m.tasks.filter((t) => !t.done).length
 
   // the transcript has its own tab; citations in the notes jump there
@@ -382,6 +406,10 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
               </>
             )}
             <RewriteDialog meeting={m} onDone={reload} />
+            <Button variant="outline" onClick={deleteMeeting} disabled={deleting}>
+              <Trash2 />
+              Delete
+            </Button>
           </div>
         </div>
       </div>

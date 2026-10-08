@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -111,6 +112,15 @@ def test_upload_review_notes_regenerate(setup, cfg):
     meeting_id = client.get("/api/meetings").json()["meetings"][0]["id"]
     reopened = client.post(f"/api/meetings/{meeting_id}/open").json()["id"]
     assert client.get(f"/api/sessions/{reopened}").json()["state"] == "done"
+
+    # deleting removes the meeting and its note
+    note_file = Path(client.get(f"/api/sessions/{sid}/note").json()["path"])
+    assert note_file.exists()
+    assert client.delete(f"/api/meetings/{meeting_id}").json() == {"deleted": True}
+    assert not note_file.exists()
+    assert client.get("/api/meetings").json()["meetings"] == []
+    assert client.get(f"/api/meetings/{meeting_id}").status_code == 404
+    assert client.delete(f"/api/meetings/{meeting_id}").status_code == 404
 
 
 def test_record_over_websocket_with_live_preview(setup, cfg):
