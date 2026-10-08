@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { FileAudio, Loader2, Mic, Upload, X } from "lucide-react"
+import { FileAudio, Loader2, Mic, Upload, Video, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { useInfo } from "@/components/providers"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
-import { recorder } from "@/lib/recorder"
+import { recorder, type RecordingSource } from "@/lib/recorder"
 import { cn } from "@/lib/utils"
 
 type Meta = {
@@ -125,14 +126,15 @@ export function MeetingForm({
     num_speakers: meta.num_speakers ? Number(meta.num_speakers) : null,
   })
 
-  async function startRecording() {
+  async function startRecording(source: RecordingSource = "room") {
     setBusy("record")
     let id: string | null = null
     try {
       id = (await api<{ id: string }>("/api/sessions", { method: "POST", json: payload() })).id
-      await recorder.start(id)
+      await recorder.start(id, source)
       onSession(id)
     } catch (e) {
+      recorder.release() // drop any microphone or shared-tab stream that was already open
       if (id) await api(`/api/sessions/${id}/cancel`, { method: "POST" }).catch(() => {})
       toast.error((e as Error).message)
     } finally {
@@ -253,7 +255,7 @@ export function MeetingForm({
         <Card className="items-center gap-5 py-10 text-center">
           <button
             type="button"
-            onClick={startRecording}
+            onClick={() => startRecording("room")}
             disabled={busy !== null}
             className="group relative flex size-28 items-center justify-center rounded-full bg-recording text-white shadow-lg shadow-recording/30 transition-transform hover:scale-105 disabled:opacity-60"
             aria-label="Start recording"
@@ -268,6 +270,35 @@ export function MeetingForm({
               computer.
             </p>
           </div>
+        </Card>
+
+        <Card className="gap-3 py-6">
+          <CardContent className="flex items-start gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
+              <Video className="size-5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <p className="font-medium">Record an online meeting</p>
+                <p className="text-sm text-muted-foreground">
+                  Zoom, Google Meet, Teams and others. Join the call as usual, then share its
+                  browser tab with audio. Your microphone is added so your voice is included.
+                  Nothing joins the call, and audio stays on this computer.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => startRecording("meeting")}
+                disabled={busy !== null}
+              >
+                <Video />
+                Choose the meeting to record
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Works in Chrome and Edge. Tell the other participants that you are recording.
+              </p>
+            </div>
+          </CardContent>
         </Card>
 
         <Card
