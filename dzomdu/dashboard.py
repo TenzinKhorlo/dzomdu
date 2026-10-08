@@ -15,6 +15,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from .vault import atomic_write_text
+
 _TASK = re.compile(r"^(\s*)- \[( |x|X)\] (.+)$")
 _OWNER = re.compile(r"^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]\s*")
 _DUE = re.compile(r"\s*(?:📅\s*(\d{4}-\d{2}-\d{2})|\(due: ([^)]+)\))")
@@ -70,7 +72,7 @@ def set_task_done(note: Path, line: int, done: bool) -> str:
         raise ValueError("That line is not a task (the note may have been edited)")
     lines[line] = re.sub(r"- \[( |x|X)\]", f"- [{'x' if done else ' '}]", lines[line], count=1)
     text = "\n".join(lines)
-    note.write_text(text, encoding="utf-8")
+    atomic_write_text(note, text)
     return text
 
 

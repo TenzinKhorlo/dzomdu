@@ -164,3 +164,13 @@ def test_serves_built_dashboard(cfg, fake_llm, tmp_path, monkeypatch):
         assert c.get("/meetings/").text == "<h1>meetings</h1>"
         assert "Start recording" in c.get("/classic/").text
         assert c.get("/api/meetings").status_code == 200  # API still wins
+
+
+def test_atomic_write_replaces_without_leftovers(tmp_path):
+    from dzomdu.vault import atomic_write_text
+
+    target = tmp_path / "meeting.json"
+    atomic_write_text(target, "old")
+    atomic_write_text(target, "new")
+    assert target.read_text() == "new"
+    assert [p.name for p in tmp_path.iterdir()] == ["meeting.json"]

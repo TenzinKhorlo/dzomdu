@@ -29,7 +29,7 @@ from .recover import recover_words
 from .speakers.matching import ClusterVoice, LibraryEntry, cluster_voices, match_clusters
 from .speakers.refine import refine_clusters
 from .speakers.store import VoiceprintStore
-from .vault import Vault
+from .vault import Vault, atomic_write_text
 
 Progress = Callable[[str], None]
 
@@ -368,7 +368,7 @@ class Pipeline:
             record, notes, template, self.llm.model if notes else None, self.known_people()
         )
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        atomic_write_text(path, text)
         record.note_path = str(path)
         self.save_record(record, note_sha=hashlib.sha256(text.encode()).hexdigest(), notes=notes)
         return path
@@ -390,7 +390,7 @@ class Pipeline:
         data["_note_sha"] = note_sha
         # the structured notes (summary, decisions, actions) feed the dashboard
         data["_notes"] = notes.model_dump() if notes else None
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        atomic_write_text(path, json.dumps(data, ensure_ascii=False, indent=1))
         return path
 
     def note_changed_by_app(self, meeting_id: str) -> None:
@@ -400,7 +400,7 @@ class Pipeline:
         data = json.loads(path.read_text(encoding="utf-8"))
         note = Path(data["note_path"])
         data["_note_sha"] = hashlib.sha256(note.read_bytes()).hexdigest()
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        atomic_write_text(path, json.dumps(data, ensure_ascii=False, indent=1))
 
     def load_record(self, meeting_id: str) -> tuple[MeetingRecord, str | None]:
         path = self.cfg.meetings_dir / f"{meeting_id}.json"

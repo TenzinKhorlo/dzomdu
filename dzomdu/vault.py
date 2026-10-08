@@ -3,6 +3,7 @@ people and projects."""
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 from datetime import datetime
@@ -29,6 +30,14 @@ def split_frontmatter(text: str) -> tuple[dict[str, Any], str]:
             body = text[end + 4 :].lstrip("\n")
             return (meta if isinstance(meta, dict) else {}), body
     return {}, text
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    """Write a file so a reader sees either the old content or the new, never a half-written
+    one (the dashboard and the API read these files while the pipeline is still saving)."""
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def dump_frontmatter(meta: dict[str, Any]) -> str:
