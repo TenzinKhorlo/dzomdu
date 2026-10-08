@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from ..audio import Audio
+import numpy as np
+
+from ..audio import Audio, write_wav
 from ..models import Word
 from . import ASRBackend
 
@@ -40,12 +42,22 @@ class ParakeetMLXBackend(ASRBackend):
 
     def transcribe(self, audio: Audio) -> list[Word]:
         model = self._load()
-        chunk = self.chunk_duration if audio.duration > self.chunk_duration else None
-        result = model.transcribe(
-            str(audio.path), chunk_duration=chunk, overlap_duration=self.overlap
-        )
+        # Parakeet often drops the last words when speech runs right up to the end of the
+        # file (as when Stop is pressed straight after someone speaks), so it gets a second
+        # of silence to finish on.
+        padded = audio.path.with_name(f"{audio.path.stem}.padded.wav")
+        samples = np.concatenate([audio.samples, np.zeros(audio.sample_rate, np.float32)])
+        write_wav(padded, samples, audio.sample_rate)
+        try:
+            duration = len(samples) / audio.sample_rate
+            chunk = self.chunk_duration if duration > self.chunk_duration else None
+            result = model.transcribe(
+                str(padded), chunk_duration=chunk, overlap_duration=self.overlap
+            )
+        finally:
+            padded.unlink(missing_ok=True)
         tokens = [token for sentence in result.sentences for token in sentence.tokens]
-        return tokens_to_words(tokens)
+        return [w for w in tokens_to_words(tokens) if w.start < audio.duration]
 
 
 def tokens_to_words(tokens: Iterable[Any]) -> list[Word]:

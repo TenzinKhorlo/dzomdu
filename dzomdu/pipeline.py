@@ -25,7 +25,9 @@ from .llm.summarize import summarize
 from .models import MeetingRecord, SpeakerAssignment, SpeakerSegment, Word
 from .notes.render import render_note
 from .notes.templates import MinutesTemplate, load_template
+from .recover import recover_words
 from .speakers.matching import ClusterVoice, LibraryEntry, cluster_voices, match_clusters
+from .speakers.refine import refine_clusters
 from .speakers.store import VoiceprintStore
 from .vault import Vault
 
@@ -115,15 +117,29 @@ class Pipeline:
         work.mkdir(parents=True, exist_ok=True)
         audio = prepare_audio(audio_path, work)
 
+        cfg = self.cfg.speakers
+        library = self._library(attendees)
         segments = self._diarize(audio, work, num_speakers, min_speakers, max_speakers)
-        words = self._transcribe(audio, work)
+        if cfg.split_mixed_clusters and num_speakers is None:
+            # a fixed speaker count from the user is respected as given
+            self.progress("Checking each speaker for more than one voice")
+            segments = refine_clusters(
+                audio,
+                segments,
+                self.diarizer,
+                library,
+                accept_threshold=cfg.accept_threshold,
+                same_voice=cfg.same_voice_threshold,
+                min_voice_seconds=cfg.min_voice_seconds,
+                progress=self.progress,
+            )
+        words = self._transcribe(audio, work, segments)
         self.progress("Aligning words with speakers")
         turns = align(words, segments)
 
         self.progress("Recognising speakers")
         speaking = [t.speaker for t in turns]
         order = list(dict.fromkeys(speaking))  # clusters in order of first speech
-        cfg = self.cfg.speakers
         voices = cluster_voices(
             audio,
             [s for s in segments if s.speaker in order],
@@ -134,7 +150,7 @@ class Pipeline:
         )
         assignments = match_clusters(
             voices,
-            self._library(attendees),
+            library,
             cfg.accept_threshold,
             cfg.suggest_threshold,
             first_seen_order=order,
@@ -171,12 +187,17 @@ class Pipeline:
         cache.write_text(json.dumps([asdict(s) for s in segments]))
         return segments
 
-    def _transcribe(self, audio: Audio, work: Path) -> list[Word]:
-        cache = work / f"asr-{_slug_key(self.asr.model_id)}.json"
+    def _transcribe(
+        self, audio: Audio, work: Path, segments: list[SpeakerSegment] | None = None
+    ) -> list[Word]:
+        recover = self.cfg.asr.recover_missing and segments is not None
+        cache = work / f"asr-{_slug_key(self.asr.model_id)}{'-r1' if recover else ''}.json"
         if cache.exists():
             return [Word(**w) for w in json.loads(cache.read_text())]
         self.progress(f"Transcribing ({self.asr.model_id})")
         words = self.asr.transcribe(audio)
+        if recover:
+            words = recover_words(audio, words, segments or [], self.asr, work, self.progress)
         cache.write_text(json.dumps([asdict(w) for w in words]))
         return words
 

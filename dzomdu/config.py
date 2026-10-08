@@ -33,6 +33,9 @@ class ASRConfig:
     model: str | None = None  # None = the backend's default model
     language: str = "en"
     chunk_duration: float = 120.0  # seconds; long files are transcribed in overlapping chunks
+    # Re-transcribe stretches where speech was detected but the full pass returned no words
+    # (speech engines sometimes drop the last sentence of a recording, or a short reply).
+    recover_missing: bool = True
 
 
 @dataclass
@@ -53,6 +56,11 @@ class SpeakerConfig:
     min_segment_duration: float = 1.5  # shorter segments make unreliable embeddings
     max_segments_per_cluster: int = 12
     clip_duration: float = 8.0  # length of the reference clip kept per confirmed sample
+    # Split a diarization cluster when short windows of it clearly hold different voices
+    # (two similar voices merged into one speaker). See dzomdu/speakers/refine.py.
+    split_mixed_clusters: bool = True
+    same_voice_threshold: float = 0.50  # windows/voices at least this similar are one person
+    min_voice_seconds: float = 3.0  # speech a voice needs before a cluster is split for it
 
 
 @dataclass
