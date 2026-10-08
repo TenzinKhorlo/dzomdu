@@ -167,6 +167,18 @@ def dump_config(cfg: Config) -> str:
     return "\n".join(lines) + "\n"
 
 
+def save_config(cfg: Config, path: Path | None = None) -> Path:
+    """Write the config file. It may hold an API key, so only the owner can read it."""
+    path = path or default_config_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(dump_config(cfg), encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:  # e.g. Windows
+        pass
+    return path
+
+
 def is_installed(module: str) -> bool:
     """True if `module` can be imported (find_spec raises when a parent package is missing)."""
     try:

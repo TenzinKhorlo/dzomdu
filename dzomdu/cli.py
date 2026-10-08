@@ -485,7 +485,7 @@ def ui(
         )
     if not cfg.vault.exists():
         console.print(f"Creating vault at [bold]{cfg.vault}[/] (run `dzomdu init` to change it)")
-    app_ = create_app(cfg)
+    app_ = create_app(cfg, config_path=config)
     # browsers only allow microphone access on https or "localhost"
     url = (
         f"http://localhost:{port}"

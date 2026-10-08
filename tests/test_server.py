@@ -206,3 +206,47 @@ def test_warmup_loads_models_once(setup):
     client, _ = setup
     assert client.post("/api/warmup").json() == {"ok": True}
     assert client.post("/api/warmup").json() == {"ok": True}  # already loading or loaded
+
+
+def test_settings_change_llm_and_vault(cfg, tmp_path, fake_llm):
+    from dzomdu.config import load_config
+
+    path = tmp_path / "config.toml"
+    pipe = Pipeline(cfg, llm=fake_llm)
+    with TestClient(create_app(cfg, pipe, config_path=path)) as client:
+        before = client.get("/api/settings").json()
+        assert before["llm"]["api_key_set"] is False and before["vault"] == str(cfg.vault)
+
+        cloud = {
+            "api": "ollama",
+            "base_url": "https://ollama.com",
+            "model": "gpt-oss:120b",
+            "api_key": "secret-key",
+        }
+        new_vault = tmp_path / "elsewhere" / "Notes"
+        res = client.put("/api/settings", json={"llm": cloud, "vault": str(new_vault)})
+        assert res.status_code == 200
+        body = res.json()
+        assert body["llm"]["api_key_set"] is True and "secret-key" not in res.text
+        assert body["vault"] == str(new_vault.resolve())
+        assert (new_vault / "People").is_dir() and (new_vault / "Templates").is_dir()
+        assert pipe.vault.root == new_vault.resolve()
+
+        saved = load_config(path)  # persisted for the next start
+        assert saved.llm.base_url == "https://ollama.com" and saved.llm.api_key == "secret-key"
+        assert saved.vault == new_vault.resolve()
+        assert oct(path.stat().st_mode & 0o777) == "0o600"
+
+        # leaving the key blank keeps it; clearing removes it
+        local = {"api": "ollama", "base_url": "http://localhost:11434", "model": "qwen3:14b"}
+        client.put("/api/settings", json={"llm": local})
+        assert load_config(path).llm.api_key == "secret-key"
+        client.put("/api/settings", json={"llm": {**local, "clear_api_key": True}})
+        assert load_config(path).llm.api_key == ""
+
+        bad = client.put("/api/settings", json={"llm": {**local, "base_url": "localhost"}})
+        assert bad.status_code == 400
+        file_path = tmp_path / "afile"
+        file_path.write_text("x")
+        assert client.put("/api/settings", json={"vault": str(file_path)}).status_code == 400
+        assert client.post("/api/settings/llm/test", json={**local, "api": "x"}).status_code == 400

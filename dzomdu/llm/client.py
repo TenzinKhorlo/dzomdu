@@ -171,7 +171,11 @@ class LLMClient:
                 resp = self.http.get(self._url("/api/tags"), timeout=5)
                 names = {m["name"] for m in resp.json().get("models", [])}
                 wanted = self.cfg.model if ":" in self.cfg.model else f"{self.cfg.model}:latest"
+                if resp.status_code in (401, 403):
+                    return False, "the server rejected the API key"
                 if wanted not in names:
+                    if "ollama.com" in self.cfg.base_url:
+                        return False, f"model {self.cfg.model} not found on Ollama Cloud"
                     return (
                         False,
                         f"model {self.cfg.model} not pulled (run: ollama pull {self.cfg.model})",
@@ -181,6 +185,8 @@ class LLMClient:
             resp = self.http.get(
                 base + ("/models" if base.endswith("/v1") else "/v1/models"), timeout=5
             )
+            if resp.status_code in (401, 403):
+                return False, "the server rejected the API key"
             return resp.status_code == 200, f"HTTP {resp.status_code}"
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             return False, f"not reachable at {self.cfg.base_url} ({exc.__class__.__name__})"

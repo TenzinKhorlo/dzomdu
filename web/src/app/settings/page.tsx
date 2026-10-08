@@ -1,9 +1,10 @@
 "use client"
 
-import { AudioLines, Bot, CheckCircle2, FolderOpen, TriangleAlert, Users } from "lucide-react"
+import { AudioLines, Bot, CheckCircle2, TriangleAlert, Users } from "lucide-react"
 
 import { PageHeader } from "@/components/common"
 import { useInfo } from "@/components/providers"
+import { SettingsForms } from "@/components/settings-forms"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,7 +50,7 @@ function StatusCard({
       {(!ok || detail) && (
         <CardContent className="text-sm text-muted-foreground">
           {detail && <p>{detail}</p>}
-          {!ok && (
+          {!ok && fix && (
             <p className="mt-2">
               Fix: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{fix}</code>
             </p>
@@ -66,7 +67,7 @@ export default function SettingsPage() {
     <div className="@container/main flex flex-col gap-6">
       <PageHeader
         title="Settings & status"
-        description="Everything runs locally. Run `dzomdu doctor` in a terminal for a full check."
+        description="Choose where the language model runs and where your notes are saved."
       >
         <Button variant="outline" onClick={reload}>
           Check again
@@ -97,28 +98,10 @@ export default function SettingsPage() {
               model={info.models.llm}
               ok={info.status.llm.ok}
               detail={info.status.llm.detail}
-              fix="brew services start ollama"
+              fix=""
             />
           </div>
-          <div className="grid gap-4 @4xl/main:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderOpen className="size-4" />
-                  Vault
-                </CardTitle>
-                <CardDescription>Where meeting notes, people and projects are saved</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <code className="block truncate rounded-md bg-muted px-3 py-2 font-mono text-xs">
-                  {info.vault}
-                </code>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Open this folder in Obsidian with <em>Open folder as vault</em>. Change it with{" "}
-                  <code className="font-mono text-xs">dzomdu init --vault …</code>.
-                </p>
-              </CardContent>
-            </Card>
+          <SettingsForms>
             <Card>
               <CardHeader>
                 <CardTitle>Minutes formats</CardTitle>
@@ -140,7 +123,7 @@ export default function SettingsPage() {
                 </ul>
               </CardContent>
             </Card>
-          </div>
+          </SettingsForms>
         </>
       )}
     </div>

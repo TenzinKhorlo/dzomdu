@@ -20,10 +20,18 @@ from starlette.websockets import WebSocketDisconnect
 
 from .. import dashboard
 from ..audio import wav_bytes
-from ..config import ASR_PACKAGES, Config, is_installed
+from ..config import (
+    ASR_PACKAGES,
+    Config,
+    LLMConfig,
+    default_config_path,
+    is_installed,
+    save_config,
+)
 from ..llm.client import LLMClient
 from ..notes.templates import list_templates
 from ..pipeline import Pipeline
+from ..vault import Vault
 from .markdown import note_to_html
 from .sessions import ACTIVE_STATES, SessionManager, SessionMeta
 
@@ -91,12 +99,27 @@ class PersonBody(BaseModel):
     bio: str | None = None
 
 
+class LLMSettings(BaseModel):
+    api: str = "ollama"  # "ollama" (local or Ollama Cloud) | "openai" (any compatible server)
+    base_url: str
+    model: str
+    api_key: str | None = None  # None/empty keeps the saved key
+    clear_api_key: bool = False
+
+
+class SettingsBody(BaseModel):
+    llm: LLMSettings | None = None
+    vault: str | None = None
+
+
 class RenameBody(BaseModel):
     old: str
     new: str
 
 
-def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
+def create_app(
+    cfg: Config, pipeline: Pipeline | None = None, config_path: Path | None = None
+) -> FastAPI:
     pipeline = pipeline or Pipeline(cfg)
     pipeline.vault.init()
     manager = SessionManager(cfg, pipeline)
@@ -169,6 +192,74 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
             },
             "recovered": [str(p) for p in manager.recovered],
         }
+
+    # -- settings ---------------------------------------------------------------------------
+
+    def settings_view() -> dict[str, Any]:
+        llm = cfg.llm
+        return {
+            "llm": {
+                "api": llm.api,
+                "base_url": llm.base_url,
+                "model": llm.model,
+                "api_key_set": bool(llm.api_key),  # the key itself is never sent back
+            },
+            "vault": str(cfg.vault),
+        }
+
+    def candidate_llm(body: LLMSettings) -> LLMConfig:
+        if body.api not in ("ollama", "openai"):
+            raise HTTPException(400, "api must be 'ollama' or 'openai'")
+        if not body.base_url.strip() or not body.model.strip():
+            raise HTTPException(400, "A server URL and a model name are required")
+        if not body.base_url.strip().startswith(("http://", "https://")):
+            raise HTTPException(400, "The server URL must start with http:// or https://")
+        key = "" if body.clear_api_key else (body.api_key or cfg.llm.api_key)
+        return LLMConfig(
+            **{
+                **vars(cfg.llm),
+                "api": body.api,
+                "base_url": body.base_url.strip(),
+                "model": body.model.strip(),
+                "api_key": key,
+            }
+        )
+
+    @app.get("/api/settings")
+    def get_settings() -> dict[str, Any]:
+        return settings_view()
+
+    @app.post("/api/settings/llm/test")
+    async def test_llm(body: LLMSettings) -> dict[str, Any]:
+        ok, detail = await asyncio.to_thread(LLMClient(candidate_llm(body)).ping)
+        return {"ok": ok, "detail": detail}
+
+    @app.put("/api/settings")
+    def save_settings(body: SettingsBody) -> dict[str, Any]:
+        new_llm = candidate_llm(body.llm) if body.llm else None
+        new_vault: Path | None = None
+        if body.vault is not None and body.vault.strip():
+            new_vault = Path(body.vault.strip()).expanduser().resolve()
+            if new_vault != cfg.vault:
+                if new_vault.exists() and not new_vault.is_dir():
+                    raise HTTPException(400, "The vault location is a file, not a folder")
+                if any(s.state in ACTIVE_STATES for s in manager.sessions.values()):
+                    raise HTTPException(409, "Finish or cancel the current meeting first")
+                try:
+                    Vault(new_vault).init()
+                except OSError as exc:
+                    raise HTTPException(400, f"Cannot use that folder: {exc}") from exc
+        if new_llm is not None:
+            cfg.llm = new_llm
+            pipeline._llm = None  # rebuilt with the new server and key on next use
+        if new_vault is not None and new_vault != cfg.vault:
+            cfg.vault = new_vault
+            pipeline.vault = Vault(new_vault)
+        try:
+            save_config(cfg, config_path or default_config_path())
+        except OSError as exc:
+            raise HTTPException(500, f"Could not save the settings: {exc}") from exc
+        return settings_view()
 
     # -- sessions ---------------------------------------------------------------------------
 
