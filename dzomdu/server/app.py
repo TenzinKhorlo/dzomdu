@@ -425,6 +425,25 @@ def create_app(cfg: Config, pipeline: Pipeline | None = None) -> FastAPI:
         except FileNotFoundError as exc:
             raise HTTPException(404, str(exc)) from exc
 
+    @app.delete("/api/meetings/{meeting_id}")
+    def delete_meeting(meeting_id: str) -> dict[str, bool]:
+        if any(
+            s.record is not None and s.record.id == meeting_id and s.state in ACTIVE_STATES
+            for s in manager.sessions.values()
+        ):
+            raise HTTPException(409, "This meeting is still being processed")
+        try:
+            pipeline.delete_record(meeting_id, manager.recordings_dir)
+        except FileNotFoundError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        for sid in [
+            sid
+            for sid, s in manager.sessions.items()
+            if s.record is not None and s.record.id == meeting_id
+        ]:
+            del manager.sessions[sid]
+        return {"deleted": True}
+
     @app.get("/api/speakers")
     def speakers() -> list[dict[str, Any]]:
         talk: dict[str, float] = {}
