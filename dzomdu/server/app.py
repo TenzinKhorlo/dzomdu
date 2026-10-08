@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import quote
 
+import jinja2
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
@@ -29,7 +30,14 @@ from ..config import (
     save_config,
 )
 from ..llm.client import LLMClient
-from ..notes.templates import list_templates
+from ..notes.render import check_template_body
+from ..notes.templates import (
+    builtin_text,
+    list_templates,
+    load_template,
+    template_key,
+    template_text,
+)
 from ..pipeline import Pipeline
 from ..vault import Vault, safe_filename
 from .markdown import note_to_html
@@ -110,6 +118,15 @@ class LLMSettings(BaseModel):
 class SettingsBody(BaseModel):
     llm: LLMSettings | None = None
     vault: str | None = None
+    default_template: str | None = None
+    summary_instructions: str | None = None
+
+
+class TemplateBody(BaseModel):
+    name: str
+    description: str = ""
+    instructions: str = ""
+    body: str
 
 
 class ProjectBody(BaseModel):
@@ -209,6 +226,8 @@ def create_app(
                 "api_key_set": bool(llm.api_key),  # the key itself is never sent back
             },
             "vault": str(cfg.vault),
+            "default_template": cfg.default_template,
+            "summary_instructions": cfg.summary_instructions,
         }
 
     def candidate_llm(body: LLMSettings) -> LLMConfig:
@@ -253,6 +272,14 @@ def create_app(
                     Vault(new_vault).init()
                 except OSError as exc:
                     raise HTTPException(400, f"Cannot use that folder: {exc}") from exc
+        if body.default_template is not None:
+            try:
+                load_template(body.default_template, pipeline.vault.templates_dir)
+            except KeyError as exc:
+                raise HTTPException(400, str(exc.args[0])) from exc
+            cfg.default_template = body.default_template
+        if body.summary_instructions is not None:
+            cfg.summary_instructions = body.summary_instructions.strip()
         if new_llm is not None:
             cfg.llm = new_llm
             pipeline._llm = None  # rebuilt with the new server and key on next use
@@ -264,6 +291,81 @@ def create_app(
         except OSError as exc:
             raise HTTPException(500, f"Could not save the settings: {exc}") from exc
         return settings_view()
+
+    # -- minutes formats --------------------------------------------------------------------
+
+    def template_view(t: Any) -> dict[str, Any]:
+        shipped = builtin_text(t.key)
+        path = pipeline.vault.templates_dir / f"{t.key}.md"
+        return {
+            "key": t.key,
+            "name": t.name,
+            "description": t.description,
+            "instructions": t.instructions,
+            "body": t.body.strip("\n"),
+            "builtin": shipped is not None,
+            # a built-in the user has changed, so "reset" does something
+            "edited": shipped is not None
+            and path.is_file()
+            and path.read_text(encoding="utf-8").strip() != shipped.strip(),
+            "default": t.key == cfg.default_template,
+        }
+
+    def validated_template(body: TemplateBody) -> str:
+        if not body.name.strip():
+            raise HTTPException(400, "Give the format a name")
+        if not body.body.strip():
+            raise HTTPException(400, "The layout cannot be empty")
+        try:
+            check_template_body(body.body)
+        except jinja2.TemplateSyntaxError as exc:
+            raise HTTPException(400, f"Layout error on line {exc.lineno}: {exc.message}") from exc
+        except jinja2.TemplateError as exc:
+            raise HTTPException(400, f"Layout error: {exc}") from exc
+        return template_text(body.name, body.description, body.instructions, body.body)
+
+    def write_template(key: str, text: str) -> None:
+        folder = pipeline.vault.templates_dir
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"{key}.md").write_text(text, encoding="utf-8")
+
+    @app.get("/api/templates")
+    def get_templates() -> list[dict[str, Any]]:
+        return [template_view(t) for t in list_templates(pipeline.vault.templates_dir)]
+
+    @app.post("/api/templates")
+    def create_template(body: TemplateBody) -> dict[str, Any]:
+        text = validated_template(body)
+        key = template_key(body.name)
+        if not key:
+            raise HTTPException(400, "The name needs letters or numbers")
+        if (pipeline.vault.templates_dir / f"{key}.md").exists() or builtin_text(key):
+            raise HTTPException(409, f"A format with the key “{key}” already exists")
+        write_template(key, text)
+        return template_view(load_template(key, pipeline.vault.templates_dir))
+
+    @app.put("/api/templates/{key}")
+    def update_template(key: str, body: TemplateBody) -> dict[str, Any]:
+        known = {t.key for t in list_templates(pipeline.vault.templates_dir)}
+        if key not in known:
+            raise HTTPException(404, f"No format called {key}")
+        write_template(key, validated_template(body))
+        return template_view(load_template(key, pipeline.vault.templates_dir))
+
+    @app.delete("/api/templates/{key}")
+    def delete_template(key: str) -> dict[str, Any]:
+        """Delete a custom format, or put a built-in one back to how it shipped."""
+        path = pipeline.vault.templates_dir / f"{key}.md"
+        shipped = builtin_text(key)
+        if shipped is not None:
+            write_template(key, shipped)
+            return {"reset": True}
+        if not path.is_file():
+            raise HTTPException(404, f"No format called {key}")
+        if key == cfg.default_template:
+            raise HTTPException(409, "This is the default format. Choose another default first")
+        path.unlink()
+        return {"deleted": True}
 
     # -- sessions ---------------------------------------------------------------------------
 

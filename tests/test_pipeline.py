@@ -168,3 +168,23 @@ def test_llm_receives_people_and_project_context(cfg, tmp_path):
     assert "busy director" in prompt  # template style instructions
     assert "] Unknown speaker 2: Thanks." in prompt
     assert log[0]["options"]["num_ctx"] == 16384
+
+
+def test_standing_summary_instructions_reach_the_llm(cfg, tmp_path):
+    import httpx
+    from conftest import ollama_transport
+
+    from dzomdu.config import LLMConfig
+    from dzomdu.llm.client import LLMClient
+
+    cfg.summary_instructions = "Always write in British English."
+    log: list[dict] = []
+    llm = LLMClient(LLMConfig(), http=httpx.Client(transport=ollama_transport(log=log)))
+    pipe, _, _ = _pipeline(cfg, tmp_path, llm)
+    analysis = pipe.analyze(tmp_path / "m1.wav")
+    pipe.summarize(analysis.record, pipe.template("executive"), "Mention the budget first.")
+
+    prompt = log[0]["messages"][1]["content"]
+    # format guidance, then the standing instructions, then this meeting's request
+    order = ["busy director", "Always write in British English.", "Mention the budget first."]
+    assert [prompt.index(x) for x in order] == sorted(prompt.index(x) for x in order)

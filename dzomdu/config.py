@@ -84,6 +84,9 @@ class Config:
     vault: Path = field(default_factory=lambda: Path.home() / "DzomduVault")
     data_dir: Path = field(default_factory=default_data_dir)
     default_template: str = "standard"
+    # Standing guidance for every summary (tone, language, what to include). Added to the
+    # format's own instructions and to any per-meeting request.
+    summary_instructions: str = ""
     asr: ASRConfig = field(default_factory=ASRConfig)
     diarization: DiarizationConfig = field(default_factory=DiarizationConfig)
     speakers: SpeakerConfig = field(default_factory=SpeakerConfig)
@@ -134,7 +137,7 @@ def load_config(path: Path | None = None) -> Config:
             kwargs[key] = _build(_SECTIONS[key], value)
         elif key in ("vault", "data_dir"):
             kwargs[key] = Path(value).expanduser()
-        elif key == "default_template":
+        elif key in ("default_template", "summary_instructions"):
             kwargs[key] = value
         else:
             raise ValueError(f"Unknown config key: {key}")
@@ -146,7 +149,14 @@ def _toml_value(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, int | float):
         return repr(value)
-    escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    escaped = (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
     return f'"{escaped}"'
 
 
@@ -156,6 +166,7 @@ def dump_config(cfg: Config) -> str:
         f"vault = {_toml_value(cfg.vault)}",
         f"data_dir = {_toml_value(cfg.data_dir)}",
         f"default_template = {_toml_value(cfg.default_template)}",
+        f"summary_instructions = {_toml_value(cfg.summary_instructions)}",
     ]
     for name in _SECTIONS:
         lines += ["", f"[{name}]"]

@@ -260,5 +260,62 @@ def test_create_project(setup, cfg):
     assert client.post("/api/projects", json={"name": "Solar Microgrid"}).json()["created"] is False
     assert client.post("/api/projects", json={"name": "A/B: plan"}).json()["name"] == "A-B- plan"
     assert client.post("/api/projects", json={"name": "   "}).status_code == 400
-    assert {p["name"] for p in client.get("/api/projects").json()} >= {"Solar Microgrid", "A-B- plan"}
+    names = {p["name"] for p in client.get("/api/projects").json()}
+    assert names >= {"Solar Microgrid", "A-B- plan"}
     assert "Solar Microgrid" in client.get("/api/info").json()["projects"]
+
+
+def test_custom_formats_and_standing_instructions(cfg, tmp_path, fake_llm):
+    from dzomdu.config import load_config
+
+    path = tmp_path / "config.toml"
+    pipe = Pipeline(cfg, llm=fake_llm)
+    with TestClient(create_app(cfg, pipe, config_path=path)) as client:
+        formats = {t["key"]: t for t in client.get("/api/templates").json()}
+        assert formats["standard"]["builtin"] and not formats["standard"]["edited"]
+        assert formats["standard"]["default"]
+
+        new = {
+            "name": "Weekly Sync!",
+            "description": "Short weekly note",
+            "instructions": "Keep it to five bullets.\nUse plain language.",
+            "body": "## Recap\n\n{{ notes.summary }}\n\n{% for a in notes.action_items %}\n"
+            "- [ ] {{ task(a) }}\n{% endfor %}",
+        }
+        made = client.post("/api/templates", json=new)
+        assert made.status_code == 200 and made.json()["key"] == "weekly-sync"
+        assert not made.json()["builtin"]
+        assert client.post("/api/templates", json=new).status_code == 409
+        assert (cfg.vault / "Templates" / "Minutes" / "weekly-sync.md").exists()
+        assert "weekly-sync" in {t["key"] for t in client.get("/api/info").json()["templates"]}
+
+        # mistakes in the layout are caught when saving
+        bad = client.put("/api/templates/weekly-sync", json={**new, "body": "{% for x in %}"})
+        assert bad.status_code == 400 and "Layout error" in bad.json()["detail"]
+        unknown = client.put("/api/templates/weekly-sync", json={**new, "body": "{{ nope.x }}"})
+        assert unknown.status_code == 400
+
+        edited = client.put("/api/templates/standard", json={**new, "name": "Standard"})
+        assert edited.json()["edited"] is True
+        assert client.delete("/api/templates/standard").json() == {"reset": True}
+        assert not {t["key"]: t for t in client.get("/api/templates").json()}["standard"]["edited"]
+
+        # standing summary instructions and the default format persist to the config file
+        res = client.put(
+            "/api/settings",
+            json={
+                "summary_instructions": " Write in British English.\nBe brief. ",
+                "default_template": "weekly-sync",
+            },
+        )
+        assert res.json()["default_template"] == "weekly-sync"
+        saved = load_config(path)
+        assert saved.summary_instructions == "Write in British English.\nBe brief."
+        assert saved.default_template == "weekly-sync"
+        assert client.put("/api/settings", json={"default_template": "nope"}).status_code == 400
+
+        # the default format can't be deleted from under the app; others can
+        assert client.delete("/api/templates/weekly-sync").status_code == 409
+        client.put("/api/settings", json={"default_template": "standard"})
+        assert client.delete("/api/templates/weekly-sync").json() == {"deleted": True}
+        assert client.delete("/api/templates/weekly-sync").status_code == 404

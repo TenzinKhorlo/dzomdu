@@ -4,6 +4,7 @@ import { AudioLines, Bot, CheckCircle2, TriangleAlert, Users } from "lucide-reac
 
 import { PageHeader } from "@/components/common"
 import { useInfo } from "@/components/providers"
+import { FormatsCard, SummaryDefaultsCard } from "@/components/format-settings"
 import { SettingsForms } from "@/components/settings-forms"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -67,7 +68,7 @@ export default function SettingsPage() {
     <div className="@container/main flex flex-col gap-6">
       <PageHeader
         title="Settings & status"
-        description="Choose where the language model runs and where your notes are saved."
+        description="Choose where the language model runs, where notes are saved, and how summaries are written."
       >
         <Button variant="outline" onClick={reload}>
           Check again
@@ -102,28 +103,9 @@ export default function SettingsPage() {
             />
           </div>
           <SettingsForms>
-            <Card>
-              <CardHeader>
-                <CardTitle>Minutes formats</CardTitle>
-                <CardDescription>
-                  Add your own as Markdown files in <code className="font-mono text-xs">Templates/Minutes/</code>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="divide-y text-sm">
-                  {info.templates.map((t) => (
-                    <li key={t.key} className="flex items-start justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
-                      <div>
-                        <p className="font-medium">{t.name}</p>
-                        <p className="text-muted-foreground">{t.description}</p>
-                      </div>
-                      {t.key === info.default_template && <Badge variant="secondary">Default</Badge>}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <SummaryDefaultsCard />
           </SettingsForms>
+          <FormatsCard />
         </>
       )}
     </div>

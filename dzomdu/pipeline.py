@@ -329,7 +329,9 @@ class Pipeline:
     def summarize(
         self, record: MeetingRecord, template: MinutesTemplate, extra_instructions: str = ""
     ) -> MeetingNotes:
-        instructions = "\n".join(x for x in (template.instructions, extra_instructions) if x)
+        standing = self.cfg.summary_instructions.strip()
+        parts = (template.instructions, standing, extra_instructions)
+        instructions = "\n".join(x for x in parts if x)
         return summarize(
             self.llm,
             record.turns,

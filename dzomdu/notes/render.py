@@ -160,3 +160,34 @@ def render_note(
         )
     parts.append("## Transcript\n\n" + render_transcript(record) + "\n")
     return "\n".join(parts)
+
+
+def check_template_body(body: str) -> None:
+    """Render a layout with made-up notes so mistakes surface when it is saved, not when a real
+    meeting is processed. Raises jinja2.TemplateError."""
+    from ..llm.schema import Decision, Topic
+
+    notes = MeetingNotes(
+        title="Sample",
+        summary="A short summary.",
+        topics=[Topic(title="Budget", points=["One point", "Another point"], source_turns=["t1"])],
+        decisions=[Decision(decision="Approve the plan", source_turns=["t1"])],
+        action_items=[ActionItem(task="Send the draft", owner="Alice", due="2026-01-31")],
+        open_questions=["Who owns the rollout?"],
+        next_meeting="Next week",
+    )
+    ctx = {
+        "title": "Sample meeting",
+        "date": "2026-01-01T10:00:00",
+        "duration": "30m",
+        "project": "Sample project",
+        "attendees": ["Alice", "Bob"],
+        "unknown_speakers": [],
+    }
+    _env().from_string(body).render(
+        notes=notes,
+        meeting=ctx,
+        cite=lambda item, wrap=True: "([[#^t1|00:00:05]])",
+        person=lambda name: f"[[{name}]]" if name else "",
+        task=lambda item: item.task,
+    )

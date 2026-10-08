@@ -17,11 +17,12 @@ The body lays out the extracted notes. Available in the body:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 
-from ..vault import split_frontmatter
+from ..vault import dump_frontmatter, split_frontmatter
 
 
 @dataclass
@@ -75,3 +76,21 @@ def load_template(key: str, vault_templates: Path | None) -> MinutesTemplate:
         return parse_template(key, builtin.read_text(encoding="utf-8"), "built-in")
     available = ", ".join(t.key for t in list_templates(vault_templates))
     raise KeyError(f"No template called {key!r}. Available: {available}")
+
+
+def builtin_text(key: str) -> str | None:
+    """The shipped version of a built-in template, or None for a custom one."""
+    path = _builtin_dir() / f"{key}.md"
+    return path.read_text(encoding="utf-8") if path.is_file() else None
+
+
+def template_key(name: str) -> str:
+    """A file-name-safe key for a new template, e.g. 'Weekly Sync!' -> 'weekly-sync'."""
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:60]
+
+
+def template_text(name: str, description: str, instructions: str, body: str) -> str:
+    meta = {"name": name.strip(), "description": description.strip()}
+    if instructions.strip():
+        meta["instructions"] = instructions.strip()
+    return dump_frontmatter(meta) + body.strip("\n") + "\n"
