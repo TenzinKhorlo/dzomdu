@@ -3,6 +3,8 @@ name = "dzomdu"
 version = "0.1.0"
 description = "Offline meeting notetaker: speaker recognition, speaker-attributed transcription and local-LLM minutes, saved as Markdown."
 readme = "README.md"
+license = { file = "LICENSE" }
+classifiers = ["License :: Other/Proprietary License"]
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",

@@ -1,0 +1,13 @@
+Copyright (c) 2026 Tenzin Khorlo. All rights reserved.
+
+This software and its source code ("Dzomdu") are proprietary. No licence or right to use,
+copy, modify, merge, publish, distribute, sublicense, sell or host Dzomdu, in whole or in part,
+is granted except under a separate written agreement with the copyright holder.
+
+Third-party components that Dzomdu uses or depends on remain under their own licences and are
+not covered by this notice. See THIRD_PARTY_NOTICES.md.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
