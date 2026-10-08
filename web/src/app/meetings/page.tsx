@@ -27,7 +27,7 @@ const ALL = "__all__"
 function MeetingsInner() {
   const params = useSearchParams()
   const router = useRouter()
-  const { data } = useApi<{ meetings: MeetingRow[]; active: ActiveSession[] }>("/api/meetings", {
+  const { data, reload } = useApi<{ meetings: MeetingRow[]; active: ActiveSession[] }>("/api/meetings", {
     interval: 10000,
   })
   const query = params.get("q") ?? ""
@@ -111,7 +111,7 @@ function MeetingsInner() {
       ) : rows.length ? (
         <Card className="overflow-hidden py-0">
           <CardContent className="px-0">
-            <MeetingTable meetings={rows} />
+            <MeetingTable meetings={rows} onDeleted={reload} />
           </CardContent>
         </Card>
       ) : (
