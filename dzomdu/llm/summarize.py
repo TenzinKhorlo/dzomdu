@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from ..models import Turn, format_timestamp
 from .client import LLMClient, LLMError
-from .schema import MeetingNotes, notes_schema
+from .schema import MeetingNotes, SectionSpec, notes_schema
 
 SYSTEM = """You are a meticulous meeting secretary. You turn a speaker-attributed meeting \
 transcript into structured notes.
@@ -23,6 +23,8 @@ from in "source_turns" (ids look like t12).
 - An action item needs a clear task. Set "owner" only if someone is named or volunteers, \
 and "due" only if a time is mentioned (YYYY-MM-DD when the date is unambiguous).
 - A decision is something the group agreed on, not a suggestion.
+- If the schema has an "extra" object, fill every field in it as its description asks, \
+using only what the transcript supports (an empty string or list if it is not covered).
 - Reply with a single JSON object that matches the schema. No other text."""
 
 MERGE = """You are given structured notes extracted from consecutive parts of ONE meeting. \
@@ -84,10 +86,17 @@ def summarize(
     instructions: str = "",
     max_chunk_tokens: int = 6000,
     progress: Callable[[str], None] | None = None,
+    sections: list[SectionSpec] | None = None,
 ) -> MeetingNotes:
+    sections = sections or []
     if not turns:
-        return MeetingNotes(summary="No speech was detected in this recording.")
-    schema = notes_schema()
+        empty = MeetingNotes(summary="No speech was detected in this recording.")
+        empty.normalise_extra(sections)
+        return empty
+    schema = notes_schema(sections)
+    if sections:
+        fields = "\n".join(f'- "{s.key}" ({s.type}): {s.description or s.title}' for s in sections)
+        instructions = f'{instructions}\nFields to fill in "extra":\n{fields}'.strip()
     lines = format_transcript(turns, name_for)
     chunks = chunk_lines(lines, max_chunk_tokens)
     partials: list[MeetingNotes] = []
@@ -107,4 +116,5 @@ def summarize(
         payload = json.dumps([p.model_dump() for p in partials], ensure_ascii=False, indent=1)
         user = _user_prompt(context, instructions, "Partial notes", payload)
         notes = _parse(client.chat_json(MERGE, user, schema))
+    notes.normalise_extra(sections)
     return _drop_bad_citations(notes, {t.id for t in turns})

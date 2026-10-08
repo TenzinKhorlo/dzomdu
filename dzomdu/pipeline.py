@@ -340,6 +340,7 @@ class Pipeline:
             instructions=instructions,
             max_chunk_tokens=self.cfg.llm.max_chunk_tokens,
             progress=self.progress,
+            sections=template.sections,
         )
 
     def template(self, key: str | None) -> MinutesTemplate:
@@ -364,8 +365,13 @@ class Pipeline:
             path = self.vault.meeting_path(
                 datetime.fromisoformat(record.date), record.title, record.project
             )
+        roles = {
+            n: role
+            for n in {*record.attendees, *(a.name for a in record.assignments.values() if a.name)}
+            if (role := self.vault.person_profile(n)["role"])
+        }
         text = render_note(
-            record, notes, template, self.llm.model if notes else None, self.known_people()
+            record, notes, template, self.llm.model if notes else None, self.known_people(), roles
         )
         path.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_text(path, text)

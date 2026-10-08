@@ -282,8 +282,31 @@ def test_custom_formats_and_standing_instructions(cfg, tmp_path, fake_llm):
             "body": "## Recap\n\n{{ notes.summary }}\n\n{% for a in notes.action_items %}\n"
             "- [ ] {{ task(a) }}\n{% endfor %}",
         }
-        made = client.post("/api/templates", json=new)
+        sections = [
+            {"title": "Meeting purpose", "type": "text", "description": "One sentence."},
+            {"title": "Key takeaways", "type": "items", "description": "Top outcomes."},
+        ]
+        new["body"] += (
+            "\n\n{{ notes.extra.meeting_purpose }}\n"
+            "{% for k in notes.extra.key_takeaways %}{{ k.title }}{% endfor %}"
+        )
+        assert (
+            client.post("/api/templates", json={**new, "sections": sections[:1]}).status_code == 400
+        )
+        made = client.post("/api/templates", json={**new, "sections": sections})
         assert made.status_code == 200 and made.json()["key"] == "weekly-sync"
+        assert [(x["key"], x["type"]) for x in made.json()["sections"]] == [
+            ("meeting_purpose", "text"),
+            ("key_takeaways", "items"),
+        ]
+        blank = [{"title": "  ", "type": "text", "key": "notes"}]
+        assert client.post("/api/templates", json={**new, "sections": blank}).status_code == 400
+        dup = [{"title": "Notes", "type": "text"}, {"title": "notes", "type": "list"}]
+        assert (
+            client.post("/api/templates", json={**new, "name": "Dup", "sections": dup}).status_code
+            == 400
+        )
+        new["sections"] = sections
         assert not made.json()["builtin"]
         assert client.post("/api/templates", json=new).status_code == 409
         assert (cfg.vault / "Templates" / "Minutes" / "weekly-sync.md").exists()
@@ -294,6 +317,15 @@ def test_custom_formats_and_standing_instructions(cfg, tmp_path, fake_llm):
         assert bad.status_code == 400 and "Layout error" in bad.json()["detail"]
         unknown = client.put("/api/templates/weekly-sync", json={**new, "body": "{{ nope.x }}"})
         assert unknown.status_code == 400
+
+        # saving a built-in format with its own fields keeps their keys, so its layout still works
+        idisc = {t["key"]: t for t in client.get("/api/templates").json()}["internal-discussion"]
+        assert [x["key"] for x in idisc["sections"]][:2] == ["meeting_type", "purpose"]
+        again = {k: idisc[k] for k in ("name", "description", "instructions", "body", "sections")}
+        res = client.put("/api/templates/internal-discussion", json=again)
+        assert res.status_code == 200, res.text
+        assert [x["key"] for x in res.json()["sections"]] == [x["key"] for x in idisc["sections"]]
+        client.delete("/api/templates/internal-discussion")
 
         edited = client.put("/api/templates/standard", json={**new, "name": "Standard"})
         assert edited.json()["edited"] is True

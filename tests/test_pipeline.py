@@ -188,3 +188,57 @@ def test_standing_summary_instructions_reach_the_llm(cfg, tmp_path):
     # format guidance, then the standing instructions, then this meeting's request
     order = ["busy director", "Always write in British English.", "Mention the budget first."]
     assert [prompt.index(x) for x in order] == sorted(prompt.index(x) for x in order)
+
+
+def test_format_with_extra_sections_and_roles(cfg, tmp_path):
+    import httpx
+    from conftest import ollama_transport
+
+    from dzomdu.config import LLMConfig
+    from dzomdu.llm.client import LLMClient
+
+    seen: list[dict] = []
+
+    def reply(payload):
+        seen.append(payload)
+        return {
+            "title": "MoU",
+            "summary": "Finalised the MoU.",
+            "topics": [
+                {
+                    "title": "Legal status",
+                    "points": ["Problem: Vague.", "Decision: Non-binding."],
+                    "source_turns": ["t1"],
+                }
+            ],
+            "decisions": [],
+            "action_items": [],
+            "open_questions": [],
+            "next_meeting": None,
+            # the model gets one field wrong and omits another: the layout must still render
+            "extra": {
+                "meeting_type": "Internal Discussion",
+                "key_takeaways": [{"title": "Non-binding", "text": "Moves faster."}],
+                "comments": "Needs JSC approval",
+            },
+        }
+
+    llm = LLMClient(LLMConfig(), http=httpx.Client(transport=ollama_transport(reply=reply)))
+    pipe, _, _ = _pipeline(cfg, tmp_path, llm)
+    pipe.vault.ensure_person("Alice", role="AD")
+    analysis = pipe.analyze(tmp_path / "m1.wav", date=datetime(2026, 1, 14, 10, 0))
+    pipe.apply_review(analysis, {"SPEAKER_00": "Alice", "SPEAKER_01": None})
+    template = pipe.template("internal-discussion")
+    notes = pipe.summarize(analysis.record, template)
+
+    extra_schema = seen[0]["format"]["properties"]["extra"]
+    assert set(extra_schema["required"]) == {"meeting_type", "purpose", "key_takeaways", "comments"}
+    assert notes.extra["purpose"] == ""  # omitted by the model, still present
+    assert notes.extra["comments"] == ["Needs JSC approval"]  # a string became a list
+
+    text = pipe.write_note(analysis.record, notes, template).read_text()
+    assert "**Internal Discussion • January 14, 2026 • 1 min**" in text
+    assert "1. AD [[Alice]]" in text
+    assert "* **Non-binding:** Moves faster." in text
+    assert "   2. Decision: Non-binding." in text
+    assert "## Meeting purpose\n\nFinalised the MoU." in text  # falls back to the summary

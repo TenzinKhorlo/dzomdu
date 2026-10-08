@@ -13,7 +13,7 @@ from typing import Any
 
 import jinja2
 
-from ..llm.schema import ActionItem, Cited, MeetingNotes
+from ..llm.schema import ActionItem, Cited, MeetingNotes, SectionSpec
 from ..models import MeetingRecord, format_duration, format_timestamp
 from ..vault import dump_frontmatter
 from .templates import MinutesTemplate
@@ -36,7 +36,13 @@ def wikilink(name: str) -> str:
 
 
 class _Helpers:
-    def __init__(self, record: MeetingRecord, known_people: list[str] | None = None):
+    def __init__(
+        self,
+        record: MeetingRecord,
+        known_people: list[str] | None = None,
+        roles: dict[str, str] | None = None,
+    ):
+        self.roles = {k.casefold(): v for k, v in (roles or {}).items()}
         self.turn_start = {t.id: t.start for t in record.turns}
         # anyone known (in the vault or with a voiceprint) is linked, e.g. an owner who was absent
         self.people = (
@@ -54,6 +60,9 @@ class _Helpers:
         if not links:
             return ""
         return f"({', '.join(links)})" if wrap else ", ".join(links)
+
+    def role(self, name: str | None) -> str:
+        return self.roles.get((name or "").strip().casefold(), "")
 
     def person(self, name: str | None) -> str:
         if not name:
@@ -90,10 +99,13 @@ def render_transcript(record: MeetingRecord) -> str:
 def meeting_context(record: MeetingRecord) -> dict[str, Any]:
     known = sorted({a.name for a in record.assignments.values() if a.name} | set(record.attendees))
     unknown = sorted({a.display_name for a in record.assignments.values() if not a.name})
+    when = datetime.fromisoformat(record.date)
     return {
         "title": record.title,
         "date": record.date,
+        "date_long": f"{when:%B} {when.day}, {when.year}",
         "duration": format_duration(record.duration),
+        "minutes": max(1, round(record.duration / 60)),
         "project": record.project,
         "attendees": known,
         "unknown_speakers": unknown,
@@ -106,6 +118,7 @@ def render_note(
     template: MinutesTemplate | None,
     llm_model: str | None = None,
     known_people: list[str] | None = None,
+    roles: dict[str, str] | None = None,
 ) -> str:
     ctx = meeting_context(record)
     when = datetime.fromisoformat(record.date)
@@ -140,7 +153,9 @@ def render_note(
 
     parts = [dump_frontmatter(meta), f"# {record.title}\n"]
     if notes and template:
-        helpers = _Helpers(record, known_people)
+        notes = notes.model_copy(deep=True)
+        notes.normalise_extra(template.sections)  # every declared field exists, in its shape
+        helpers = _Helpers(record, known_people, roles)
         body = (
             _env()
             .from_string(template.body)
@@ -149,6 +164,7 @@ def render_note(
                 meeting=ctx,
                 cite=helpers.cite,
                 person=helpers.person,
+                role=helpers.role,
                 task=helpers.task,
             )
         )
@@ -162,7 +178,19 @@ def render_note(
     return "\n".join(parts)
 
 
-def check_template_body(body: str) -> None:
+def _sample_extra(sections: list[SectionSpec]) -> dict:
+    out: dict = {}
+    for sec in sections:
+        if sec.type == "list":
+            out[sec.key] = ["First point", "Second point"]
+        elif sec.type == "items":
+            out[sec.key] = [{"title": "A headline", "text": "A sentence about it."}]
+        else:
+            out[sec.key] = "Some text"
+    return out
+
+
+def check_template_body(body: str, sections: list[SectionSpec] | None = None) -> None:
     """Render a layout with made-up notes so mistakes surface when it is saved, not when a real
     meeting is processed. Raises jinja2.TemplateError."""
     from ..llm.schema import Decision, Topic
@@ -175,11 +203,14 @@ def check_template_body(body: str) -> None:
         action_items=[ActionItem(task="Send the draft", owner="Alice", due="2026-01-31")],
         open_questions=["Who owns the rollout?"],
         next_meeting="Next week",
+        extra=_sample_extra(sections or []),
     )
     ctx = {
         "title": "Sample meeting",
         "date": "2026-01-01T10:00:00",
+        "date_long": "January 1, 2026",
         "duration": "30m",
+        "minutes": 30,
         "project": "Sample project",
         "attendees": ["Alice", "Bob"],
         "unknown_speakers": [],
@@ -189,5 +220,6 @@ def check_template_body(body: str) -> None:
         meeting=ctx,
         cite=lambda item, wrap=True: "([[#^t1|00:00:05]])",
         person=lambda name: f"[[{name}]]" if name else "",
+        role=lambda name: "Role",
         task=lambda item: item.task,
     )

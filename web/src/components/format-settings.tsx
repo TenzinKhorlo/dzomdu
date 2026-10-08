@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Loader2, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from "react"
+import { Loader2, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   Dialog,
@@ -11,46 +11,77 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog";
-import { useConfirm } from "@/components/confirm";
-import { useInfo } from "@/components/providers";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@/components/animate-ui/components/radix/dialog"
+import { useConfirm } from "@/components/confirm"
+import { useInfo } from "@/components/providers"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { useApi } from "@/hooks/use-api";
-import { api } from "@/lib/api";
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
+import { useApi } from "@/hooks/use-api"
+import { api } from "@/lib/api"
+
+type Section = {
+  title: string
+  type: "text" | "list" | "items"
+  description: string
+  key?: string
+}
 
 type Format = {
-  key: string;
-  name: string;
-  description: string;
-  instructions: string;
-  body: string;
-  builtin: boolean;
-  edited: boolean;
-  default: boolean;
-};
+  key: string
+  name: string
+  description: string
+  instructions: string
+  body: string
+  sections: Section[]
+  builtin: boolean
+  edited: boolean
+  default: boolean
+}
 
-type Draft = Pick<Format, "name" | "description" | "instructions" | "body">;
+type Draft = Pick<
+  Format,
+  "name" | "description" | "instructions" | "body" | "sections"
+>
+
+const SECTION_TYPES: [Section["type"], string][] = [
+  ["text", "A short passage"],
+  ["list", "A list of points"],
+  ["items", "Headline + sentence pairs"],
+]
+
+// what a layout calls an extra field, matching the name the server derives from the title
+const sectionKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40)
 
 const VARIABLES: [string, string][] = [
+  [
+    "{{ meeting.date_long }}, {{ meeting.minutes }}",
+    "the date (January 14, 2026) and length in minutes",
+  ],
+  ["{{ role(name) }}", "the role in a person's profile, such as AD"],
+  ["{{ loop.index }}", "1, 2, 3… inside a for loop, for numbered lists"],
   ["{{ notes.summary }}", "the summary paragraph"],
   ["{% for d in notes.decisions %} … {{ d.decision }}", "each decision"],
   [
@@ -68,10 +99,10 @@ const VARIABLES: [string, string][] = [
   ["{{ cite(item) }}", "links an item to the moment it was said"],
   ["{{ person(name) }}", "a [[link]] for a known person"],
   [
-    "{{ meeting.title }}, .date, .duration, .project, .attendees",
+    "{{ meeting.title }}, .project, .duration, .attendees",
     "details of the meeting",
   ],
-];
+]
 
 function FormatDialog({
   open,
@@ -80,13 +111,13 @@ function FormatDialog({
   starter,
   onSaved,
 }: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  format: Format | null; // null = a new format
-  starter: Format | undefined;
-  onSaved: () => void;
+  open: boolean
+  onOpenChange: (o: boolean) => void
+  format: Format | null // null = a new format
+  starter: Format | undefined
+  onSaved: () => void
 }) {
-  const [busy, setBusy] = React.useState(false);
+  const [busy, setBusy] = React.useState(false)
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -98,14 +129,14 @@ function FormatDialog({
             busy={busy}
             setBusy={setBusy}
             onSaved={() => {
-              onSaved();
-              onOpenChange(false);
+              onSaved()
+              onOpenChange(false)
             }}
           />
         )}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 function FormatForm({
@@ -115,30 +146,44 @@ function FormatForm({
   setBusy,
   onSaved,
 }: {
-  format: Format | null;
-  starter: Format | undefined;
-  busy: boolean;
-  setBusy: (b: boolean) => void;
-  onSaved: () => void;
+  format: Format | null
+  starter: Format | undefined
+  busy: boolean
+  setBusy: (b: boolean) => void
+  onSaved: () => void
 }) {
   // a new format begins as a copy of the starter, so it starts from something that works
   const [draft, setDraft] = React.useState<Draft>(() => {
-    const from = format ?? starter;
+    const from = format ?? starter
     return {
       name: format ? format.name : "",
       description: format ? format.description : "",
       instructions: from?.instructions ?? "",
       body: from?.body ?? "",
-    };
-  });
-  const [error, setError] = React.useState<string | null>(null);
+      // keep each field's key, so a copied or edited layout still finds its fields
+      sections: (from?.sections ?? []).map(
+        ({ key, title, type, description }) => ({
+          key,
+          title,
+          type,
+          description,
+        }),
+      ),
+    }
+  })
+  const [error, setError] = React.useState<string | null>(null)
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
+    setDraft((d) => ({ ...d, [k]: v }))
+  const setSection = (i: number, sec: Section) =>
+    set(
+      "sections",
+      draft.sections.map((x, j) => (j === i ? sec : x)),
+    )
 
   async function save(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
     try {
       await api(
         format
@@ -148,13 +193,13 @@ function FormatForm({
           method: format ? "PUT" : "POST",
           json: draft,
         },
-      );
-      toast.success(format ? "Format saved" : "Format created");
-      onSaved();
+      )
+      toast.success(format ? "Format saved" : "Format created")
+      onSaved()
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
@@ -202,6 +247,92 @@ function FormatForm({
         />
       </div>
       <div className="grid gap-2">
+        <Label>Extra things for the AI to pick out</Label>
+        <p className="text-xs text-muted-foreground">
+          Beyond the summary, topics, decisions and actions, the AI can also
+          fill in your own fields, such as a meeting purpose or key takeaways.
+          Show them in the layout with the name under each field.
+        </p>
+        {draft.sections.map((sec, i) => (
+          <div key={i} className="grid gap-2 rounded-lg border p-3">
+            <div className="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
+              <Input
+                aria-label="Field title"
+                placeholder="e.g. Meeting purpose"
+                value={sec.title}
+                onChange={(e) =>
+                  setSection(i, { ...sec, title: e.target.value })
+                }
+              />
+              <Select
+                value={sec.type}
+                onValueChange={(v) =>
+                  setSection(i, { ...sec, type: v as Section["type"] })
+                }
+              >
+                <SelectTrigger aria-label="Field type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SECTION_TYPES.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Remove field"
+                onClick={() =>
+                  set(
+                    "sections",
+                    draft.sections.filter((_, j) => j !== i),
+                  )
+                }
+              >
+                <Trash2 />
+              </Button>
+            </div>
+            <Input
+              aria-label="What to put in this field"
+              placeholder="What should the AI write here?"
+              value={sec.description}
+              onChange={(e) =>
+                setSection(i, { ...sec, description: e.target.value })
+              }
+            />
+            {(sec.key ?? sectionKey(sec.title)) && (
+              <p className="text-xs text-muted-foreground">
+                In the layout:{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono">
+                  {`{{ notes.extra.${sec.key ?? sectionKey(sec.title)} }}`}
+                </code>
+                {sec.type !== "text" && " (use a for loop)"}
+              </p>
+            )}
+          </div>
+        ))}
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              set("sections", [
+                ...draft.sections,
+                { title: "", type: "text", description: "" },
+              ])
+            }
+          >
+            <Plus />
+            Add a field
+          </Button>
+        </div>
+      </div>
+      <div className="grid gap-2">
         <Label htmlFor="fmt-body">Layout</Label>
         <Textarea
           id="fmt-body"
@@ -230,10 +361,9 @@ function FormatForm({
             ))}
           </ul>
           <p className="mt-2">
-            The AI always extracts the same things (summary, topics, decisions,
-            actions, open questions). A layout chooses what to show and how. To
-            get something extra, such as a Risks section, ask for it in the
-            instructions and it appears under the topics.
+            The AI always extracts the summary, topics, decisions, actions and
+            open questions. Use &quot;Extra things&quot; above for anything else
+            you want in the note.
           </p>
         </details>
       </div>
@@ -255,27 +385,27 @@ function FormatForm({
         </Button>
       </DialogFooter>
     </form>
-  );
+  )
 }
 
 export function FormatsCard() {
-  const { data, reload } = useApi<Format[]>("/api/templates");
-  const { reload: reloadInfo } = useInfo();
-  const confirm = useConfirm();
-  const [editing, setEditing] = React.useState<Format | null>(null);
-  const [open, setOpen] = React.useState(false);
+  const { data, reload } = useApi<Format[]>("/api/templates")
+  const { reload: reloadInfo } = useInfo()
+  const confirm = useConfirm()
+  const [editing, setEditing] = React.useState<Format | null>(null)
+  const [open, setOpen] = React.useState(false)
 
   const refresh = () => {
-    reload();
-    reloadInfo();
-  };
+    reload()
+    reloadInfo()
+  }
   const openDialog = (f: Format | null) => {
-    setEditing(f);
-    setOpen(true);
-  };
+    setEditing(f)
+    setOpen(true)
+  }
 
   async function remove(f: Format) {
-    const reset = f.builtin;
+    const reset = f.builtin
     const ok = await confirm({
       title: reset ? `Reset “${f.name}”?` : `Delete “${f.name}”?`,
       description: reset
@@ -283,20 +413,20 @@ export function FormatsCard() {
         : "The format is deleted. Notes already written with it are not changed.",
       confirmLabel: reset ? "Reset format" : "Delete format",
       destructive: true,
-    });
-    if (!ok) return;
+    })
+    if (!ok) return
     try {
       await api(`/api/templates/${encodeURIComponent(f.key)}`, {
         method: "DELETE",
-      });
-      toast.success(reset ? "Format reset" : "Format deleted");
-      refresh();
+      })
+      toast.success(reset ? "Format reset" : "Format deleted")
+      refresh()
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message)
     }
   }
 
-  const starter = data?.find((f) => f.key === "standard") ?? data?.[0];
+  const starter = data?.find((f) => f.key === "standard") ?? data?.[0]
 
   return (
     <Card>
@@ -374,15 +504,15 @@ export function FormatsCard() {
         onSaved={refresh}
       />
     </Card>
-  );
+  )
 }
 
-type Defaults = { default_template: string; summary_instructions: string };
+type Defaults = { default_template: string; summary_instructions: string }
 
 export function SummaryDefaultsCard() {
-  const { data, reload } = useApi<Defaults>("/api/settings");
-  const { info, reload: reloadInfo } = useInfo();
-  if (!data) return <Skeleton className="h-64 rounded-xl" />;
+  const { data, reload } = useApi<Defaults>("/api/settings")
+  const { info, reload: reloadInfo } = useInfo()
+  if (!data) return <Skeleton className="h-64 rounded-xl" />
   // keyed on what is saved so the form resets to it after a save
   return (
     <DefaultsForm
@@ -390,11 +520,11 @@ export function SummaryDefaultsCard() {
       saved={data}
       formats={info?.templates ?? []}
       onSaved={() => {
-        reload();
-        reloadInfo();
+        reload()
+        reloadInfo()
       }}
     />
-  );
+  )
 }
 
 function DefaultsForm({
@@ -402,21 +532,21 @@ function DefaultsForm({
   formats,
   onSaved,
 }: {
-  saved: Defaults;
-  formats: { key: string; name: string }[];
-  onSaved: () => void;
+  saved: Defaults
+  formats: { key: string; name: string }[]
+  onSaved: () => void
 }) {
-  const [template, setTemplate] = React.useState(saved.default_template);
+  const [template, setTemplate] = React.useState(saved.default_template)
   const [instructions, setInstructions] = React.useState(
     saved.summary_instructions,
-  );
-  const [busy, setBusy] = React.useState(false);
+  )
+  const [busy, setBusy] = React.useState(false)
   const dirty =
     template !== saved.default_template ||
-    instructions.trim() !== saved.summary_instructions.trim();
+    instructions.trim() !== saved.summary_instructions.trim()
 
   async function save() {
-    setBusy(true);
+    setBusy(true)
     try {
       await api("/api/settings", {
         method: "PUT",
@@ -424,13 +554,13 @@ function DefaultsForm({
           default_template: template,
           summary_instructions: instructions,
         },
-      });
-      toast.success("Summary defaults saved");
-      onSaved();
+      })
+      toast.success("Summary defaults saved")
+      onSaved()
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
@@ -480,5 +610,5 @@ function DefaultsForm({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

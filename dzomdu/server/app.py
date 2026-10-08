@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -30,11 +31,13 @@ from ..config import (
     save_config,
 )
 from ..llm.client import LLMClient
+from ..llm.schema import SECTION_TYPES, SectionSpec
 from ..notes.render import check_template_body
 from ..notes.templates import (
     builtin_text,
     list_templates,
     load_template,
+    section_key,
     template_key,
     template_text,
 )
@@ -122,11 +125,22 @@ class SettingsBody(BaseModel):
     summary_instructions: str | None = None
 
 
+SECTION_KEY = re.compile(r"[a-z][a-z0-9_]{0,39}")
+
+
+class SectionBody(BaseModel):
+    key: str | None = None  # kept when editing, so layouts that use it keep working
+    title: str
+    type: str = "text"
+    description: str = ""
+
+
 class TemplateBody(BaseModel):
     name: str
     description: str = ""
     instructions: str = ""
     body: str
+    sections: list[SectionBody] = []
 
 
 class ProjectBody(BaseModel):
@@ -303,6 +317,10 @@ def create_app(
             "description": t.description,
             "instructions": t.instructions,
             "body": t.body.strip("\n"),
+            "sections": [
+                {"key": x.key, "title": x.title, "type": x.type, "description": x.description}
+                for x in t.sections
+            ],
             "builtin": shipped is not None,
             # a built-in the user has changed, so "reset" does something
             "edited": shipped is not None
@@ -316,13 +334,21 @@ def create_app(
             raise HTTPException(400, "Give the format a name")
         if not body.body.strip():
             raise HTTPException(400, "The layout cannot be empty")
+        specs: list[SectionSpec] = []
+        for sec in body.sections:
+            key = sec.key if sec.key and SECTION_KEY.fullmatch(sec.key) else section_key(sec.title)
+            if not sec.title.strip() or not key or sec.type not in SECTION_TYPES:
+                raise HTTPException(400, f"Extra field “{sec.title}” needs a name and a valid type")
+            if key in {s.key for s in specs}:
+                raise HTTPException(400, f"Two extra fields would both be called “{key}”")
+            specs.append(SectionSpec(key, sec.title.strip(), sec.type, sec.description.strip()))
         try:
-            check_template_body(body.body)
+            check_template_body(body.body, specs)
         except jinja2.TemplateSyntaxError as exc:
             raise HTTPException(400, f"Layout error on line {exc.lineno}: {exc.message}") from exc
         except jinja2.TemplateError as exc:
             raise HTTPException(400, f"Layout error: {exc}") from exc
-        return template_text(body.name, body.description, body.instructions, body.body)
+        return template_text(body.name, body.description, body.instructions, body.body, specs)
 
     def write_template(key: str, text: str) -> None:
         folder = pipeline.vault.templates_dir
