@@ -80,7 +80,7 @@ export function ActionList({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+              className="overflow-hidden border-b border-border/70 last:border-0"
             >
               <SwipeToComplete
                 done={checked}
@@ -98,7 +98,7 @@ export function ActionList({
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p
                       className={cn(
-                        "text-sm leading-snug transition-colors duration-300",
+                        "text-[13px] leading-relaxed transition-colors duration-300",
                         checked && "text-muted-foreground line-through",
                       )}
                     >

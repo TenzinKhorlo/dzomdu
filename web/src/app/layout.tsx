@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
-import "@fontsource-variable/inter/opsz.css"
+import { GeistSans } from "geist/font/sans"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/animate-ui/components/radix/sidebar"
@@ -17,13 +17,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistMono.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}>
         <Providers>
-          <SidebarProvider>
+          <SidebarProvider style={{ "--sidebar-width": "14rem" } as React.CSSProperties}>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="min-w-0">
               <SiteHeader />
-              <div className="flex flex-1 flex-col gap-5 px-4 pt-5 pb-8 md:px-7">{children}</div>
+              <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 px-4 py-6 md:px-6 lg:px-8">{children}</div>
             </SidebarInset>
           </SidebarProvider>
         </Providers>

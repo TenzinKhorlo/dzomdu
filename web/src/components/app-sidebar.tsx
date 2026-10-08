@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { Folder, Mic, Plus } from "lucide-react"
+import { Folder, Mic, Plus, ShieldCheck } from "lucide-react"
 
 import {
   Sidebar,
@@ -38,10 +38,10 @@ const NAV = [
   { title: "Projects", href: "/projects/", icon: Layers },
 ]
 
-// the selected item reads as a raised white pill on the grey sidebar
+// A quiet filled selection keeps navigation separate from the content cards.
 const ITEM =
-  "text-[13px] text-sidebar-foreground [&>svg]:text-muted-foreground data-[active=true]:shadow-[0_0_0_1px_var(--sidebar-border),var(--shadow-card)] data-[active=true]:[&>svg]:text-sidebar-accent-foreground"
-const LABEL = "text-[11px] font-medium tracking-[0.06em] text-muted-foreground uppercase"
+  "h-9 rounded-lg px-3 text-[13px] text-sidebar-foreground [&>svg]:size-4 [&>svg]:text-muted-foreground data-[active=true]:font-medium data-[active=true]:[&>svg]:text-sidebar-accent-foreground"
+const LABEL = "px-3 text-[11px] font-medium tracking-normal text-muted-foreground"
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href.replace(/\/$/, ""))
@@ -53,13 +53,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const projects = info?.projects ?? []
 
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" variant="sidebar" {...props}>
+      <SidebarHeader className="h-14 justify-center border-b px-3 py-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="hover:bg-transparent!">
+            <SidebarMenuButton size="lg" asChild className="h-10 hover:bg-transparent!">
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-[var(--shadow-card)]">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Mic className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
@@ -74,11 +74,11 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className={LABEL}>Menu</SidebarGroupLabel>
+      <SidebarContent className="gap-4 px-2 pt-3">
+        <SidebarGroup className="p-0">
+          <SidebarGroupLabel className={LABEL}>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-1">
               {NAV.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <AnimateIcon animateOnHover asChild>
@@ -101,7 +101,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {projects.length > 0 && (
-          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroup className="p-0 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className={LABEL}>Projects</SidebarGroupLabel>
             <SidebarGroupAction asChild title="New meeting in a project">
               <Link href="/record/">
@@ -118,7 +118,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="gap-3">
+      <SidebarFooter className="gap-3 p-3">
         <ModelStatus />
         <SidebarMenu>
           <SidebarMenuItem>
@@ -156,7 +156,7 @@ function ProjectLinks({ projects }: { projects: string[] }) {
             className={ITEM}
           >
             <Link href={`/meetings/?project=${encodeURIComponent(p)}`}>
-              <Folder style={{ color: colorFor(p), fill: colorFor(p) }} className="opacity-90" />
+              <Folder style={{ color: colorFor(p) }} className="opacity-75" />
               <span>{p}</span>
             </Link>
           </SidebarMenuButton>
@@ -179,10 +179,10 @@ function ModelStatus() {
   return (
     <Link
       href="/settings/"
-      className="pressable block rounded-xl border bg-background p-3 shadow-[var(--shadow-card)] transition-colors hover:bg-accent group-data-[collapsible=icon]:hidden"
+      className="pressable block rounded-xl border bg-card p-3 transition-colors hover:bg-accent group-data-[collapsible=icon]:hidden"
     >
       <div className="flex items-baseline justify-between">
-        <span className="text-[13px] font-medium">Local models</span>
+        <span className="flex items-center gap-1.5 text-xs font-medium"><ShieldCheck className="size-3.5 text-muted-foreground" />Local models</span>
         <span className="text-xs text-muted-foreground tabular-nums">
           {ready}/{rows.length} ready
         </span>
@@ -191,7 +191,7 @@ function ModelStatus() {
         {rows.map((r) => (
           <span
             key={r.label}
-            className={cn("h-1.5 flex-1 rounded-full", r.ok ? "bg-brand" : "bg-track")}
+            className={cn("h-1 flex-1 rounded-full", r.ok ? "bg-success" : "bg-track")}
           />
         ))}
       </div>

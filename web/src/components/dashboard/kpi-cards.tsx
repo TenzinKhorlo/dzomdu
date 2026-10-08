@@ -17,7 +17,7 @@ function Delta({ value }: { value: number | null }) {
   const up = value >= 0
   const Icon = up ? ArrowUpRight : ArrowDownRight
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums">
+    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md border bg-background px-1.5 py-0.5 text-[11px] font-medium text-foreground tabular-nums">
       <Icon className="size-3" aria-hidden />
       {up ? "+" : "−"}
       {Math.abs(Math.round(value))}%
@@ -47,19 +47,19 @@ function Kpi({
 }) {
   const reduce = useReducedMotion()
   return (
-    <Card className="gap-3 py-4">
+    <Card className="gap-4 py-4 shadow-none">
       <div className="flex items-center gap-2 px-4">
         <span
-          className="flex size-5 items-center justify-center rounded-md text-white"
-          style={{ backgroundColor: tint }}
+          className="flex size-6 shrink-0 items-center justify-center rounded-md"
+          style={{ color: tint, backgroundColor: `color-mix(in oklch, ${tint} 12%, transparent)` }}
           aria-hidden
         >
-          <Icon className="size-3" />
+          <Icon className="size-3.5" />
         </span>
-        <span className="truncate text-[13px] font-medium">{label}</span>
+        <span className="truncate text-xs text-muted-foreground">{label}</span>
       </div>
       <div className="px-4">
-        <div className="text-2xl font-semibold tracking-[-0.02em] tabular-nums">
+        <div className="text-[30px] leading-none font-medium tracking-[-0.045em] tabular-nums">
           {reduce ? (
             value.toFixed(decimals)
           ) : (
@@ -71,12 +71,12 @@ function Kpi({
             />
           )}
           {suffix && (
-            <span className="ml-0.5 text-sm font-medium text-muted-foreground">{suffix}</span>
+            <span className="ml-1 text-sm font-normal tracking-normal text-muted-foreground">{suffix}</span>
           )}
         </div>
         <div
           className={cn(
-            "mt-1.5 flex min-h-5 items-center gap-2 text-xs text-muted-foreground",
+            "mt-3 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground",
             delta != null && "justify-between",
           )}
         >
@@ -94,7 +94,7 @@ export function KpiCards({ data }: { data: Dashboard }) {
   const vs = (delta: number | null) =>
     delta === null ? `in the last ${period.days} days` : `vs previous ${period.days} days`
   return (
-    <div className="grid grid-cols-2 gap-3 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 @3xl/main:grid-cols-4">
       <Kpi
         icon={CalendarDays}
         tint="var(--chart-2)"
@@ -118,14 +118,14 @@ export function KpiCards({ data }: { data: Dashboard }) {
         tint="var(--brand)"
         label="Open action items"
         value={totals.open_actions}
-        footer={`${totals.done_actions} completed · synced with your notes`}
+        footer={`${totals.done_actions} completed`}
       />
       <Kpi
         icon={AudioLines}
         tint="var(--chart-1)"
         label="Voices recognised"
         value={totals.voices}
-        footer="Voiceprints stay on this computer"
+        footer="Saved in your local library"
       />
     </div>
   )

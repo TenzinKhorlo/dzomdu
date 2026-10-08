@@ -38,18 +38,21 @@ version the API is on the same origin.
 
 ## Visual style
 
-- **Surfaces.** A grey sidebar canvas, white cards with a hairline border and
-  `shadow-[var(--shadow-card)]`, 12px card corners (`rounded-xl`) and 8px controls
+- **Surfaces.** A warm neutral canvas and slim sidebar, white cards with a hairline border and
+  restrained shadows, 8px card corners (`rounded-xl`) and 6px controls
   (`rounded-lg`).
-- **Type.** Inter (bundled via `@fontsource-variable/inter`) for the interface, Geist Mono for
-  timestamps. Page titles are `text-xl`; labels, table text and descriptions are 13px.
+- **Type.** Locally bundled Geist Sans for the interface and Geist Mono for timestamps.
+  Page titles are 22px; body and table text are 13px, secondary labels 11–12px, and metrics 30px.
 - **Colour.**
   - Primary actions are near-black (`bg-primary`).
-  - The one accent, `brand` (orange #ea580c), is for highlights only: the "New recording"
-    button (`variant="brand"`), the activity chart and open-item chips.
+  - The `brand` accent is muted terracotta for the activity chart and open-item chips.
+    Primary recording actions live in the page header; the global header contains search,
+    breadcrumbs, appearance, and an active recording indicator.
+  - Sage green indicates local model readiness. Metric icons use subdued tinted backgrounds.
   - Speaker and project colours come from `colorFor()`.
 - **Charts.**
-  - One hue on the neutral `track` colour, with 2px gaps between marks.
+  - One hue on the neutral `track` colour, with 3px gaps between activity marks.
+  - The activity plot has a fixed height across date ranges, with an aggregate in its header.
   - A dark tooltip on hover and keyboard focus.
   - Values sit at the bar tips. Text is never drawn in a data colour.
 

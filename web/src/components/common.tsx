@@ -8,18 +8,20 @@ export function PageHeader({
   title,
   description,
   children,
+  actionsClassName,
 }: {
   title: React.ReactNode
   description?: React.ReactNode
   children?: React.ReactNode
+  actionsClassName?: string
 }) {
   return (
-    <Fade className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-      <div className="min-w-0 space-y-1">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        {description && <p className="text-[13px] text-muted-foreground">{description}</p>}
+    <Fade className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+      <div className="min-w-0 space-y-1.5">
+        <h1 className="text-[22px] font-semibold">{title}</h1>
+        {description && <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground">{description}</p>}
       </div>
-      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+      {children && <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{children}</div>}
     </Fade>
   )
 }

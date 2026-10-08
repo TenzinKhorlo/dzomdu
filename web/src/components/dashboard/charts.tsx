@@ -1,15 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { BarChart3, Sparkles, Users } from "lucide-react"
+import { BarChart3, Users } from "lucide-react"
 
-import { EmptyState } from "@/components/common"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState, SpeakerAvatar } from "@/components/common"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Dashboard } from "@/lib/api"
 import { colorFor, shortDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-const LEVELS = 12 // dots per column
+const LEVELS = 16 // marks per column; the chart height stays fixed across date ranges
 
 /** A clean axis maximum: 15, 30, 60, 90, 120, 180, 240 … minutes. */
 function niceMax(v: number) {
@@ -25,8 +25,8 @@ function minutesLabel(m: number) {
 }
 
 /**
- * Time in meetings per day as a dot matrix: each column is a day, each lit dot is a twelfth of
- * the axis. One series in one hue (the brand accent) on a neutral track, a 2px gap between dots,
+ * Time in meetings per day as a dot matrix: each column is a day, each lit mark is a sixteenth of
+ * the axis. One series in one hue (the brand accent) on a neutral track, a 3px gap between marks,
  * and a per-column tooltip on hover and keyboard focus.
  */
 export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
@@ -34,17 +34,22 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
   const total = data.reduce((s, r) => s + r.minutes, 0)
   const top = niceMax(Math.max(1, ...data.map((r) => r.minutes)))
   const busiest = data.reduce((a, b) => (b.minutes > a.minutes ? b : a), data[0])
-  const labelEvery = Math.max(1, Math.ceil(data.length / 7))
+  const labelEvery = Math.max(1, Math.ceil(data.length / 6))
   const hovered = active !== null ? data[active] : null
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Time in meetings</CardTitle>
-        <CardDescription>
-          {minutesLabel(total)} over the last {data.length} days
-          {busiest?.minutes > 0 && ` · busiest day ${shortDate(busiest.date)}`}
-        </CardDescription>
+    <Card className="h-full gap-5 shadow-none">
+      <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1.5">
+          <CardTitle>Meeting activity</CardTitle>
+          <CardDescription>
+            Time in meetings over the last {data.length} days
+          </CardDescription>
+        </div>
+        <CardAction className="hidden text-right @sm/card-header:block">
+          <p className="text-lg leading-tight font-medium tracking-tight tabular-nums">{minutesLabel(total)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Total meeting time</p>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <div className="flex gap-3">
@@ -61,8 +66,11 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             <div
               role="group"
               aria-label="Minutes in meetings per day"
-              className="grid gap-[2px]"
-              style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
+              className="grid h-[196px] gap-[3px]"
+              style={{
+                gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`,
+                columnGap: data.length > 60 ? 1 : 3,
+              }}
               onPointerLeave={() => setActive(null)}
             >
               {data.map((d, i) => {
@@ -76,7 +84,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
                     onFocus={() => setActive(i)}
                     onBlur={() => setActive(null)}
                     className={cn(
-                      "flex flex-col-reverse items-center gap-[2px] rounded-sm py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      "flex h-full min-w-0 flex-col-reverse items-center gap-[3px] rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                       "transition-opacity duration-200",
                       active !== null && active !== i && "opacity-45",
                     )}
@@ -85,7 +93,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
                       <span
                         key={level}
                         className={cn(
-                          "aspect-square w-full max-w-4 rounded-[3px]",
+                          "w-full max-w-5 flex-1 rounded-[2px]",
                           level < lit ? "bg-brand" : "bg-track",
                         )}
                       />
@@ -96,19 +104,19 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             </div>
             {/* x axis: a few evenly spaced dates, today emphasised */}
             <div
-              className="mt-2 grid text-[11px] text-muted-foreground"
-              style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
+              className="relative mt-3 h-4 text-[11px] text-muted-foreground"
               aria-hidden
             >
               {data.map((d, i) => {
                 const last = i === data.length - 1
                 const show = last || ((data.length - 1 - i) % labelEvery === 0 && data.length - 1 - i >= labelEvery / 2)
                 return (
-                  <span
+                  show && <span
                     key={d.date}
-                    className={cn("text-center whitespace-nowrap", last && "font-medium text-foreground")}
+                    className={cn("absolute whitespace-nowrap", !last && i !== 0 && "-translate-x-1/2", last && "font-medium text-foreground")}
+                    style={last ? { right: 0 } : { left: i === 0 ? 0 : `${((i + 0.5) / data.length) * 100}%` }}
                   >
-                    {show ? (last ? "Today" : shortDate(d.date)) : ""}
+                    {last ? "Today" : shortDate(d.date)}
                   </span>
                 )
               })}
@@ -116,7 +124,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             {hovered && active !== null && (
               <div
                 className="pointer-events-none absolute -top-2 z-10 min-w-36 -translate-x-1/2 -translate-y-full rounded-lg bg-neutral-900 px-3 py-2 text-xs text-neutral-300 shadow-lg dark:bg-neutral-800"
-                style={{ left: `${((active + 0.5) / data.length) * 100}%` }}
+                style={{ left: `clamp(4.5rem, ${((active + 0.5) / data.length) * 100}%, calc(100% - 4.5rem))` }}
                 role="status"
               >
                 <div className="text-[11px] text-neutral-400">{shortDate(hovered.date)}</div>
@@ -131,6 +139,10 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             )}
           </div>
         </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-sm bg-brand" aria-hidden />Daily meeting time</span>
+          {busiest?.minutes > 0 && <span>Busiest day · {shortDate(busiest.date)}</span>}
+        </div>
       </CardContent>
     </Card>
   )
@@ -143,10 +155,10 @@ export function SpeakersChart({ data }: { data: Dashboard["speakers"] }) {
   const top = data[0]
 
   return (
-    <Card className="h-full">
+    <Card className="h-full shadow-none">
       <CardHeader>
-        <CardTitle>Who talks most</CardTitle>
-        <CardDescription>Speaking time across all meetings</CardDescription>
+        <CardTitle>Speaking time</CardTitle>
+        <CardDescription>Contributions across your meetings</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4">
         {data.length === 0 ? (
@@ -158,21 +170,18 @@ export function SpeakersChart({ data }: { data: Dashboard["speakers"] }) {
           />
         ) : (
           <>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {data.slice(0, 6).map((d) => (
                 <li
                   key={d.name}
-                  className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-3 text-[13px]"
+                  className="space-y-2 text-[13px]"
                 >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: colorFor(d.name) }}
-                      aria-hidden
-                    />
-                    <span className="truncate">{d.name}</span>
-                  </span>
-                  <span className="h-2 overflow-hidden rounded-full bg-track" aria-hidden>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <SpeakerAvatar name={d.name} size="sm" className="size-5 ring-0" />
+                    <span className="min-w-0 flex-1 truncate">{d.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{minutesLabel(d.minutes)}</span>
+                  </div>
+                  <span className="block h-1 overflow-hidden rounded-full bg-track" aria-hidden>
                     <span
                       className="block h-full rounded-r-[4px]"
                       style={{
@@ -181,22 +190,12 @@ export function SpeakersChart({ data }: { data: Dashboard["speakers"] }) {
                       }}
                     />
                   </span>
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {minutesLabel(d.minutes)}
-                  </span>
                 </li>
               ))}
             </ul>
             {top && sum > 0 && (
-              <div className="mt-auto rounded-lg bg-muted/60 px-3 py-2.5">
-                <p className="flex items-center gap-1.5 text-[13px] font-medium">
-                  <Sparkles className="size-3.5 text-brand" aria-hidden />
-                  {top.name} leads the conversation
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {Math.round((top.minutes / sum) * 100)}% of all speaking time, across{" "}
-                  {top.meetings} meeting{top.meetings === 1 ? "" : "s"}.
-                </p>
+              <div className="mt-auto border-t pt-3 text-[11px] leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">{top.name}</span> contributed {Math.round((top.minutes / sum) * 100)}% of speaking time across {top.meetings} meeting{top.meetings === 1 ? "" : "s"}.
               </div>
             )}
           </>
@@ -210,8 +209,9 @@ export function NoActivity() {
   return (
     <EmptyState
       icon={BarChart3}
-      title="No meetings yet"
-      description="Record or upload your first meeting. Charts, action items and speaker stats appear here."
+      title="Your next conversation starts here"
+      description="Record a meeting or upload audio to see your activity, notes, and action items in one place."
+      className="min-h-72 bg-card"
     />
   )
 }

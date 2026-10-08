@@ -29,9 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
-import { useMounted } from "@/hooks/use-mounted"
 import type { Dashboard } from "@/lib/api"
-import { greeting } from "@/lib/format"
 
 const STATE_LABEL: Record<string, string> = {
   recording: "Recording",
@@ -45,20 +43,16 @@ export default function DashboardPage() {
   const { data, error, reload } = useApi<Dashboard>(`/api/dashboard?days=${days}`, {
     interval: 15000,
   })
-  const mounted = useMounted()
 
   return (
     <div className="@container/main flex flex-col gap-5">
       <PageHeader
         title="Overview"
-        description={
-          mounted
-            ? `${greeting()}. Your meetings, decisions and action items, processed on this computer.`
-            : "Your meetings, decisions and action items, processed on this computer."
-        }
+        description="Your meetings, conversations, and next steps at a glance."
+        actionsClassName="grid w-full grid-cols-2 sm:flex sm:w-auto"
       >
         <Select value={days} onValueChange={setDays}>
-          <SelectTrigger aria-label="Period" className="gap-1.5">
+          <SelectTrigger aria-label="Period" className="col-span-2 w-full gap-1.5 sm:w-auto">
             <CalendarDays className="text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
@@ -71,13 +65,13 @@ export default function DashboardPage() {
         <Button variant="outline" asChild>
           <Link href="/record/?upload=1">
             <Upload />
-            Upload recording
+            Upload audio
           </Link>
         </Button>
         <Button asChild>
           <Link href="/record/">
             <Mic />
-            Start recording
+            New recording
           </Link>
         </Button>
       </PageHeader>
@@ -123,12 +117,12 @@ export default function DashboardPage() {
                 <SpeakersChart data={data.speakers} />
               </div>
               <div className="grid gap-3 @5xl/main:grid-cols-3">
-                <Card className="gap-0 overflow-hidden pb-0 @5xl/main:col-span-2">
+                <Card className="gap-0 overflow-hidden pb-0 shadow-none @5xl/main:col-span-2">
                   <CardHeader className="pb-4">
                     <CardTitle>Recent meetings</CardTitle>
-                    <CardDescription>Click a meeting to read its notes</CardDescription>
+                    <CardDescription>Your latest conversations and meeting notes</CardDescription>
                     <CardAction>
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="ghost" size="sm" asChild>
                         <Link href="/meetings/">
                           View all
                           <ArrowRight />
@@ -140,11 +134,11 @@ export default function DashboardPage() {
                     <MeetingTable meetings={data.recent} compact />
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="shadow-none">
                   <CardHeader>
-                    <CardTitle>Open action items</CardTitle>
+                    <CardTitle>Action items</CardTitle>
                     <CardDescription>
-                      {data.totals.open_actions} open · {data.totals.done_actions} done
+                      {data.totals.open_actions} open · {data.totals.done_actions} completed
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -176,9 +170,9 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 @5xl/main:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 @3xl/main:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-xl" />
+          <Skeleton key={i} className="h-[142px] rounded-xl" />
         ))}
       </div>
       <div className="grid gap-3 @5xl/main:grid-cols-3">
