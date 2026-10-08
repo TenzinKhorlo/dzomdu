@@ -31,7 +31,7 @@ from ..config import (
 from ..llm.client import LLMClient
 from ..notes.templates import list_templates
 from ..pipeline import Pipeline
-from ..vault import Vault
+from ..vault import Vault, safe_filename
 from .markdown import note_to_html
 from .sessions import ACTIVE_STATES, SessionManager, SessionMeta
 
@@ -110,6 +110,10 @@ class LLMSettings(BaseModel):
 class SettingsBody(BaseModel):
     llm: LLMSettings | None = None
     vault: str | None = None
+
+
+class ProjectBody(BaseModel):
+    name: str
 
 
 class RenameBody(BaseModel):
@@ -508,6 +512,18 @@ def create_app(
                 }
             )
         return sorted(out, key=lambda p: (p["last"] or "", p["name"]), reverse=True)
+
+    @app.post("/api/projects")
+    def create_project(body: ProjectBody) -> dict[str, Any]:
+        """Create a project folder with its overview note. Creating an existing one is a no-op,
+        so the caller can simply select it."""
+        name = safe_filename(body.name.strip())
+        if not body.name.strip() or len(name) > 100:
+            raise HTTPException(400, "Give the project a name of up to 100 characters")
+        vault = pipeline.vault
+        created = not (vault.project_dir(name) / f"{name}.md").exists()
+        vault.ensure_project(name)
+        return {"name": name, "created": created}
 
     @app.post("/api/meetings/{meeting_id}/open")
     def open_meeting(meeting_id: str) -> dict[str, str]:

@@ -250,3 +250,15 @@ def test_settings_change_llm_and_vault(cfg, tmp_path, fake_llm):
         file_path.write_text("x")
         assert client.put("/api/settings", json={"vault": str(file_path)}).status_code == 400
         assert client.post("/api/settings/llm/test", json={**local, "api": "x"}).status_code == 400
+
+
+def test_create_project(setup, cfg):
+    client, _ = setup
+    res = client.post("/api/projects", json={"name": "  Solar Microgrid "})
+    assert res.json() == {"name": "Solar Microgrid", "created": True}
+    assert (cfg.vault / "Projects" / "Solar Microgrid" / "Solar Microgrid.md").exists()
+    assert client.post("/api/projects", json={"name": "Solar Microgrid"}).json()["created"] is False
+    assert client.post("/api/projects", json={"name": "A/B: plan"}).json()["name"] == "A-B- plan"
+    assert client.post("/api/projects", json={"name": "   "}).status_code == 400
+    assert {p["name"] for p in client.get("/api/projects").json()} >= {"Solar Microgrid", "A-B- plan"}
+    assert "Solar Microgrid" in client.get("/api/info").json()["projects"]

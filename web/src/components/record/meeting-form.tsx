@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { FileAudio, Loader2, Mic, Upload, Video, X } from "lucide-react"
+import { FileAudio, FolderPlus, Loader2, Mic, Upload, Video, X } from "lucide-react"
 import { toast } from "sonner"
 
+import { NewProjectDialog } from "@/components/new-project-dialog"
 import { useInfo } from "@/components/providers"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -96,6 +97,8 @@ function AttendeeInput({
   )
 }
 
+const NO_PROJECT = "__none__"
+
 export function MeetingForm({
   onSession,
   focusUpload = false,
@@ -179,19 +182,32 @@ export function MeetingForm({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="project">Project</Label>
-            <Input
-              id="project"
-              list="project-suggestions"
-              placeholder="e.g. Solar Microgrid"
-              value={meta.project}
-              onChange={(e) => set("project", e.target.value)}
-            />
-            <datalist id="project-suggestions">
-              {info?.projects.map((p) => (
-                <option key={p} value={p} />
-              ))}
-            </datalist>
+            <Label>Project</Label>
+            <div className="flex gap-2">
+              <Select
+                value={meta.project || NO_PROJECT}
+                onValueChange={(v) => set("project", v === NO_PROJECT ? "" : v)}
+              >
+                <SelectTrigger className="w-full min-w-0 flex-1" aria-label="Project">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PROJECT}>No project</SelectItem>
+                  {[...new Set([...(info?.projects ?? []), ...(meta.project ? [meta.project] : [])])].map(
+                    (p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+              <NewProjectDialog onCreated={(name) => set("project", name)}>
+                <Button type="button" variant="outline" size="icon" aria-label="New project" title="New project">
+                  <FolderPlus />
+                </Button>
+              </NewProjectDialog>
+            </div>
           </div>
           <div className="grid gap-2">
             <Label>Minutes format</Label>

@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Folder, Layers } from "lucide-react"
+import { ArrowRight, Folder, FolderPlus, Layers } from "lucide-react"
 
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
 import { EmptyState, PageHeader } from "@/components/common"
+import { NewProjectDialog } from "@/components/new-project-dialog"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
@@ -12,13 +14,20 @@ import type { Project } from "@/lib/api"
 import { colorFor, relative } from "@/lib/format"
 
 export default function ProjectsPage() {
-  const { data } = useApi<Project[]>("/api/projects")
+  const { data, reload } = useApi<Project[]>("/api/projects")
   return (
     <div className="@container/main flex flex-col gap-6">
       <PageHeader
         title="Projects"
         description="Each project is a folder in your vault with an overview note, a glossary and its meetings."
-      />
+      >
+        <NewProjectDialog onCreated={reload}>
+          <Button>
+            <FolderPlus />
+            New project
+          </Button>
+        </NewProjectDialog>
+      </PageHeader>
       {!data ? (
         <div className="grid gap-4 @3xl/main:grid-cols-2 @6xl/main:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -29,8 +38,15 @@ export default function ProjectsPage() {
         <EmptyState
           icon={Layers}
           title="No projects yet"
-          description="Give a meeting a project name when you record it, and a project folder is created in your vault."
-        />
+          description="Create a project to group related meetings, or name one when you record a meeting."
+        >
+          <NewProjectDialog onCreated={reload}>
+            <Button variant="outline">
+              <FolderPlus />
+              New project
+            </Button>
+          </NewProjectDialog>
+        </EmptyState>
       ) : (
         <div className="grid gap-4 @3xl/main:grid-cols-2 @6xl/main:grid-cols-3">
           {data.map((p, i) => (
