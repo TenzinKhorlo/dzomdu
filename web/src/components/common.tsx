@@ -105,3 +105,39 @@ export function EmptyState({
     </div>
   )
 }
+
+/** A small figure card: label on top, the value, and a quiet hint on the right. */
+export function StatTile({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  className,
+}: {
+  label: string
+  value: React.ReactNode
+  hint?: React.ReactNode
+  icon?: React.ComponentType<{ className?: string }>
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-card px-4 py-3.5 shadow-[var(--shadow-card)]",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-[13px] font-medium">{label}</span>
+        {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
+      </div>
+      {/* the hint moves under the value when the tile is narrow, never squeezing it */}
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+        <span className="text-xl leading-none font-semibold tracking-[-0.02em] whitespace-nowrap tabular-nums">
+          {value}
+        </span>
+        {hint && <span className="min-w-0 truncate text-xs text-muted-foreground">{hint}</span>}
+      </div>
+    </div>
+  )
+}

@@ -292,7 +292,7 @@
     @apply mt-0;
   }
   .note-prose h2 {
-    @apply mt-8 mb-3 border-b pb-2 text-base font-semibold first:mt-0;
+    @apply mt-7 mb-3 border-b pb-2 text-[15px] font-semibold tracking-[-0.01em] first:mt-0;
   }
   .note-prose h3 {
     @apply mt-5 mb-2 text-sm font-semibold;
@@ -314,7 +314,7 @@
     @apply text-muted-foreground;
   }
   .note-prose a[href^="#t"] {
-    @apply rounded bg-primary/10 px-1 font-mono text-xs text-primary no-underline;
+    @apply rounded-md border bg-muted/60 px-1 py-px font-mono text-[11px] text-foreground no-underline transition-colors hover:border-brand/40 hover:text-brand;
   }
   .note-prose code {
     @apply font-mono text-xs text-muted-foreground;
@@ -333,6 +333,6 @@
     @apply -mx-2 rounded-md px-2 py-1 transition-colors duration-700;
   }
   .note-prose p.flash {
-    @apply bg-primary/15;
+    @apply bg-brand/10;
   }
 }

@@ -6,15 +6,18 @@ import { useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
   CalendarDays,
+  CircleHelp,
   Clock,
   Copy,
   ExternalLink,
   FolderOpen,
+  Gavel,
   ListChecks,
   Loader2,
   Play,
   Search,
   Sparkles,
+  Users,
 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import { toast } from "sonner"
@@ -36,7 +39,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/animate-ui/components/animate/tabs"
-import { EmptyState, SpeakerAvatar } from "@/components/common"
+import { AvatarStack, EmptyState, SpeakerAvatar, StatTile } from "@/components/common"
 import { useInfo } from "@/components/providers"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -113,9 +116,9 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="brand">
           <Sparkles />
-          Rewrite
+          Rewrite with AI
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -231,13 +234,13 @@ function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string 
                 className={cn(
                   "group pressable relative -mx-2 flex w-[calc(100%+1rem)] gap-3 rounded-xl px-2 py-2 text-left transition-colors duration-300",
                   "hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-transparent",
-                  (active || focus === t.id) && "bg-primary/8 hover:bg-primary/10",
+                  (active || focus === t.id) && "bg-brand/[0.06] hover:bg-brand/10",
                 )}
               >
                 {active && (
                   <motion.span
                     layoutId="active-turn"
-                    className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-primary"
+                    className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-brand"
                   />
                 )}
                 <SpeakerAvatar name={t.label} />
@@ -303,73 +306,113 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
   // the transcript has its own tab; citations in the notes jump there
   const notesHtml = m.note?.html.split("<h2>Transcript</h2>")[0] ?? ""
 
-  // a citation takes you to what was actually said, and plays it
-  function onNoteClick(e: React.MouseEvent) {
-    const a = (e.target as HTMLElement).closest('a[href^="#t"]')
-    if (!a) return
-    e.preventDefault()
-    const id = a.getAttribute("href")!.slice(1)
+  // a citation (or a decision) takes you to what was actually said, and plays it
+  function goToTurn(id: string) {
     setFocus(id)
     setTab("transcript")
     const turn = m.turns.find((t) => t.id === id)
     if (turn && player?.available) player.seek(turn.start, true)
   }
+  function onNoteClick(e: React.MouseEvent) {
+    const a = (e.target as HTMLElement).closest('a[href^="#t"]')
+    if (!a) return
+    e.preventDefault()
+    goToTurn(a.getAttribute("href")!.slice(1))
+  }
+  const identified = m.speakers.filter((s) => s.name).length
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 space-y-2">
-          <Button variant="ghost" size="sm" className="-ml-2 text-muted-foreground" asChild>
-            <Link href="/meetings/">
-              <ArrowLeft />
-              Meetings
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">{m.title}</h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="size-4" />
-              {longDate(m.date)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="size-4" />
-              {duration(m.duration)}
-            </span>
-            {m.project && (
-              <Link href={`/meetings/?project=${encodeURIComponent(m.project)}`}>
-                <Badge variant="secondary">{m.project}</Badge>
-              </Link>
-            )}
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/meetings/"
+          className="inline-flex w-fit items-center gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          All meetings
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0 space-y-2">
+            <h1 className="text-xl font-semibold">{m.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarDays className="size-3.5" />
+                {longDate(m.date)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5" />
+                {duration(m.duration)}
+              </span>
+              {m.project && (
+                <Link href={`/meetings/?project=${encodeURIComponent(m.project)}`}>
+                  <Badge variant="outline" className="gap-1.5 font-normal hover:bg-accent">
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ backgroundColor: colorFor(m.project) }}
+                      aria-hidden
+                    />
+                    {m.project}
+                  </Badge>
+                </Link>
+              )}
+              {m.people.length > 0 && <AvatarStack names={m.people} max={5} />}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {m.note && (
-            <>
-              <Button variant="outline" asChild>
-                <a href={m.note.obsidian_url}>
-                  <ExternalLink />
-                  Open in Obsidian
-                </a>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  navigator.clipboard
-                    .writeText(m.note!.markdown)
-                    .then(() => toast.success("Markdown copied"))
-                    .catch(() => toast.error("Copy failed"))
-                }
-              >
-                <Copy />
-                Copy
-              </Button>
-            </>
-          )}
-          <RewriteDialog meeting={m} onDone={reload} />
+          <div className="flex flex-wrap gap-2">
+            {m.note && (
+              <>
+                <Button variant="outline" asChild>
+                  <a href={m.note.obsidian_url}>
+                    <ExternalLink />
+                    Open in Obsidian
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigator.clipboard
+                      .writeText(m.note!.markdown)
+                      .then(() => toast.success("Markdown copied"))
+                      .catch(() => toast.error("Copy failed"))
+                  }
+                >
+                  <Copy />
+                  Copy Markdown
+                </Button>
+              </>
+            )}
+            <RewriteDialog meeting={m} onDone={reload} />
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-6 @5xl/main:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
+        <StatTile label="Length" icon={Clock} value={duration(m.duration)} hint={`${m.turns.length} turns`} />
+        <StatTile
+          label="Speakers"
+          icon={Users}
+          value={m.speakers.length}
+          hint={identified === m.speakers.length ? "all identified" : `${identified} identified`}
+        />
+        <StatTile
+          label="Decisions"
+          icon={Gavel}
+          value={m.decisions.length}
+          hint={
+            m.topics.length
+              ? `${m.topics.length} topic${m.topics.length === 1 ? "" : "s"}`
+              : undefined
+          }
+        />
+        <StatTile
+          label="Action items"
+          icon={ListChecks}
+          value={openTasks}
+          hint={m.tasks.length ? `open of ${m.tasks.length}` : "none"}
+        />
+      </div>
+
+      <div className="grid gap-4 @5xl/main:grid-cols-3">
         <div className="min-w-0 @5xl/main:col-span-2">
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList>
@@ -384,7 +427,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
                 )}
               </TabsTrigger>
             </TabsList>
-            <Card className="mt-3">
+            <Card className="mt-2">
               <CardContent>
                 <TabsContents>
                   <TabsContent value="notes">
@@ -422,56 +465,96 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
           <PlayerBar turns={m.turns} className="mt-4" />
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {m.summary && (
-            <Card>
+            <Card className="gap-3">
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <CardTitle className="flex items-center gap-1.5">
+                  <Sparkles className="size-4 text-brand" aria-hidden />
+                  Summary
+                </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm leading-relaxed text-muted-foreground">
+              <CardContent className="text-[13px] leading-relaxed text-muted-foreground">
                 {m.summary}
               </CardContent>
             </Card>
           )}
-          <Card>
+          <Card className="gap-4">
             <CardHeader>
               <CardTitle>Speakers</CardTitle>
               <CardDescription>Share of speaking time</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {m.speakers.map((s) => (
-                <div key={s.cluster} className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-sm">
-                    <SpeakerAvatar name={s.label} size="sm" />
-                    <span className="flex-1 truncate font-medium">{s.label}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {Math.round((s.talk_seconds / total) * 100)}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${(s.talk_seconds / total) * 100}%`,
-                        backgroundColor: colorFor(s.label),
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+            <CardContent>
+              <ul className="space-y-3">
+                {m.speakers.map((s) => {
+                  const share = s.talk_seconds / total
+                  return (
+                    <li
+                      key={s.cluster}
+                      className="grid grid-cols-[minmax(0,1fr)_minmax(3rem,5.5rem)_2.25rem] items-center gap-3 text-[13px]"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <SpeakerAvatar name={s.label} size="sm" className="ring-0" />
+                        <span className={cn("truncate", !s.name && "text-muted-foreground")}>
+                          {s.label}
+                        </span>
+                      </span>
+                      <span className="h-2 overflow-hidden rounded-full bg-track" aria-hidden>
+                        <span
+                          className="block h-full rounded-r-[4px] transition-[width] duration-700"
+                          style={{ width: `${share * 100}%`, backgroundColor: colorFor(s.label) }}
+                        />
+                      </span>
+                      <span className="text-right text-xs text-muted-foreground tabular-nums">
+                        {Math.round(share * 100)}%
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
             </CardContent>
           </Card>
           {m.decisions.length > 0 && (
-            <Card>
+            <Card className="gap-3">
               <CardHeader>
                 <CardTitle>Decisions</CardTitle>
+                <CardDescription>Click one to hear where it was decided</CardDescription>
+              </CardHeader>
+              <CardContent className="px-3">
+                <ol className="space-y-0.5">
+                  {m.decisions.map((d, i) => {
+                    const source = d.source_turns[0]
+                    return (
+                      <li key={d.decision}>
+                        <button
+                          type="button"
+                          disabled={!source}
+                          onClick={() => source && goToTurn(source)}
+                          className="pressable flex w-full gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-muted/70 disabled:hover:bg-transparent"
+                        >
+                          <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-md border bg-muted/60 text-[11px] font-medium text-muted-foreground tabular-nums">
+                            {i + 1}
+                          </span>
+                          <span className="leading-snug">{d.decision}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
+          {m.open_questions.length > 0 && (
+            <Card className="gap-3">
+              <CardHeader>
+                <CardTitle>Open questions</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  {m.decisions.map((d) => (
-                    <li key={d.decision} className="flex gap-2">
-                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                      {d.decision}
+                <ul className="space-y-2 text-[13px]">
+                  {m.open_questions.map((q) => (
+                    <li key={q} className="flex gap-2">
+                      <CircleHelp className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="leading-snug">{q}</span>
                     </li>
                   ))}
                 </ul>
@@ -486,7 +569,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
 
 export default function MeetingPage() {
   return (
-    <div className="@container/main flex flex-col gap-6">
+    <div className="@container/main flex flex-col gap-5">
       <React.Suspense fallback={<Skeleton className="h-[70vh] rounded-xl" />}>
         <MeetingView />
       </React.Suspense>
