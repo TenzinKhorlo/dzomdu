@@ -8,7 +8,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
-RUN npm run build -- --webpack
+RUN npm run build
 
 # ---- 2. the app -------------------------------------------------------------------------
 FROM ${RUNTIME_IMAGE}

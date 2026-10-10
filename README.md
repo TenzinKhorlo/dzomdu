@@ -70,7 +70,7 @@ dzomdu init --vault ~/Documents/DzomduVault
 
 cd web
 npm ci
-npm run build -- --webpack
+npm run build
 cd ..
 dzomdu doctor
 dzomdu ui
@@ -178,7 +178,7 @@ Build and launch the dashboard from the repository root with the virtual environ
 ```bash
 cd web
 npm ci
-npm run build -- --webpack
+npm run build
 cd ..
 dzomdu doctor
 dzomdu ui --no-open
@@ -270,7 +270,7 @@ git pull --ff-only
 # Repeat the pip installation for your platform above if dependencies changed.
 cd web
 npm ci
-npm run build -- --webpack
+npm run build
 cd ..
 dzomdu ui
 ```
