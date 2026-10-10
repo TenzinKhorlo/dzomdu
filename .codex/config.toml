@@ -1,0 +1,13 @@
+[mcp_servers.next-devtools]
+command = "npx"
+args = [
+    "-y",
+    "next-devtools-mcp@latest",
+]
+
+[mcp_servers.shadcn]
+command = "sh"
+args = [
+    "-c",
+    "cd web && exec npx -y shadcn@latest mcp",
+]
