@@ -119,3 +119,51 @@ def test_empty_meeting_needs_no_llm():
         raise AssertionError("should not be called")
 
     assert "No speech" in summarize(_client(handler), [], str).summary
+
+
+def test_openai_stream_yields_content_without_reasoning():
+    def handler(request):
+        assert request.url.path == "/v1/chat/completions"
+        assert json.loads(request.content)["stream"] is True
+        return httpx.Response(
+            200,
+            content=(
+                b": keepalive\n\n"
+                b'data: {"choices":[{"delta":{"reasoning_content":"hidden"}}]}\n\n'
+                b'data: {"choices":[{"delta":{"content":"Hello "}}]}\n\n'
+                b'data: {"choices":[{"delta":{"content":"world"},"finish_reason":"stop"}]}\n\n'
+                b"data: [DONE]\n\n"
+            ),
+        )
+
+    client = _client(handler, api="openai", base_url="http://localhost:8080/v1")
+    assert list(client.chat_stream([{"role": "user", "content": "Hi"}])) == ["Hello ", "world"]
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b'data: {"choices":[{"delta":{"content":"Partial"}}]}\n\n',
+        b'data: {"choices":[{"delta":{"content":"Partial"},"finish_reason":"length"}]}\n\n',
+        b"data: malformed\n\n",
+        b'data: {"error":{"message":"unavailable"}}\n\n',
+    ],
+)
+def test_incomplete_or_failed_openai_stream_raises(content):
+    client = _client(lambda request: httpx.Response(200, content=content), api="openai")
+    with pytest.raises(LLMError):
+        list(client.chat_stream([{"role": "user", "content": "Hi"}]))
+
+
+def test_ollama_stream_retries_unsupported_think_flag():
+    seen = []
+
+    def handler(request):
+        payload = json.loads(request.content)
+        seen.append(payload)
+        if "think" in payload:
+            return httpx.Response(400, json={"error": "think is unsupported"})
+        return httpx.Response(200, content=b'{"message":{"content":"Answer"},"done":true}\n')
+
+    assert list(_client(handler).chat_stream([{"role": "user", "content": "Hi"}])) == ["Answer"]
+    assert seen[0]["stream"] and "think" not in seen[1]

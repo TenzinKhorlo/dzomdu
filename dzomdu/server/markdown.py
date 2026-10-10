@@ -4,12 +4,41 @@ translated to plain HTML; raw HTML in the note is not allowed through."""
 from __future__ import annotations
 
 import re
+from urllib.parse import quote
 
 from markdown_it import MarkdownIt
 
 from ..vault import split_frontmatter
 
 _md = MarkdownIt("commonmark", {"html": False, "linkify": False}).enable("table")
+_chat_md = (
+    MarkdownIt("commonmark", {"html": False, "linkify": False}).enable("table").disable("image")
+)
+
+
+def chat_to_html(markdown: str, sources: list[dict]) -> str:
+    """Render model output safely, allowing only links to verified meeting sources."""
+    urls = {
+        str(s["number"]): "/meetings/view/?id=" + quote(s["meeting_id"], safe="") for s in sources
+    }
+    markdown = re.sub(
+        r"\[(\d+)\]",
+        lambda m: f"[{m[1]}]({urls[m[1]]})" if m[1] in urls else m[0],
+        markdown,
+    )
+    tokens = _chat_md.parse(markdown)
+    for token in tokens:
+        links = []
+        for child in token.children or []:
+            if child.type == "link_open":
+                allowed = child.attrGet("href") in urls.values()
+                links.append(allowed)
+                if not allowed:
+                    child.tag, child.attrs = "span", {}
+            elif child.type == "link_close" and links and not links.pop():
+                child.tag = "span"
+    return _chat_md.renderer.render(tokens, _chat_md.options, {})
+
 
 _BLOCK_LINK = re.compile(r"\[\[#\^(t\d+)(?:\\?\|([^\]]+))?\]\]")
 # a wikilink becomes bold text; one that is already bold (**[[Name]]**) is not doubled

@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox"
 import { SpeakerAvatar } from "@/components/common"
 import { SwipeToComplete } from "@/components/swipe-to-complete"
+import { useTasks } from "@/components/task-provider"
 import { Badge } from "@/components/ui/badge"
 import { api, type Task } from "@/lib/api"
 import { shortDate } from "@/lib/format"
@@ -31,7 +32,7 @@ function dueBadge(due: string | null) {
   )
 }
 
-const key = (i: Item) => `${i.meeting_id}:${i.line}`
+const key = (i: Item) => i.id ?? `${i.meeting_id}:${i.line}:${i.text}`
 
 /**
  * Action items. Complete one with the checkbox or by swiping right; either way the Obsidian
@@ -47,24 +48,34 @@ export function ActionList({
   onChange?: () => void
 }) {
   const [done, setDone] = React.useState<Record<string, boolean>>({})
+  const { reload: reloadTasks } = useTasks()
 
   async function setTask(item: Item, value: boolean, undoable = true) {
     setDone((d) => ({ ...d, [key(item)]: value }))
     try {
-      await api(`/api/meetings/${item.meeting_id}/tasks/${item.line}`, {
-        method: "POST",
-        json: { done: value },
-      })
+      await api(
+        item.id ? `/api/tasks/${item.id}` : `/api/meetings/${item.meeting_id}/tasks/${item.line}`,
+        {
+          method: item.id ? "PATCH" : "POST",
+          json: { done: value },
+        },
+      )
       if (undoable) {
         toast.success(value ? "Marked as done" : "Reopened", {
           description: item.text,
-          action: { label: "Undo", onClick: () => void setTask(item, !value, false) },
+          action: {
+            label: "Undo",
+            onClick: () => void setTask(item, !value, false),
+          },
         })
       }
       onChange?.()
+      reloadTasks()
     } catch (e) {
       setDone((d) => ({ ...d, [key(item)]: !value }))
-      toast.error("Couldn't update the note", { description: (e as Error).message })
+      toast.error("Couldn't update the note", {
+        description: (e as Error).message,
+      })
     }
   }
 
@@ -84,14 +95,14 @@ export function ActionList({
             >
               <SwipeToComplete
                 done={checked}
-                disabled={!item.editable}
+                disabled={!item.editable && !item.id}
                 onCommit={() => void setTask(item, !checked)}
               >
                 <div className="flex items-start gap-3 px-2 py-2.5">
                   <Checkbox
                     className="mt-0.5"
                     checked={checked}
-                    disabled={!item.editable}
+                    disabled={!item.editable && !item.id}
                     onCheckedChange={(v) => void setTask(item, v === true)}
                     aria-label={`Mark "${item.text}" as ${checked ? "open" : "done"}`}
                   />

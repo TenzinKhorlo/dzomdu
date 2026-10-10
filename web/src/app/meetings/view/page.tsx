@@ -14,6 +14,7 @@ import {
   Gavel,
   ListChecks,
   Loader2,
+  MessagesSquare,
   Play,
   Search,
   Sparkles,
@@ -42,6 +43,7 @@ import {
 } from "@/components/animate-ui/components/animate/tabs"
 import { AvatarStack, EmptyState, SpeakerAvatar, StatTile } from "@/components/common"
 import { useInfo } from "@/components/providers"
+import { useTasks } from "@/components/task-provider"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -57,8 +59,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { useApi } from "@/hooks/use-api"
-import { api, type MeetingDetail, type Session } from "@/lib/api"
+import { api, projectHref, type MeetingDetail, type Session } from "@/lib/api"
 import { PlayerBar, PlayerProvider, turnAt, usePlayer } from "@/components/meeting/player"
+import { RenameMeetingDialog } from "@/components/meeting/rename-dialog"
 import { useConfirm } from "@/components/confirm"
 import { clock, colorFor, duration, longDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -173,7 +176,8 @@ function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string 
   const player = usePlayer()
   const reduce = useReducedMotion()
   const lastUserScroll = React.useRef(0)
-  const playingIdx = player && (player.playing || player.time > 0) ? turnAt(meeting.turns, player.time) : -1
+  const playingIdx =
+    player && (player.playing || player.time > 0) ? turnAt(meeting.turns, player.time) : -1
   const activeId = playingIdx >= 0 ? meeting.turns[playingIdx].id : null
 
   // the user is in control: if they scroll, stop following playback for a few seconds
@@ -271,9 +275,11 @@ function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string 
 
 function MeetingView() {
   const id = useSearchParams().get("id")
-  const { data: m, error, reload } = useApi<MeetingDetail>(
-    id ? `/api/meetings/${encodeURIComponent(id)}` : null,
-  )
+  const {
+    data: m,
+    error,
+    reload,
+  } = useApi<MeetingDetail>(id ? `/api/meetings/${encodeURIComponent(id)}` : null)
   if (!id || error) {
     return (
       <EmptyState
@@ -297,6 +303,7 @@ function MeetingView() {
 }
 
 function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
+  const { reload: reloadTasks } = useTasks()
   const [tab, setTab] = React.useState("notes")
   const [focus, setFocus] = React.useState<string | null>(null)
   const player = usePlayer()
@@ -317,6 +324,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
     try {
       await api(`/api/meetings/${encodeURIComponent(m.id)}`, { method: "DELETE" })
       toast.success("Meeting deleted")
+      reloadTasks()
       router.push("/meetings/")
     } catch (e) {
       toast.error((e as Error).message)
@@ -324,7 +332,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
     }
   }
 
-  const total =m.speakers.reduce((s, x) => s + x.talk_seconds, 0) || 1
+  const total = m.speakers.reduce((s, x) => s + x.talk_seconds, 0) || 1
   const openTasks = m.tasks.filter((t) => !t.done).length
 
   // the transcript has its own tab; citations in the notes jump there
@@ -357,7 +365,10 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0 space-y-2">
-            <h1 className="text-xl font-semibold">{m.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="break-words text-xl font-semibold">{m.title}</h1>
+              <RenameMeetingDialog id={m.id} title={m.title} onRenamed={reload} />
+            </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="size-3.5" />
@@ -368,7 +379,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
                 {duration(m.duration)}
               </span>
               {m.project && (
-                <Link href={`/meetings/?project=${encodeURIComponent(m.project)}`}>
+                <Link href={projectHref(m.project)}>
                   <Badge variant="outline" className="gap-1.5 font-normal hover:bg-accent">
                     <span
                       className="size-1.5 rounded-full"
@@ -383,6 +394,12 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="brand" asChild>
+              <Link href={`/chat/?meeting=${encodeURIComponent(m.id)}`}>
+                <MessagesSquare />
+                Ask about this meeting
+              </Link>
+            </Button>
             {m.note && (
               <>
                 <Button variant="outline" asChild>
@@ -415,7 +432,12 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
-        <StatTile label="Length" icon={Clock} value={duration(m.duration)} hint={`${m.turns.length} turns`} />
+        <StatTile
+          label="Length"
+          icon={Clock}
+          value={duration(m.duration)}
+          hint={`${m.turns.length} turns`}
+        />
         <StatTile
           label="Speakers"
           icon={Users}

@@ -21,6 +21,7 @@ from ..audio import SAMPLE_RATE, Audio, write_wav
 from ..config import Config
 from ..live import LiveSpeakerTracker, LiveTranscriber
 from ..llm.client import LLMError
+from ..noise import NoiseSuppressor
 from ..pipeline import Analysis, Pipeline
 
 ACTIVE_STATES = {"recording", "processing", "summarizing"}
@@ -180,8 +181,15 @@ class SessionManager:
         def on_error(msg: str) -> None:
             s.warning = msg
 
+        noise = None
+        if self.cfg.noise.enabled:
+            try:
+                noise = NoiseSuppressor(self.cfg.noise.strength)
+            except Exception as exc:
+                on_error(f"Noise suppression unavailable; using original audio: {exc}")
         return LiveTranscriber(
-            pipe.asr, pipe.diarizer, tracker, work, self.submit, s.put_live, on_error
+            pipe.asr, pipe.diarizer, tracker, work, self.submit, s.put_live, on_error,
+            noise=noise,
         )
 
     def add_audio(self, s: Session, pcm: bytes) -> None:
@@ -205,6 +213,8 @@ class SessionManager:
                 s._pcm = None
         if s._live is not None:
             s._live.cancel()  # the full pass supersedes the preview
+            # Finished sessions must not retain speech models after Settings switches them.
+            s._live = None
         if s.cancelled:
             if s.audio_path:
                 s.audio_path.unlink(missing_ok=True)

@@ -1,0 +1,33 @@
+# Linux x86_64 with NVIDIA Container Toolkit.
+# docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+services:
+  dzomdu:
+    platform: linux/amd64
+    image: dzomdu:cuda
+    build:
+      context: .
+      args:
+        RUNTIME_IMAGE: nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+        TORCH_INDEX: https://download.pytorch.org/whl/cu128
+    environment:
+      DZOMDU_ASR_DEVICE: cuda
+      DZOMDU_ASR_COMPUTE_TYPE: ${DZOMDU_ASR_COMPUTE_TYPE:-float16}
+      DZOMDU_DIARIZATION_DEVICE: cuda
+      DZOMDU_REQUIRE_CUDA: "1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Activated only with --profile local-llm; shares GPU memory with Dzomdu.
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

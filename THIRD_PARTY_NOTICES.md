@@ -10,8 +10,9 @@ legal advice.
 
 ## AI models
 
-Dzomdu does **not** include any model weights. Each user downloads them from the publisher on
-first use, so the publisher's licence applies to that download. If you ever bundle, pre-download
+Dzomdu's source does **not** include model weights. Speech recognition and diarization weights
+are downloaded separately; the optional RNNoise runtime includes its pretrained model in the
+installed native library. The publisher's licence applies in each case. If you bundle, pre-download
 or host the weights for customers, you take on the attribution duties below.
 
 | Model | Used for | Licence | What it asks |
@@ -21,6 +22,7 @@ or host the weights for customers, you take on the attribution duties below.
 | OpenAI Whisper large-v3-turbo (`mlx-community/whisper-large-v3-turbo`) and the `faster-whisper` models | Optional speech to text | MIT | Keep the copyright and licence notice. |
 | Qwen3 14B (`qwen3:14b`) | Default local summaries | Apache-2.0 (**unverified**) | Keep the licence and notices if you redistribute it. |
 | gpt-oss (`gpt-oss:120b`) | Suggested Ollama Cloud model | Apache-2.0 (**unverified**) | As above. |
+| [RNNoise v0.2](https://github.com/xiph/rnnoise), bundled native model in `pyrnnoise==0.4.3` | Optional background noise suppression for transcription | [BSD-3-Clause](https://github.com/xiph/rnnoise/blob/main/COPYING) | Permits commercial use. Retain copyright, licence conditions and disclaimer when redistributing source or binaries; do not imply contributor endorsement. |
 
 Suggested attribution wherever the app's credits or documentation are shown:
 
@@ -50,7 +52,8 @@ Installed from PyPI, not copied into this repository.
 | faster-whisper, ctranslate2 (optional `whisper`) | MIT |
 | pyannote.audio (optional `diarize`) | MIT (**unverified**: no licence in its PyPI metadata) |
 | torch (pulled in by pyannote) | BSD-style, with Apache-2.0 and MIT parts |
-| scipy (optional `bench`) | BSD-3-Clause |
+| scipy (optional `bench`, `denoise`) | BSD-3-Clause |
+| [pyrnnoise](https://github.com/pengzhendong/pyrnnoise) (optional `denoise`) | Apache-2.0; bundled RNNoise library/model is BSD-3-Clause |
 | huggingface-hub | Apache-2.0 |
 
 The full transitive tree behind `uv.lock` has **not** been scanned. Run a licence report

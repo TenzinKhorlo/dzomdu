@@ -461,6 +461,23 @@ def doctor(config: ConfigOpt = None) -> None:
 
 
 @app.command()
+def export_okf(
+    destination: Annotated[Path, typer.Argument(help="New folder for the portable OKF bundle")],
+    config: ConfigOpt = None,
+) -> None:
+    """Export saved notes and transcripts as an Open Knowledge Format v0.2 bundle."""
+    import yaml
+
+    from .okf import export_bundle
+
+    try:
+        count = export_bundle(_cfg(config), destination)
+    except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as exc:
+        raise _fail(str(exc)) from exc
+    console.print(f"[green]Exported[/] {count} meeting(s) to {escape(str(destination))}")
+
+
+@app.command()
 def ui(
     port: Annotated[int, typer.Option()] = 8765,
     host: Annotated[

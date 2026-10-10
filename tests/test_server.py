@@ -1,3 +1,4 @@
+import asyncio
 import time
 from pathlib import Path
 
@@ -5,6 +6,7 @@ import numpy as np
 import pytest
 from conftest import FakeASR, FakeDiarizer, make_meeting
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocket
 
 from dzomdu.audio import read_wav
 from dzomdu.models import Word
@@ -141,6 +143,47 @@ def test_record_over_websocket_with_live_preview(setup, cfg):
     assert len(s["speakers"]) == 2
     wav_files = list((cfg.data_dir / "recordings").glob(f"{sid}.*"))
     assert [p.suffix for p in wav_files] == [".wav"]
+
+
+@pytest.mark.parametrize("ending", ["disconnect", "stop", "invalid_session"])
+def test_audio_socket_transport_disappears_during_close(setup, cfg, ending):
+    client, wav = setup
+    samples, _ = read_wav(wav)
+    pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes()
+    sid = client.post("/api/sessions", json={"live": False}).json()["id"]
+    endpoint = next(route.endpoint for route in client.app.routes if route.name == "audio")
+    incoming = iter(
+        [
+            {"type": "websocket.connect"},
+            {"type": "websocket.receive", "bytes": pcm},
+            {"type": "websocket.disconnect", "code": 1001}
+            if ending == "disconnect"
+            else {"type": "websocket.receive", "text": "stop"},
+        ]
+    )
+    closes = []
+
+    async def receive():
+        return next(incoming)
+
+    async def send(message):
+        if message["type"] == "websocket.close":
+            closes.append(message["code"])
+            # Starlette converts this into WebSocketDisconnect(1006), as Uvicorn
+            # does when the browser vanishes before the closing frame is sent.
+            raise OSError("Browser connection lost")
+
+    socket = WebSocket({"type": "websocket"}, receive, send)
+    asyncio.run(endpoint(socket, "missing" if ending == "invalid_session" else sid))
+    assert closes == [4400 if ending == "invalid_session" else 1000]
+    if ending == "invalid_session":
+        assert client.get(f"/api/sessions/{sid}").json()["state"] == "new"
+        return
+    wait_for(client, sid, {"review"})
+    recording = cfg.data_dir / "recordings" / f"{sid}.wav"
+    saved, _ = read_wav(recording)
+    assert len(saved) == len(samples)
+    assert not recording.with_suffix(".pcm").exists()
 
 
 def test_cancel_discards_audio(setup, cfg):

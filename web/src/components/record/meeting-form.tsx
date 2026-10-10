@@ -100,16 +100,18 @@ function AttendeeInput({
 const NO_PROJECT = "__none__"
 
 export function MeetingForm({
+  initialProject = "",
   onSession,
   focusUpload = false,
 }: {
+  initialProject?: string
   onSession: (id: string) => void
   focusUpload?: boolean
 }) {
   const { info } = useInfo()
   const [meta, setMeta] = React.useState<Meta>({
     title: "",
-    project: "",
+    project: initialProject,
     attendees: [],
     template: "",
     num_speakers: "",
@@ -177,6 +179,7 @@ export function MeetingForm({
             <Input
               id="title"
               placeholder="Leave empty and the AI suggests one"
+              maxLength={120}
               value={meta.title}
               onChange={(e) => set("title", e.target.value)}
             />
@@ -193,17 +196,26 @@ export function MeetingForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_PROJECT}>No project</SelectItem>
-                  {[...new Set([...(info?.projects ?? []), ...(meta.project ? [meta.project] : [])])].map(
-                    (p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ),
-                  )}
+                  {[
+                    ...new Set([
+                      ...(info?.projects ?? []),
+                      ...(meta.project ? [meta.project] : []),
+                    ]),
+                  ].map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <NewProjectDialog onCreated={(name) => set("project", name)}>
-                <Button type="button" variant="outline" size="icon" aria-label="New project" title="New project">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="New project"
+                  title="New project"
+                >
                   <FolderPlus />
                 </Button>
               </NewProjectDialog>
@@ -238,7 +250,7 @@ export function MeetingForm({
               id="speakers"
               type="number"
               min={1}
-              max={30}
+              max={100}
               placeholder="Detect automatically"
               value={meta.num_speakers}
               onChange={(e) => set("num_speakers", e.target.value)}
@@ -277,7 +289,11 @@ export function MeetingForm({
             aria-label="Start recording"
           >
             <span className="absolute -inset-3 animate-pulse rounded-full bg-recording/15 [animation-duration:2.4s]" />
-            {busy === "record" ? <Loader2 className="size-9 animate-spin" /> : <Mic className="size-10" />}
+            {busy === "record" ? (
+              <Loader2 className="size-9 animate-spin" />
+            ) : (
+              <Mic className="size-10" />
+            )}
           </button>
           <div className="space-y-1 px-6">
             <p className="text-lg font-semibold">Start recording</p>

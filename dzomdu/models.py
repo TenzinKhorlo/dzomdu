@@ -65,7 +65,7 @@ class MeetingRecord:
 
     id: str
     title: str
-    date: str  # ISO 8601, local time
+    date: str  # ISO 8601 with UTC offset; legacy records may contain local wall time
     source_audio: str
     audio_sha: str
     duration: float
@@ -76,6 +76,7 @@ class MeetingRecord:
     diarization_model: str
     attendees: list[str] = field(default_factory=list)
     note_path: str | None = None
+    title_pending: bool = False  # a fallback name awaiting successful note generation
 
     def name_for(self, cluster: str) -> str:
         assignment = self.assignments.get(cluster)

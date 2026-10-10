@@ -36,9 +36,21 @@ export function wsUrl(path: string): string {
 
 export const apiUrl = (path: string) => API_BASE + path
 
+export function projectHref(name: string): string {
+  const folder =
+    name
+      .replace(/[\\/:*?"<>|#^\[\]]/g, "-")
+      .trim()
+      .replace(/^\.+|\.+$/g, "")
+      .replace(/\s+/g, " ") || "Untitled"
+  return `/projects/view/?name=${encodeURIComponent(folder)}`
+}
+
 // -- types ------------------------------------------------------------------------------------
 
 export type Task = {
+  id: string | null
+  reminder_date: string | null
   line: number
   done: boolean
   text: string
@@ -48,7 +60,12 @@ export type Task = {
   editable: boolean
 }
 
-export type OpenTask = Task & { meeting_id: string; meeting_title: string; date: string }
+export type OpenTask = Task & {
+  meeting_id: string
+  meeting_title: string
+  date: string
+  project: string | null
+}
 
 export type MeetingRow = {
   id: string
@@ -64,6 +81,91 @@ export type MeetingRow = {
 }
 
 export type ActiveSession = { id: string; title: string; state: SessionState }
+
+export type ChatSource = {
+  number: number
+  meeting_id: string
+  title: string
+  date: string
+  project: string | null
+  heading: string
+  excerpt: string
+}
+
+export type ChatMessage = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  html?: string
+  sources: ChatSource[]
+  coverage: {
+    searched_meetings?: number
+    included_meetings?: number
+    partial?: boolean
+  }
+  created_at: string
+}
+
+export type ChatSummary = {
+  id: string
+  title: string
+  pinned: boolean
+  project: string | null
+  meeting_ids: string[]
+  created_at: string
+  updated_at: string
+}
+
+export type Chat = ChatSummary & { messages: ChatMessage[] }
+
+export async function streamChatAnswer(
+  id: string,
+  message: string,
+  signal: AbortSignal,
+  onAnswer: (answer: { content: string; html: string }) => void,
+): Promise<Chat> {
+  const response = await fetch(apiUrl(`/api/chats/${encodeURIComponent(id)}/messages/stream`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+    signal,
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new ApiError(data?.detail ?? "Could not start the answer.", response.status)
+  }
+  if (!response.body) throw new Error("Your browser could not open the answer stream.")
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ""
+  let completed: Chat | undefined
+  function receive(line: string) {
+    if (!line.trim()) return
+    const event = JSON.parse(line)
+    if (event.type === "answer") onAnswer({ content: event.content, html: event.html })
+    else if (event.type === "complete") completed = event.chat as Chat
+    else if (event.type === "error") throw new Error(event.message)
+  }
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += decoder.decode(value, { stream: !done })
+      const lines = buffer.split("\n")
+      buffer = lines.pop() ?? ""
+      for (const line of lines) receive(line)
+      if (done) {
+        receive(buffer)
+        break
+      }
+    }
+    if (!completed)
+      throw new Error("The connection ended before the answer finished. Please try again.")
+    return completed
+  } finally {
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
+  }
+}
 
 export type Dashboard = {
   totals: {
@@ -84,7 +186,12 @@ export type Dashboard = {
   speakers: { name: string; minutes: number; meetings: number }[]
   recent: MeetingRow[]
   actions: OpenTask[]
-  projects: { name: string; meetings: number; minutes: number; last: string | null }[]
+  projects: {
+    name: string
+    meetings: number
+    minutes: number
+    last: string | null
+  }[]
   active: ActiveSession[]
 }
 
@@ -112,19 +219,17 @@ export type MeetingDetail = MeetingRow & {
   topics: { title: string; points: string[]; source_turns: string[] }[]
   open_questions: string[]
   tasks: Task[]
-  note: { path: string; markdown: string; html: string; obsidian_url: string } | null
+  note: {
+    path: string
+    markdown: string
+    html: string
+    obsidian_url: string
+  } | null
   models: { asr: string; diarization: string }
 }
 
 export type SessionState =
-  | "new"
-  | "recording"
-  | "processing"
-  | "review"
-  | "summarizing"
-  | "done"
-  | "error"
-  | "cancelled"
+  "new" | "recording" | "processing" | "review" | "summarizing" | "done" | "error" | "cancelled"
 
 export type ReviewSpeaker = {
   cluster: string
@@ -210,4 +315,23 @@ export type Project = {
   minutes: number
   last: string | null
   overview: string
+}
+
+export type ProjectMember = {
+  name: string
+  role: string
+  organisation: string
+  assigned: boolean
+  meetings: number
+  open_tasks: number
+}
+
+export type ProjectOverview = Project & {
+  meeting_ids: string[]
+  meeting_rows: MeetingRow[]
+  members: string[]
+  team: ProjectMember[]
+  open_tasks: OpenTask[]
+  completed_tasks: number
+  unassigned_tasks: number
 }

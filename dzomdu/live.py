@@ -18,7 +18,7 @@ from __future__ import annotations
 import collections
 from collections.abc import Callable
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +28,7 @@ from .align import join_words
 from .asr import ASRBackend
 from .audio import SAMPLE_RATE, Audio, write_wav
 from .diarize import Diarizer, l2_normalize
+from .noise import NoiseSuppressor
 from .speakers.matching import LibraryEntry, similarity
 
 FRAME_SECONDS = 0.03
@@ -38,6 +39,7 @@ class Utterance:
     start: float
     end: float
     samples: np.ndarray
+    original_samples: np.ndarray | None = None
 
 
 class Segmenter:
@@ -198,6 +200,7 @@ class LiveTranscriber:
         sample_rate: int = SAMPLE_RATE,
         min_embed_seconds: float = 1.5,
         partial_every: float | None = 0.7,
+        noise: NoiseSuppressor | None = None,
     ):
         self.asr = asr
         self.embedder = embedder
@@ -218,13 +221,45 @@ class LiveTranscriber:
         self._partial: Future[Any] | None = None
         self._guess: dict[int, str] = {}  # interim speaker guesses, by segment id
         self._shown: set[int] = set()  # ids whose interim text is on screen
+        self.noise = noise
+        self._raw = np.zeros(0, np.float32)
+        self._raw_start = 0
+        self._output_samples = 0
 
     def feed(self, samples: np.ndarray) -> None:
+        self._raw = np.concatenate([self._raw, samples])
+        if self.noise is not None:
+            try:
+                samples, _ = self.noise.feed(samples)
+            except Exception as exc:
+                self.on_error(f"Noise suppression stopped; using original audio: {exc}")
+                self.noise.close()
+                self.noise = None
+                # Feed everything not emitted yet, without a gap or timestamp jump.
+                samples = self._raw[self._output_samples - self._raw_start :].copy()
+        self._feed_clean(samples)
+        # Keep enough raw history for the longest utterance, including pre-roll.
+        keep_from = max(self._raw_start, self._output_samples - int(12 * self.sr))
+        self._raw = self._raw[keep_from - self._raw_start :]
+        self._raw_start = keep_from
+
+    def _feed_clean(self, samples: np.ndarray) -> None:
+        self._output_samples += len(samples)
         for utt in self.segmenter.feed(samples):
             self._submit(utt)
         self._maybe_partial()
 
     def finish(self) -> None:
+        if self.noise is not None:
+            try:
+                samples = self.noise.finish()[0]
+            except Exception as exc:
+                self.on_error(f"Noise suppression stopped; using original audio: {exc}")
+                samples = self._raw[self._output_samples - self._raw_start :].copy()
+            finally:
+                self.noise.close()
+                self.noise = None
+            self._feed_clean(samples)
         for utt in self.segmenter.flush():
             self._submit(utt)
 
@@ -232,6 +267,13 @@ class LiveTranscriber:
         """Drop utterances not yet transcribed (the full pass will cover them)."""
         for fut in self._futures:
             fut.cancel()
+        if self.noise is not None:
+            self.noise.close()
+
+    def _with_original(self, utt: Utterance) -> Utterance:
+        start = max(0, round(utt.start * self.sr) - self._raw_start)
+        original = self._raw[start : start + len(utt.samples)].copy()
+        return replace(utt, original_samples=original)
 
     def _schedule(self, job: Callable[[], None]) -> Future[Any]:
         self._futures = [f for f in self._futures if not f.done()]
@@ -240,6 +282,7 @@ class LiveTranscriber:
         return fut
 
     def _submit(self, utt: Utterance) -> None:
+        utt = self._with_original(utt)
         if self._open_id is None:
             self._n += 1
             n = self._n
@@ -261,6 +304,7 @@ class LiveTranscriber:
             self._open_id = self._n
         n = self._open_id
         self._partial_len = utt.end - utt.start
+        utt = self._with_original(utt)
         self._partial = self._schedule(lambda: self._process(n, utt, final=False))
 
     def _transcribe(self, n: int, utt: Utterance, tag: str) -> str:
@@ -268,7 +312,7 @@ class LiveTranscriber:
         try:
             write_wav(path, utt.samples, self.sr)
             return join_words(
-                [w.text for w in self.asr.transcribe(Audio(utt.samples, self.sr, path))]
+                [w.text for w in self.asr.transcribe_preview(Audio(utt.samples, self.sr, path))]
             )
         finally:
             path.unlink(missing_ok=True)
@@ -277,7 +321,8 @@ class LiveTranscriber:
         if self.embedder is None or utt.end - utt.start < self.min_embed:
             return None
         try:
-            return self.embedder.embed([utt.samples], self.sr)[0]
+            samples = utt.original_samples if utt.original_samples is not None else utt.samples
+            return self.embedder.embed([samples], self.sr)[0]
         except Exception:  # a preview label is optional; never break the transcript
             return None
 

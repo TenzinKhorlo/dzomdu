@@ -143,6 +143,8 @@ function NewMeeting() {
         description="Record live in the room, or upload a recording you already have."
       />
       <MeetingForm
+        key={params.get("project") ?? "no-project"}
+        initialProject={params.get("project") ?? ""}
         focusUpload={params.get("upload") === "1"}
         onSession={(id) => router.replace(`/record/?session=${encodeURIComponent(id)}`)}
       />

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
@@ -107,6 +108,80 @@ class LLMClient:
                 },
             ]
         raise LLMError(str(last_error))
+
+    def chat_stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        """Yield content as received; reasoning tokens stay out of the visible answer."""
+        payload: dict[str, Any] = {
+            "model": self.cfg.model,
+            "messages": messages,
+            "stream": True,
+        }
+        if self.cfg.api == "ollama":
+            url = self._url("/api/chat")
+            payload.update(
+                keep_alive=self.cfg.keep_alive,
+                options={"temperature": self.cfg.temperature, "num_ctx": self.cfg.num_ctx},
+            )
+            if self.cfg.think is not None:
+                payload["think"] = self.cfg.think
+        elif self.cfg.api == "openai":
+            base = self.cfg.base_url.rstrip("/")
+            url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
+            payload["temperature"] = self.cfg.temperature
+        else:
+            raise LLMError(f"Unknown llm.api {self.cfg.api!r}")
+        try:
+            for attempt in range(2):
+                with self.http.stream("POST", url, json=payload) as response:
+                    if response.status_code != 200:
+                        response.read()
+                        if (
+                            attempt == 0
+                            and response.status_code == 400
+                            and "think" in payload
+                            and "think" in response.text.lower()
+                        ):
+                            payload.pop("think")
+                            continue
+                        raise LLMError(f"LLM server error {response.status_code}")
+                    finished = False
+                    for line in response.iter_lines():
+                        if not line or line.startswith(":"):
+                            continue
+                        if self.cfg.api == "openai":
+                            if not line.startswith("data:"):
+                                continue
+                            line = line[5:].strip()
+                            if line == "[DONE]":
+                                finished = True
+                                break
+                        data = json.loads(line)
+                        if data.get("error"):
+                            raise LLMError("The model could not finish the answer")
+                        if self.cfg.api == "ollama":
+                            content = data.get("message", {}).get("content", "")
+                            finished = bool(data.get("done"))
+                            if finished and data.get("done_reason") == "length":
+                                raise LLMError("The model reached its output limit")
+                        else:
+                            choices = data.get("choices", [])
+                            if not choices:
+                                continue
+                            choice = choices[0]
+                            reason = choice.get("finish_reason")
+                            if reason is not None and reason != "stop":
+                                raise LLMError("The model could not finish the answer")
+                            content = choice.get("delta", {}).get("content") or ""
+                            finished = finished or reason == "stop"
+                        if content:
+                            yield content
+                        if self.cfg.api == "ollama" and finished:
+                            break
+                    if not finished:
+                        raise LLMError("The model connection ended before the answer finished")
+                    return
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            raise LLMError("Could not read the model's answer stream") from exc
 
     # -- backends ---------------------------------------------------------------------------
 

@@ -31,11 +31,22 @@ class ASRConfig:
     # parakeet (Apple Silicon, English) | mlx-whisper (Apple Silicon) | faster-whisper (CPU/CUDA)
     backend: str = "parakeet"
     model: str | None = None  # None = the backend's default model
-    language: str = "en"
+    language: str = "en"  # en | ne | auto
     chunk_duration: float = 120.0  # seconds; long files are transcribed in overlapping chunks
+    device: str = "auto"  # faster-whisper: auto | cpu | cuda
+    compute_type: str = "auto"  # faster-whisper: e.g. float16 or int8
     # Re-transcribe stretches where speech was detected but the full pass returned no words
     # (speech engines sometimes drop the last sentence of a recording, or a short reply).
     recover_missing: bool = True
+    aligner_model: str = "mlx-community/Qwen3-ForcedAligner-0.6B-8bit"
+
+    def __post_init__(self):
+        if self.device not in ("auto", "cpu", "cuda"):
+            raise ValueError("ASR device must be auto, cpu or cuda")
+        if self.compute_type not in (
+            "auto", "float16", "float32", "int8", "int8_float16", "int8_float32", "bfloat16"
+        ):
+            raise ValueError("Unsupported ASR compute_type")
 
 
 @dataclass
@@ -44,6 +55,8 @@ class DiarizationConfig:
     model: str = "pyannote/speaker-diarization-community-1"
     device: str = "auto"  # auto | mps | cuda | cpu
     hf_token_env: str = "HF_TOKEN"  # only needed for the one-time model download
+    # Clustering has no fixed speaker-slot limit. Leave None to detect automatically.
+    max_speakers: int | None = None
 
 
 @dataclass
@@ -80,6 +93,17 @@ class LLMConfig:
 
 
 @dataclass
+class NoiseConfig:
+    enabled: bool = False
+    # Retain some original signal so suppression cannot completely gate quiet voices.
+    strength: float = 0.5
+
+    def __post_init__(self):
+        if not 0.0 <= self.strength <= 0.75:
+            raise ValueError("Noise suppression strength must be between 0 and 0.75")
+
+
+@dataclass
 class Config:
     vault: Path = field(default_factory=lambda: Path.home() / "DzomduVault")
     data_dir: Path = field(default_factory=default_data_dir)
@@ -91,6 +115,7 @@ class Config:
     diarization: DiarizationConfig = field(default_factory=DiarizationConfig)
     speakers: SpeakerConfig = field(default_factory=SpeakerConfig)
     llm: LLMConfig = field(default_factory=LLMConfig)
+    noise: NoiseConfig = field(default_factory=NoiseConfig)
 
     @property
     def db_path(self) -> Path:
@@ -114,6 +139,7 @@ _SECTIONS = {
     "diarization": DiarizationConfig,
     "speakers": SpeakerConfig,
     "llm": LLMConfig,
+    "noise": NoiseConfig,
 }
 
 
@@ -202,4 +228,6 @@ ASR_PACKAGES = {
     "parakeet": "parakeet_mlx",
     "mlx-whisper": "mlx_whisper",
     "faster-whisper": "faster_whisper",
+    "mlx-audio": "mlx_audio",
+    "moonshine": "moonshine_voice",
 }

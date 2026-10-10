@@ -3,6 +3,7 @@ people and projects."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -223,6 +224,24 @@ class Vault:
         if glossary := section(body, "Glossary"):
             parts.append("Glossary:\n" + glossary[:1000])
         return "\n\n".join(parts)
+
+    def project_members(self, name: str) -> list[str]:
+        path = self.project_dir(name) / ".dzomdu-project.json"
+        if path.is_symlink():
+            raise ValueError("The project team file cannot be a symbolic link")
+        if not path.exists():
+            return []
+        data = json.loads(path.read_text(encoding="utf-8"))
+        members = data.get("members", []) if isinstance(data, dict) else None
+        if not isinstance(members, list) or any(not isinstance(name, str) for name in members):
+            raise ValueError("The project's team data is invalid")
+        names, seen = [], set()
+        for name in members:
+            clean = " ".join(name.split())
+            if clean and clean.casefold() not in seen:
+                names.append(clean)
+                seen.add(clean.casefold())
+        return names
 
     # -- meetings ---------------------------------------------------------------------------
 

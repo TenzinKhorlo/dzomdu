@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+ARG RUNTIME_IMAGE=python:3.12-slim-bookworm
 
 # ---- 1. build the web dashboard (static files) -----------------------------------------
 FROM node:22-slim AS web
@@ -7,29 +8,36 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
-RUN npm run build
+RUN npm run build -- --webpack
 
 # ---- 2. the app -------------------------------------------------------------------------
-FROM python:3.12-slim
+FROM ${RUNTIME_IMAGE}
 
 # ffmpeg decodes uploaded audio and video, libsndfile reads WAV files
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg libsndfile1 \
+ && apt-get install -y --no-install-recommends ffmpeg libsndfile1 python3-venv ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+
+# Ubuntu CUDA images have Python 3.12 via apt; the CPU image already includes it.
+RUN python3 -m venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH
 
 WORKDIR /app
 
 # PyTorch for CPU only: the default wheel pulls in several GB of CUDA libraries.
-# Build with --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu126 for an NVIDIA GPU.
+# docker-compose.gpu.yml pairs CUDA PyTorch with CUDA 12 + cuDNN 9 runtime libraries.
 ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir torch torchaudio --index-url ${TORCH_INDEX}
+COPY docker/constraints.txt /app/docker/constraints.txt
+RUN pip install --no-cache-dir -c /app/docker/constraints.txt torch torchaudio --index-url ${TORCH_INDEX} \
+ && pip install --no-cache-dir -c /app/docker/constraints.txt torchcodec --index-url https://download.pytorch.org/whl/cpu
 
 # Python extras: diarize = speaker recognition (pyannote), whisper = speech to text.
 # The Mac-only speech models (parakeet, mlx-whisper) are not installed: they need Apple Silicon.
-ARG EXTRAS=diarize,whisper
-COPY pyproject.toml README.md LICENSE ./
+ARG EXTRAS=diarize,whisper,denoise,moonshine
+COPY pyproject.toml README.md LICENSE THIRD_PARTY_NOTICES.md ./
 COPY dzomdu ./dzomdu
-RUN pip install --no-cache-dir ".[${EXTRAS}]"
+RUN pip install --no-cache-dir -c /app/docker/constraints.txt ".[${EXTRAS}]" \
+ && pip check
 
 COPY --from=web /web/out /app/web
 COPY docker /app/docker

@@ -7,18 +7,52 @@ actually said with one click.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
 from typing import Any
 
 import jinja2
+import yaml
 
 from ..llm.schema import ActionItem, Cited, MeetingNotes, SectionSpec
 from ..models import MeetingRecord, format_duration, format_timestamp
+from ..okf import knowledge_metadata
 from ..vault import dump_frontmatter
 from .templates import MinutesTemplate
 
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def retitle_note(text: str, title: str) -> str:
+    """Edit only the title metadata and opening heading; retain user-written contents."""
+    newline = "\r\n" if "\r\n" in text else "\n"
+    entry = "title: " + json.dumps(title, ensure_ascii=False) + newline
+    match = re.match(r"\A---\r?\n(.*?)^---[ \t]*(?:\r?\n|$)", text, re.S | re.M)
+    if match:
+        metadata = match[1]
+        try:
+            node = yaml.compose(metadata, Loader=yaml.SafeLoader)
+        except yaml.YAMLError as exc:
+            raise ValueError("Fix this note's frontmatter before renaming it") from exc
+        if node is not None and (not isinstance(node, yaml.MappingNode) or node.flow_style):
+            raise ValueError("This note needs a block of frontmatter fields before renaming it")
+        titles = [(key, value) for key, value in node.value if key.value == "title"] if node else []
+        if len(titles) > 1:
+            raise ValueError("Remove duplicate title fields from this note before renaming it")
+        lines = metadata.splitlines(keepends=True)
+        if titles:
+            key, value = titles[0]
+            end = value.end_mark.line + bool(value.end_mark.column)
+            lines[key.start_mark.line : end] = [entry]
+        else:
+            lines.insert(0, entry)
+        header = text[: match.start(1)] + "".join(lines) + text[match.end(1) : match.end()]
+        body = text[match.end() :]
+    else:
+        header, body = f"---{newline}{entry}---{newline}", text
+    body = re.sub(r"\A((?:[ \t]*\r?\n)*)# [^\r\n]*", lambda m: m[1] + "# " + title, body, count=1)
+    return header + body
 
 
 def _env() -> jinja2.Environment:
@@ -121,11 +155,10 @@ def render_note(
     roles: dict[str, str] | None = None,
 ) -> str:
     ctx = meeting_context(record)
-    when = datetime.fromisoformat(record.date)
     meta: dict[str, Any] = {
         "type": "meeting",
         "title": record.title,
-        "date": when.strftime("%Y-%m-%dT%H:%M"),
+        **knowledge_metadata(record, notes.summary if notes else None),
         "duration": ctx["duration"],
     }
     if record.project:

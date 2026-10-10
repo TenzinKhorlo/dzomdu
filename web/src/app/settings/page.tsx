@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/common"
 import { useInfo } from "@/components/providers"
 import { FormatsCard, SummaryDefaultsCard } from "@/components/format-settings"
 import { SettingsForms } from "@/components/settings-forms"
+import { ModelSettings } from "@/components/model-settings"
+import { NoiseSettingsCard } from "@/components/noise-settings"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,7 +70,7 @@ export default function SettingsPage() {
     <div className="@container/main flex flex-col gap-6">
       <PageHeader
         title="Settings & status"
-        description="Choose where the language model runs, where notes are saved, and how summaries are written."
+        description="Choose your meeting models, where notes are saved, and how summaries are written."
       >
         <Button variant="outline" onClick={reload}>
           Check again
@@ -102,6 +104,8 @@ export default function SettingsPage() {
               fix=""
             />
           </div>
+          <ModelSettings />
+          <NoiseSettingsCard />
           <SettingsForms>
             <SummaryDefaultsCard />
           </SettingsForms>

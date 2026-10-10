@@ -19,8 +19,11 @@ services:
       - path: .env
         required: false
     environment:
-      # read once, when the config file is first created
-      DZOMDU_ASR_MODEL: ${DZOMDU_ASR_MODEL:-small}
+      # Model choice is initialized once; device settings apply at every start.
+      DZOMDU_ASR_MODEL: ${DZOMDU_ASR_MODEL:-dropbox-dash/faster-whisper-large-v3-turbo}
+      DZOMDU_ASR_DEVICE: ${DZOMDU_ASR_DEVICE:-auto}
+      DZOMDU_ASR_COMPUTE_TYPE: ${DZOMDU_ASR_COMPUTE_TYPE:-auto}
+      DZOMDU_DIARIZATION_DEVICE: ${DZOMDU_DIARIZATION_DEVICE:-auto}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
     extra_hosts:
       - "host.docker.internal:host-gateway" # Linux; Docker Desktop provides it already

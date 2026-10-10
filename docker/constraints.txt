@@ -1,0 +1,7 @@
+# Keep native PyTorch/TorchCodec ABIs paired in both CPU and CUDA images.
+torch==2.10.0
+torchaudio==2.10.0
+torchcodec==0.10.0
+pyannote.audio>=4.0,<5
+faster-whisper>=1.2.1,<2
+ctranslate2>=4.5,<5

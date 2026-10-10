@@ -20,6 +20,10 @@ class ASRBackend(ABC):
     @abstractmethod
     def transcribe(self, audio: Audio) -> list[Word]: ...
 
+    def transcribe_preview(self, audio: Audio) -> list[Word]:
+        """Live preview only needs text; skip expensive forced alignment where possible."""
+        return self.transcribe(audio)
+
 
 def _parakeet(cfg: ASRConfig) -> ASRBackend:
     from .parakeet import ParakeetMLXBackend
@@ -30,13 +34,30 @@ def _parakeet(cfg: ASRConfig) -> ASRBackend:
 def _mlx_whisper(cfg: ASRConfig) -> ASRBackend:
     from .whisper import MLXWhisperBackend
 
-    return MLXWhisperBackend(model=cfg.model, language=cfg.language)
+    return MLXWhisperBackend(
+        model=cfg.model, language=None if cfg.language == "auto" else cfg.language
+    )
 
 
 def _faster_whisper(cfg: ASRConfig) -> ASRBackend:
     from .whisper import FasterWhisperBackend
 
-    return FasterWhisperBackend(model=cfg.model, language=cfg.language)
+    return FasterWhisperBackend(
+        model=cfg.model, language=None if cfg.language == "auto" else cfg.language,
+        device=cfg.device, compute_type=cfg.compute_type,
+    )
+
+
+def _mlx_audio(cfg: ASRConfig) -> ASRBackend:
+    from .alternatives import MLXAudioBackend
+
+    return MLXAudioBackend(cfg)
+
+
+def _moonshine(cfg: ASRConfig) -> ASRBackend:
+    from .alternatives import MoonshineBackend
+
+    return MoonshineBackend(cfg.model)
 
 
 # name -> factory. Tests and plug-ins (e.g. a future Dzongkha model) register here.
@@ -44,6 +65,8 @@ BACKENDS: dict[str, Callable[[ASRConfig], ASRBackend]] = {
     "parakeet": _parakeet,
     "mlx-whisper": _mlx_whisper,
     "faster-whisper": _faster_whisper,
+    "mlx-audio": _mlx_audio,
+    "moonshine": _moonshine,
 }
 
 

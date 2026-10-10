@@ -43,12 +43,11 @@ python3.12 --version        # should print Python 3.12.x
 cd ~
 git clone https://github.com/TenzinKhorlo/dzomdu.git
 cd dzomdu
-git checkout claude/tender-edison-lzi890   # the code lives on this branch until it is merged
 ls                                         # you should see pyproject.toml, SETUP.md, dzomdu/
 ```
 
 If you already had a `dzomdu` folder from earlier, update it instead of cloning:
-`git fetch origin && git checkout claude/tender-edison-lzi890`.
+run `git pull --ff-only` from that folder, keeping any local changes safe first.
 
 ## 3. Create and activate the virtual environment
 

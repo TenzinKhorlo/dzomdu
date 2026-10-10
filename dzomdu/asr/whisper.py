@@ -56,9 +56,14 @@ class FasterWhisperBackend(ASRBackend):
     name = "faster-whisper"
     default_model = "large-v3-turbo"
 
-    def __init__(self, model: str | None = None, language: str | None = "en"):
+    def __init__(
+        self, model: str | None = None, language: str | None = "en",
+        device: str = "auto", compute_type: str = "auto",
+    ):
         self._model_id = model or self.default_model
         self.language = language
+        self.device = device
+        self.compute_type = compute_type
         self._model: Any = None
 
     @property
@@ -73,7 +78,9 @@ class FasterWhisperBackend(ASRBackend):
                 raise RuntimeError(
                     "faster-whisper is not installed. Run: pip install -e '.[whisper]'"
                 ) from exc
-            self._model = WhisperModel(self._model_id, device="auto", compute_type="auto")
+            self._model = WhisperModel(
+                self._model_id, device=self.device, compute_type=self.compute_type
+            )
         segments, _info = self._model.transcribe(
             str(audio.path),
             language=self.language,

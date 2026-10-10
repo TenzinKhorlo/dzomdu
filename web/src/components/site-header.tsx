@@ -25,6 +25,9 @@ const TITLES: Record<string, string> = {
   "": "Overview",
   record: "Record",
   meetings: "Meetings",
+  tasks: "Tasks",
+  chat: "Ask Dzomdu",
+  history: "Conversations",
   view: "Meeting",
   people: "People",
   projects: "Projects",
@@ -108,12 +111,17 @@ export function SiteHeader() {
         <BreadcrumbList>
           <BreadcrumbItem className="hidden sm:block">
             <BreadcrumbLink asChild>
-              <Link href="/" className="text-xs">Workspace</Link>
+              <Link href="/" className="text-xs">
+                Workspace
+              </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:block" />
           {crumbs.map((part, i) => {
-            const title = TITLES[part] ?? part
+            const title =
+              part === "view" && pathname.startsWith("/projects/")
+                ? "Project"
+                : (TITLES[part] ?? part)
             const last = i === crumbs.length - 1
             const href = "/" + crumbs.slice(0, i + 1).join("/") + (part ? "/" : "")
             return (

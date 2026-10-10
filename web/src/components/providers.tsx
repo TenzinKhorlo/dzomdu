@@ -5,11 +5,18 @@ import { MotionConfig } from "motion/react"
 import { ThemeProvider } from "next-themes"
 
 import { ConfirmProvider } from "@/components/confirm"
+import { ChatHistoryProvider } from "@/components/chat/provider"
+import { TaskProvider } from "@/components/task-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { api, type Info } from "@/lib/api"
+import { useApi } from "@/hooks/use-api"
+import { api, type Info, type Project } from "@/lib/api"
 import { spring } from "@/lib/motion"
 
-const InfoContext = React.createContext<{ info?: Info; reload: () => void }>({
+const InfoContext = React.createContext<{
+  info?: Info
+  projects?: Project[]
+  reload: () => void
+}>({
   reload: () => {},
 })
 
@@ -20,12 +27,18 @@ export function useInfo() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [info, setInfo] = React.useState<Info>()
-  const reload = React.useCallback(() => {
+  const projects = useApi<Project[]>("/api/projects", { interval: 30000 })
+  const fetchInfo = React.useCallback(() => {
     api<Info>("/api/info")
       .then(setInfo)
       .catch(() => {})
   }, [])
-  React.useEffect(() => reload(), [reload])
+  const reloadProjects = projects.reload
+  const reload = React.useCallback(() => {
+    fetchInfo()
+    reloadProjects()
+  }, [fetchInfo, reloadProjects])
+  React.useEffect(() => fetchInfo(), [fetchInfo])
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -33,7 +46,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
           (keeping fades) when the user prefers reduced motion */}
       <MotionConfig transition={spring} reducedMotion="user">
         <ConfirmProvider>
-          <InfoContext.Provider value={{ info, reload }}>{children}</InfoContext.Provider>
+          <InfoContext.Provider value={{ info, projects: projects.data, reload }}>
+            <ChatHistoryProvider>
+              <TaskProvider>{children}</TaskProvider>
+            </ChatHistoryProvider>
+          </InfoContext.Provider>
         </ConfirmProvider>
         <Toaster
           position="bottom-right"

@@ -44,7 +44,10 @@ class SectionSpec:
 
 
 class MeetingNotes(BaseModel):
-    title: str | None = Field(None, description="Short meeting title if the topic is clear")
+    title: str | None = Field(
+        None,
+        description="A concise title based on the discussion, at most 120 characters",
+    )
     summary: str = Field(description="Concise summary of the meeting")
     topics: list[Topic] = Field(default_factory=list)
     decisions: list[Decision] = Field(default_factory=list)

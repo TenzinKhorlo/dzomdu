@@ -1,0 +1,28 @@
+name: Linux containers
+on:
+  workflow_dispatch:
+  push:
+    paths: [Dockerfile, docker/**, docker-compose*.yml, dzomdu/**, pyproject.toml, web/**, .github/workflows/docker.yml]
+  pull_request:
+    paths: [Dockerfile, docker/**, docker-compose*.yml, dzomdu/**, pyproject.toml, web/**, .github/workflows/docker.yml]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [cpu, cuda]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: |
+          if [ "${{ matrix.runtime }}" = "cuda" ]; then
+            docker build --build-arg RUNTIME_IMAGE=nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu128 -t dzomdu:test .
+          else
+            docker build -t dzomdu:test .
+          fi
+      - name: Validate Linux imports and native audio libraries without downloading models
+        run: docker run --rm --entrypoint python dzomdu:test /app/docker/smoke.py

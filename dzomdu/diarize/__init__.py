@@ -20,6 +20,11 @@ class Diarizer(ABC):
     def model_id(self) -> str:
         """Identifies the embedding space. Voiceprints from different ids are not comparable."""
 
+    @property
+    def embedding_id(self) -> str:
+        """Identity of the voice embedding model, independent of speaker segmentation."""
+        return self.model_id
+
     @abstractmethod
     def diarize(
         self,
@@ -42,7 +47,16 @@ def _pyannote(cfg: DiarizationConfig) -> Diarizer:
     return PyannoteDiarizer(model=cfg.model, device=cfg.device, token_env=cfg.hf_token_env)
 
 
-BACKENDS: dict[str, Callable[[DiarizationConfig], Diarizer]] = {"pyannote": _pyannote}
+def _nemotron(cfg: DiarizationConfig) -> Diarizer:
+    from .nemotron import NemotronDiarizer
+
+    return NemotronDiarizer(cfg)
+
+
+BACKENDS: dict[str, Callable[[DiarizationConfig], Diarizer]] = {
+    "pyannote": _pyannote,
+    "nemotron-mlx": _nemotron,
+}
 
 
 def get_diarizer(cfg: DiarizationConfig) -> Diarizer:

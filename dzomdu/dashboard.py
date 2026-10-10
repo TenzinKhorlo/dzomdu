@@ -7,6 +7,7 @@ ticking it in the dashboard edits the note.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import Counter, defaultdict
@@ -15,7 +16,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .vault import atomic_write_text
+from .vault import atomic_write_text, safe_filename
 
 _TASK = re.compile(r"^(\s*)- \[( |x|X)\] (.+)$")
 _OWNER = re.compile(r"^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]\s*")
@@ -33,6 +34,8 @@ class Task:
     due: str | None = None
     turn: str | None = None  # transcript turn it was cited from
     editable: bool = True
+    id: str | None = None
+    reminder_date: str | None = None
 
 
 def parse_tasks(markdown: str) -> list[Task]:
@@ -102,19 +105,110 @@ def speaking_by_name(record: dict[str, Any]) -> dict[str, float]:
     return dict(out)
 
 
-def meeting_tasks(record: dict[str, Any]) -> list[Task]:
+def _source_tasks(record: dict[str, Any]) -> list[Task]:
     """Tasks from the note; if the note has none (e.g. a table-style template), fall back to
     the extracted action items, read-only."""
+    items = (record.get("_notes") or {}).get("action_items", [])
     note = record.get("note_path")
     if note and Path(note).exists():
         tasks = parse_tasks(Path(note).read_text(encoding="utf-8"))
         if tasks:
+            # An owner without a person profile is plain text in the note. Strip
+            # that prefix using the original action item so identities match
+            # both checkbox and table layouts.
+            for task in tasks:
+                for item in items:
+                    owner = item.get("owner")
+                    if owner and task.owner is None and task.text == f"{owner} {item['task']}":
+                        task.text, task.owner = item["task"], owner
+                        break
             return tasks
-    items = (record.get("_notes") or {}).get("action_items", [])
     return [
-        Task(-1, False, a["task"], a.get("owner"), a.get("due"), None, editable=False)
+        Task(
+            -1,
+            False,
+            a["task"],
+            a.get("owner"),
+            a.get("due"),
+            next(iter(a.get("source_turns", [])), None),
+            editable=False,
+        )
         for a in items
     ]
+
+
+def task_keys(tasks: list[Task]) -> list[str]:
+    counts: Counter[str] = Counter()
+    keys = []
+    for task in tasks:
+        signature = json.dumps([" ".join(task.text.split()), task.owner], ensure_ascii=False)
+        counts[signature] += 1
+        keys.append(hashlib.sha256(f"{signature}:{counts[signature]}".encode()).hexdigest())
+    return keys
+
+
+def sync_task_state(record: dict[str, Any], today: date | None = None) -> bool:
+    """Assign stable task ids and a reminder once, retaining dates across reordering."""
+    today = today or date.today()
+    previous = {state["key"]: state for state in record.get("_tasks", [])}
+    tasks = _source_tasks(record)
+    states = []
+    for key, task in zip(task_keys(tasks), tasks, strict=True):
+        state = dict(
+            previous.get(key)
+            or {
+                "key": key,
+                "id": hashlib.sha256(f"{record['id']}:{key}".encode()).hexdigest()[:32],
+                "reminder_date": (today + timedelta(days=7)).isoformat(),
+                "created_date": today.isoformat(),
+                "done": task.done,
+            }
+        )
+        if task.editable:
+            state["done"] = task.done
+        states.append(state)
+    changed = record.get("_tasks") != states
+    record["_tasks"] = states
+    return changed
+
+
+def meeting_tasks(record: dict[str, Any]) -> list[Task]:
+    tasks = _source_tasks(record)
+    states = {state["key"]: state for state in record.get("_tasks", [])}
+    for key, task in zip(task_keys(tasks), tasks, strict=True):
+        if state := states.get(key):
+            task.id, task.reminder_date = state["id"], state["reminder_date"]
+            if not task.editable:
+                task.done = state["done"]
+    return tasks
+
+
+def carry_task_completion(text: str, previous: dict[str, Any]) -> str:
+    previous_tasks = meeting_tasks(previous)
+    completed = {
+        key
+        for key, task in zip(task_keys(previous_tasks), previous_tasks, strict=True)
+        if task.done
+    }
+    tasks = _source_tasks(previous | {"note_path": None})
+    # Use the rendered lines for locations, but use the same canonical owner/text
+    # rules as persisted tasks when comparing identities.
+    rendered = parse_tasks(text)
+    for task in rendered:
+        for original in tasks:
+            if (
+                original.owner
+                and task.owner is None
+                and task.text == f"{original.owner} {original.text}"
+            ):
+                task.text, task.owner = original.text, original.owner
+                break
+    tasks = rendered
+    lines = text.split("\n")
+    for key, task in zip(task_keys(tasks), tasks, strict=True):
+        if key in completed:
+            lines[task.line] = re.sub(r"- \[( |x|X)\]", "- [x]", lines[task.line], count=1)
+    return "\n".join(lines)
 
 
 def summary_of(record: dict[str, Any]) -> str | None:
@@ -123,13 +217,16 @@ def summary_of(record: dict[str, Any]) -> str | None:
 
 def meeting_row(record: dict[str, Any]) -> dict[str, Any]:
     tasks = meeting_tasks(record)
-    people = sorted({a["name"] for a in record.get("assignments", {}).values() if a.get("name")})
+    people = sorted(
+        {a["name"] for a in record.get("assignments", {}).values() if a.get("name")}
+        | {name for name in record.get("attendees", []) if name}
+    )
     unknown = sum(1 for a in record.get("assignments", {}).values() if not a.get("name"))
     return {
         "id": record["id"],
         "title": record.get("title") or "Untitled",
         "date": record.get("date"),
-        "project": record.get("project"),
+        "project": safe_filename(record["project"]) if record.get("project") else None,
         "duration": record.get("duration") or 0,
         "people": people,
         "unidentified": unknown,
@@ -186,6 +283,7 @@ def build_dashboard(
             talk[name] += seconds
             talk_meetings[name] += 1
         if project := r.get("project"):
+            project = safe_filename(project)
             p = projects.setdefault(
                 project, {"name": project, "meetings": 0, "minutes": 0.0, "last": None}
             )
@@ -198,7 +296,12 @@ def build_dashboard(
                 continue
             open_tasks.append(
                 asdict(task)
-                | {"meeting_id": r["id"], "meeting_title": r.get("title"), "date": r.get("date")}
+                | {
+                    "meeting_id": r["id"],
+                    "meeting_title": r.get("title"),
+                    "date": r.get("date"),
+                    "project": r.get("project"),
+                }
             )
 
     open_tasks.sort(key=lambda t: (t["due"] is None, t["due"] or "", t["date"] or ""))
