@@ -144,7 +144,8 @@ function ProfileForm({
         <div className="space-y-1">
           <DialogTitle>Edit profile</DialogTitle>
           <DialogDescription>
-            Role and bio are given to the LLM as context, so summaries know who does what.
+            Names and roles supply participant details in minutes. Summaries use the transcript;
+            profile biographies stay separate.
           </DialogDescription>
         </div>
       </DialogHeader>

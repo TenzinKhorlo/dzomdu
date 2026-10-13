@@ -149,6 +149,13 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
             A live preview. When you stop, the whole recording is processed again and you confirm
             each speaker.
           </CardDescription>
+          {local && rec.source === "meeting" && (
+            <Badge variant="secondary" className="w-fit">
+              {!rec.includesMeetingAudio
+                ? rec.includesMicrophone ? "Microphone only" : "Saving recording"
+                : rec.includesMicrophone ? "Meeting audio + microphone" : "Meeting audio only"}
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="min-h-[40vh] pt-4">
           {!session.meta.live ? (

@@ -11,19 +11,34 @@ import { wsUrl } from "@/lib/api"
  * AudioWorklet and streamed over a WebSocket to the backend, which saves it continuously.
  *
  * Two sources: "room" records the microphone alone. "meeting" records an online meeting
- * (Zoom, Google Meet, Teams…) by mixing the microphone with the audio of a browser tab or the
- * screen that the user chooses to share. Nothing joins the call and nothing leaves this computer.
+ * (Zoom, Google Meet, Teams…) from a shared tab or screen, optionally adding the microphone.
+ * Nothing joins the call and nothing leaves this computer.
  */
 export type RecordingSource = "room" | "meeting"
 
+export type MeetingAudioOptions = {
+  includeMicrophone: boolean
+  reduceBackgroundNoise: boolean
+}
+
 type Snapshot = {
   sessionId: string | null
+  source: RecordingSource
+  includesMicrophone: boolean
+  includesMeetingAudio: boolean
   startedAt: number
   levels: number[] // recent input levels (0..1), newest last, for the waveform
 }
 
 const HISTORY = 48
-let snapshot: Snapshot = { sessionId: null, startedAt: 0, levels: Array(HISTORY).fill(0) }
+let snapshot: Snapshot = {
+  sessionId: null,
+  source: "room",
+  includesMicrophone: false,
+  includesMeetingAudio: false,
+  startedAt: 0,
+  levels: Array(HISTORY).fill(0),
+}
 const listeners = new Set<() => void>()
 
 let stream: MediaStream | null = null
@@ -42,11 +57,16 @@ function releaseStream(s: MediaStream | null) {
 }
 
 export const recorder = {
-  async start(sessionId: string, source: RecordingSource = "room") {
-    if (!navigator.mediaDevices?.getUserMedia) {
+  async start(
+    sessionId: string,
+    source: RecordingSource = "room",
+    options: MeetingAudioOptions = { includeMicrophone: false, reduceBackgroundNoise: true },
+  ) {
+    const meeting = source === "meeting"
+    const includeMicrophone = !meeting || options.includeMicrophone
+    if (!navigator.mediaDevices || (includeMicrophone && !navigator.mediaDevices.getUserMedia)) {
       throw new Error("This browser can't record here. Open Dzomdu at http://localhost.")
     }
-    const meeting = source === "meeting"
     if (meeting) {
       // Asked first, while the click that started this is still fresh. Chrome insists on a
       // video track; it is dropped straight away and only the audio is kept.
@@ -73,27 +93,41 @@ export const recorder = {
         )
       }
       meetingStream.getAudioTracks()[0].addEventListener("ended", () => {
-        if (snapshot.sessionId) toast.warning("Meeting audio stopped. Only your microphone is recording now.")
+        if (!snapshot.sessionId) return
+        emit({ includesMeetingAudio: false })
+        if (stream?.getAudioTracks().some((t) => t.readyState === "live")) {
+          toast.warning("Meeting audio stopped. Only your microphone is recording now.")
+        } else {
+          toast.warning("Meeting audio stopped. The recording is being saved.")
+          void recorder.stop()
+        }
       })
     }
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          // in a call the speakers are in the room too: cancel the echo of the other side.
-          // A room recording keeps distant voices, so it turns call-style processing off.
-          echoCancellation: meeting,
-          noiseSuppression: false,
-          autoGainControl: true,
-        },
-      })
-    } catch (e) {
-      if (meeting) {
-        toast.warning("Microphone unavailable. Only the meeting audio is recording, not your voice.")
-      } else if ((e as Error).name === "NotAllowedError") {
-        throw new Error("Microphone access was denied. Allow it in the browser and in macOS settings.")
-      } else {
-        throw e
+    if (includeMicrophone) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            // Cancel speaker echo in calls; room recordings keep distant voices.
+            echoCancellation: meeting,
+            noiseSuppression: meeting && options.reduceBackgroundNoise,
+            autoGainControl: true,
+          },
+        })
+        if (
+          meeting && options.reduceBackgroundNoise &&
+          stream.getAudioTracks()[0]?.getSettings().noiseSuppression !== true
+        ) {
+          toast.warning("Microphone noise reduction could not be confirmed. Nearby noise may still be recorded.")
+        }
+      } catch (e) {
+        if (meeting) {
+          toast.warning("Microphone unavailable. Only the meeting audio is recording, not your voice.")
+        } else if ((e as Error).name === "NotAllowedError") {
+          throw new Error("Microphone access was denied. Allow it in the browser and in macOS settings.")
+        } else {
+          throw e
+        }
       }
     }
     ctx = new AudioContext()
@@ -121,7 +155,14 @@ export const recorder = {
       const level = Math.min(1, Math.sqrt(data.rms) * 1.8)
       emit({ levels: [...snapshot.levels.slice(1), level] })
     }
-    emit({ sessionId, startedAt: Date.now(), levels: Array(HISTORY).fill(0) })
+    emit({
+      sessionId,
+      source,
+      includesMicrophone: stream !== null,
+      includesMeetingAudio: meeting,
+      startedAt: Date.now(),
+      levels: Array(HISTORY).fill(0),
+    })
   },
 
   async stop() {
@@ -143,7 +184,8 @@ export const recorder = {
     ctx = null
     node = null
     ws = null
-    emit({ sessionId: null, levels: Array(HISTORY).fill(0) })
+    emit({ sessionId: null, includesMicrophone: false, includesMeetingAudio: false,
+      levels: Array(HISTORY).fill(0) })
   },
 }
 

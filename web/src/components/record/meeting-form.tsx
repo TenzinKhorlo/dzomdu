@@ -121,6 +121,8 @@ export function MeetingForm({
   })
   const [busy, setBusy] = React.useState<"record" | "upload" | null>(null)
   const [dragging, setDragging] = React.useState(false)
+  const [includeMicrophone, setIncludeMicrophone] = React.useState(false)
+  const [reduceBackgroundNoise, setReduceBackgroundNoise] = React.useState(true)
   const fileRef = React.useRef<HTMLInputElement>(null)
   const set = <K extends keyof Meta>(k: K, v: Meta[K]) => setMeta((m) => ({ ...m, [k]: v }))
   const template = meta.template || info?.default_template || "standard"
@@ -136,7 +138,7 @@ export function MeetingForm({
     let id: string | null = null
     try {
       id = (await api<{ id: string }>("/api/sessions", { method: "POST", json: payload() })).id
-      await recorder.start(id, source)
+      await recorder.start(id, source, { includeMicrophone, reduceBackgroundNoise })
       onSession(id)
     } catch (e) {
       recorder.release() // drop any microphone or shared-tab stream that was already open
@@ -314,9 +316,47 @@ export function MeetingForm({
                 <p className="font-medium">Record an online meeting</p>
                 <p className="text-sm text-muted-foreground">
                   Zoom, Google Meet, Teams and others. Join the call as usual, then share its
-                  browser tab with audio. Your microphone is added so your voice is included.
+                  browser tab with audio. Choose whether to add your microphone below.
                   Nothing joins the call, and audio stays on this computer.
                 </p>
+              </div>
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="meeting-microphone">Include my microphone</Label>
+                    <p id="meeting-microphone-help" className="text-xs text-muted-foreground">
+                      {includeMicrophone
+                        ? "Adds your voice and nearby sounds to the meeting audio."
+                        : "Records only shared meeting audio, without opening your microphone. Your own voice may be missing."}
+                    </p>
+                  </div>
+                  <Switch
+                    id="meeting-microphone"
+                    aria-describedby="meeting-microphone-help"
+                    checked={includeMicrophone}
+                    onCheckedChange={setIncludeMicrophone}
+                    disabled={busy !== null}
+                  />
+                </div>
+                {includeMicrophone && (
+                  <div className="flex items-start justify-between gap-3 border-t pt-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="meeting-noise">Reduce microphone background noise</Label>
+                      <p id="meeting-noise-help" className="text-xs text-muted-foreground">
+                        {reduceBackgroundNoise
+                          ? "Uses browser noise reduction to keep speech clearer. Some nearby sounds may remain."
+                          : "Keeps nearby sounds picked up by your microphone."}
+                      </p>
+                    </div>
+                    <Switch
+                      id="meeting-noise"
+                      aria-describedby="meeting-noise-help"
+                      checked={reduceBackgroundNoise}
+                      onCheckedChange={setReduceBackgroundNoise}
+                      disabled={busy !== null}
+                    />
+                  </div>
+                )}
               </div>
               <Button
                 variant="outline"

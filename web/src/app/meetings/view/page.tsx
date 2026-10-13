@@ -72,10 +72,15 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
   const [template, setTemplate] = React.useState(info?.default_template ?? "standard")
   const [instructions, setInstructions] = React.useState("")
   const [busy, setBusy] = React.useState(false)
+  const [rewriteError, setRewriteError] = React.useState<string | null>(null)
+  const [progress, setProgress] = React.useState("")
   const confirm = useConfirm()
+  const invalidNotes = rewriteError?.includes("notes schema") ?? false
 
   async function run(force = false) {
     setBusy(true)
+    setRewriteError(null)
+    setProgress("Waiting for the AI service…")
     try {
       const { id } = await api<{ id: string }>(`/api/meetings/${meeting.id}/open`, {
         method: "POST",
@@ -88,8 +93,12 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
       for (;;) {
         await new Promise((r) => setTimeout(r, 1200))
         const s = await api<Session>(`/api/sessions/${id}`)
-        if (s.state === "done") break
-        if (s.state === "error") throw new Error(s.error ?? "Rewriting failed")
+        setProgress(s.messages.at(-1) ?? "Writing notes…")
+        if (s.state === "error" || s.error) throw new Error(s.error ?? "Rewriting failed")
+        if (s.state === "done") {
+          if (s.warning) throw new Error(s.warning)
+          break
+        }
       }
       toast.success("Notes rewritten")
       setOpen(false)
@@ -110,6 +119,7 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
           return run(true)
         }
       } else {
+        setRewriteError(msg)
         toast.error(msg)
       }
     } finally {
@@ -134,6 +144,28 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
+          {rewriteError && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"
+            >
+              <p className="break-words text-destructive">
+                {invalidNotes
+                  ? "The AI returned notes in an unexpected format. Your transcript and existing notes were kept. Try rewriting again."
+                  : rewriteError}
+              </p>
+              {invalidNotes ? (
+                <details>
+                  <summary className="cursor-pointer">Error details</summary>
+                  <p className="mt-2 break-words text-xs text-muted-foreground">{rewriteError}</p>
+                </details>
+              ) : (
+                <Link href="/settings/" className="underline underline-offset-4">
+                  Check AI service settings
+                </Link>
+              )}
+            </div>
+          )}
           <div className="grid gap-2">
             <Label>Format</Label>
             <Select value={template} onValueChange={setTemplate}>
@@ -161,6 +193,11 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
           </div>
         </div>
         <DialogFooter>
+          {busy && (
+            <p role="status" className="mr-auto self-center text-sm text-muted-foreground">
+              {progress}
+            </p>
+          )}
           <Button onClick={() => run()} disabled={busy}>
             {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
             {busy ? "Writing…" : "Rewrite notes"}
