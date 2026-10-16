@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from pathlib import Path
 
@@ -9,11 +10,13 @@ from fastapi.testclient import TestClient
 from starlette.websockets import WebSocket
 
 from dzomdu.audio import read_wav
+from dzomdu.llm.client import LLMError
 from dzomdu.models import Word
 from dzomdu.pipeline import Pipeline
 from dzomdu.server.app import create_app
 from dzomdu.server.markdown import note_to_html
 from dzomdu.server.sessions import Session, SessionManager, SessionMeta
+from dzomdu.transcript import LiveSpeakerEdit
 
 SCRIPT = [
     ("Alice", 0.0, 4.0, "Good morning, let's review the budget."),
@@ -123,6 +126,67 @@ def test_upload_review_notes_regenerate(setup, cfg):
     assert client.get("/api/meetings").json()["meetings"] == []
     assert client.get(f"/api/meetings/{meeting_id}").status_code == 404
     assert client.delete(f"/api/meetings/{meeting_id}").status_code == 404
+
+
+@pytest.mark.parametrize("initial_summary", [True, False])
+def test_failed_rewrite_preserves_note_and_record_and_can_be_retried(
+    setup, cfg, monkeypatch, initial_summary
+):
+    client, wav = setup
+    with wav.open("rb") as fh:
+        sid = client.post(
+            "/api/upload",
+            files={"file": ("meeting.wav", fh, "audio/wav")},
+            data={"meta": '{"summarize": ' + str(initial_summary).lower() + "}"},
+        ).json()["id"]
+    wait_for(client, sid, {"review"})
+    client.post(f"/api/sessions/{sid}/review", json={"names": {}})
+    done = wait_for(client, sid, {"done"})
+    note_path = Path(done["note_path"])
+    record_path = cfg.meetings_dir / f"{done['meeting_id']}.json"
+    before_note, before_record = note_path.read_bytes(), record_path.read_bytes()
+    pipe = client.app.state.manager.pipeline
+    original = pipe.summarize
+
+    def fail(*args, **kwargs):
+        raise LLMError("Model output did not match the notes schema")
+
+    monkeypatch.setattr(pipe, "summarize", fail)
+    response = client.post(f"/api/sessions/{sid}/regenerate", json={"template": "board"})
+    assert response.status_code == 200
+    failed = wait_for(client, sid, {"error"})
+    assert "existing notes were kept" in failed["error"]
+    assert note_path.read_bytes() == before_note
+    assert record_path.read_bytes() == before_record
+    assert client.get(f"/api/sessions/{sid}/note").status_code == 200
+
+    monkeypatch.setattr(pipe, "summarize", original)
+    response = client.post(f"/api/sessions/{sid}/regenerate", json={"template": "board"})
+    assert response.status_code == 200
+    recovered = wait_for(client, sid, {"done"})
+    assert recovered["error"] is None and recovered["warning"] is None
+    assert "Resolutions" in note_path.read_text()
+    assert "Not generated yet" not in note_path.read_text()
+
+
+def test_initial_summary_failure_still_saves_transcript_with_warning(setup, monkeypatch):
+    client, wav = setup
+
+    def fail(*args, **kwargs):
+        raise LLMError("LLM unavailable")
+
+    monkeypatch.setattr(client.app.state.manager.pipeline, "summarize", fail)
+    with wav.open("rb") as fh:
+        sid = client.post(
+            "/api/upload",
+            files={"file": ("meeting.wav", fh, "audio/wav")},
+        ).json()["id"]
+    wait_for(client, sid, {"review"})
+    client.post(f"/api/sessions/{sid}/review", json={"names": {}})
+    done = wait_for(client, sid, {"done"})
+    assert "LLM unavailable" in done["warning"]
+    note = client.get(f"/api/sessions/{sid}/note").json()["markdown"]
+    assert "Not generated yet" in note and "review the budget" in note
 
 
 def test_record_over_websocket_with_live_preview(setup, cfg):
@@ -394,3 +458,262 @@ def test_custom_formats_and_standing_instructions(cfg, tmp_path, fake_llm):
         client.put("/api/settings", json={"default_template": "standard"})
         assert client.delete("/api/templates/weekly-sync").json() == {"deleted": True}
         assert client.delete("/api/templates/weekly-sync").status_code == 404
+
+
+def live_segment(sid, start, end, speaker, text="Speech.", partial=False):
+    return {
+        "id": sid,
+        "start": start,
+        "end": end,
+        "speaker": speaker,
+        "text": text,
+        "partial": partial,
+    }
+
+
+def test_live_names_survive_model_updates_and_apply_to_future_speech():
+    s = Session("live-edit", SessionMeta(), "recording")
+    s.state = "recording"
+    s.put_live(live_segment(1, 0, 3, "Speaker 1"))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[1], name="Alice", rename_speaker=True))
+    s.put_live(live_segment(1, 0, 3, "Speaker 9", "Improved transcript."))
+    s.put_live(live_segment(2, 4, 6, "Speaker 1"))
+    assert [seg["speaker"] for seg in s.live_segments] == ["Alice", "Alice"]
+    s.edit_live(LiveSpeakerEdit(segment_ids=[2], name="Bob"))
+    s.put_live(live_segment(2, 4, 6, "Speaker 1", "Late voice match."))
+    assert s.live_segments[1]["speaker"] == "Bob"
+    assert s.live_segments[0]["speaker"] == "Alice"
+    s.put_live(live_segment(3, 7, 8, "Speaker 2"))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[3], name="Bob", rename_speaker=True))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[2], name="Robert", rename_speaker=True))
+    s.put_live(live_segment(4, 9, 11, "Speaker 2"))
+    assert [seg["speaker"] for seg in s.live_segments] == ["Alice", "Robert", "Robert", "Robert"]
+    assert all(seg["corrected"] for seg in s.live_segments)
+
+
+def test_live_correction_api_validates_state_partial_and_conflicts(setup):
+    client, _ = setup
+    manager = client.app.state.manager
+    s = manager.create(SessionMeta(), "recording")
+    s.state = "recording"
+    s.put_live(live_segment(1, 0, 3, "Speaker 1"))
+    s.put_live(live_segment(2, 4, 4.5, None, partial=True))
+    url = f"/api/sessions/{s.id}/live-speakers"
+    assert client.patch(url, json={"segment_ids": [2], "name": "Alice"}).status_code == 409
+    assert client.patch(url, json={"segment_ids": [99], "name": "Alice"}).status_code == 400
+    assert client.patch(url, json={"segment_ids": [1], "name": "  "}).status_code == 400
+    assert (
+        client.patch(
+            url, json={"segment_ids": [1], "name": "Alice", "revisions": {"1": 0}}
+        ).status_code
+        == 409
+    )
+    response = client.patch(url, json={"segment_ids": [1], "name": "Alice", "revisions": {"1": 1}})
+    assert response.status_code == 200
+    assert response.json()["live"][0]["speaker"] == "Alice"
+    s.state = "processing"
+    assert client.patch(url, json={"segment_ids": [1], "name": "Bob"}).status_code == 409
+
+
+def test_live_corrections_use_word_times_and_remain_in_end_review(setup):
+    client, wav = setup
+    manager = client.app.state.manager
+    s = manager.create(SessionMeta(), "recording")
+    s.state = "recording"
+    s.put_live(live_segment(1, 0, 4, "Speaker 1"))
+    s.put_live(live_segment(2, 4.5, 9, "Speaker 1"))  # Bob was wrongly grouped with Alice
+    s.edit_live(LiveSpeakerEdit(segment_ids=[1], name="Alice", rename_speaker=True))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[2], name="Bob"))
+    s.put_live(live_segment(3, 9.5, 13, "Speaker 1"))
+    analysis = manager.pipeline.analyze(wav, title="Live review")
+    texts = [turn.text for turn in analysis.record.turns]
+    manager._apply_live_review(s, analysis)
+    s.record, s.analysis, s.state = analysis.record, analysis, "review"
+    assert [turn.text for turn in s.record.turns] == texts
+    assert [s.record.assignments[turn.speaker].suggestion for turn in s.record.turns] == [
+        "Alice",
+        "Bob",
+        "Alice",
+    ]
+    review = client.get(f"/api/sessions/{s.id}").json()
+    assert review["state"] == "review"
+    assert {speaker["suggestion"] for speaker in review["speakers"]} == {"Alice", "Bob"}
+    assert all(speaker["has_clip"] for speaker in review["speakers"])
+    assert manager.pipeline.store.list() == []  # only the final review learns voiceprints
+    names = {speaker["cluster"]: speaker["suggestion"] for speaker in review["speakers"]}
+    client.post(f"/api/sessions/{s.id}/review", json={"names": names})
+    done = wait_for(client, s.id, {"done"})
+    detail = client.get(f"/api/meetings/{done['meeting_id']}").json()
+    assert [turn["label"] for turn in detail["turns"]] == ["Alice", "Bob", "Alice"]
+    assert {voice["name"] for voice in client.get("/api/speakers").json()} == {"Alice", "Bob"}
+
+
+def finish_for_corrections(client, wav):
+    with wav.open("rb") as fh:
+        sid = client.post("/api/upload", files={"file": ("meeting.wav", fh, "audio/wav")}).json()[
+            "id"
+        ]
+    wait_for(client, sid, {"review"})
+    client.post(
+        f"/api/sessions/{sid}/review", json={"names": {"SPEAKER_00": "Alice", "SPEAKER_01": "Bob"}}
+    )
+    done = wait_for(client, sid, {"done"})
+    return done["meeting_id"]
+
+
+def test_finished_batch_corrects_speakers_and_words_then_rewrites_once(setup, cfg, monkeypatch):
+    client, wav = setup
+    mid = finish_for_corrections(client, wav)
+    before = client.get(f"/api/meetings/{mid}").json()
+    pipe = client.app.state.manager.pipeline
+    original = pipe.summarize
+    calls = []
+
+    def summarize(record, *args, **kwargs):
+        calls.append(record.to_dict())
+        return original(record, *args, **kwargs)
+
+    monkeypatch.setattr(pipe, "summarize", summarize)
+    voices = client.get("/api/speakers").json()
+    response = client.patch(
+        f"/api/meetings/{mid}/transcript",
+        json={
+            "revision": 0,
+            "edits": [
+                {"turn_ids": [], "speaker": "SPEAKER_00", "name": "Alicia", "rename_speaker": True},
+                {
+                    "turn_ids": ["t2"],
+                    "speaker": "SPEAKER_00",
+                    "text": "Costs are above the revised plan.",
+                },
+                {"turn_ids": ["t3"], "name": "Carol"},
+            ],
+        },
+    )
+    assert response.status_code == 200, response.text
+    wait_for(client, response.json()["session_id"], {"done"})
+    after = client.get(f"/api/meetings/{mid}").json()
+    assert after["transcript_revision"] == 1
+    assert after["notes_stale"] is False
+    assert [turn["label"] for turn in after["turns"]] == ["Alicia", "Alicia", "Carol"]
+    assert after["turns"][1]["text"] == "Costs are above the revised plan."
+    assert [(t["id"], t["start"], t["end"]) for t in after["turns"]] == [
+        (t["id"], t["start"], t["end"]) for t in before["turns"]
+    ]
+    assert {s["name"] for s in after["speakers"]} == {"Alicia", "Carol"}
+    assert "above the revised plan" in after["note"]["markdown"]
+    assert "**[[Carol]]**" in after["note"]["markdown"]
+    assert len(calls) == 1 and calls[0]["turns"][1]["text"].startswith("Costs are above")
+    assert [(v["name"], v["samples"]) for v in client.get("/api/speakers").json()] == [
+        (v["name"], v["samples"]) for v in voices
+    ]
+    record = json.loads((cfg.meetings_dir / f"{mid}.json").read_text())
+    assert record["transcript_revision"] == 1
+    second = client.patch(
+        f"/api/meetings/{mid}/transcript",
+        json={
+            "revision": 1,
+            "edits": [{"turn_ids": ["t1"], "text": "Second correction batch."}],
+        },
+    )
+    assert second.status_code == 200
+    assert second.json()["session_id"] != response.json()["session_id"]
+    wait_for(client, second.json()["session_id"], {"done"})
+    assert len(calls) == 2
+    assert client.get(f"/api/meetings/{mid}").json()["transcript_revision"] == 2
+    # A concurrent editor cannot overwrite these corrections.
+    assert (
+        client.patch(
+            f"/api/meetings/{mid}/transcript",
+            json={"revision": 0, "edits": [{"turn_ids": ["t1"], "text": "Stale text"}]},
+        ).status_code
+        == 409
+    )
+
+
+def test_corrections_survive_failed_auto_rewrite_and_keep_notes(setup, cfg, monkeypatch):
+    client, wav = setup
+    mid = finish_for_corrections(client, wav)
+    before = client.get(f"/api/meetings/{mid}").json()
+
+    def fail(*args, **kwargs):
+        raise LLMError("Offline")
+
+    monkeypatch.setattr(client.app.state.manager.pipeline, "summarize", fail)
+    response = client.patch(
+        f"/api/meetings/{mid}/transcript",
+        json={"revision": 0, "edits": [{"turn_ids": ["t1"], "text": "A corrected opening."}]},
+    )
+    wait_for(client, response.json()["session_id"], {"error"})
+    after = client.get(f"/api/meetings/{mid}").json()
+    assert after["turns"][0]["text"] == "A corrected opening."
+    assert after["notes_stale"] is True
+    assert after["summary"] == before["summary"]
+    assert (
+        after["note"]["markdown"].split("## Transcript")[0]
+        == before["note"]["markdown"].split("## Transcript")[0]
+    )
+    assert "A corrected opening." in after["note"]["markdown"]
+
+
+def test_invalid_batch_is_atomic_and_manual_notes_remain_protected(setup, cfg):
+    client, wav = setup
+    mid = finish_for_corrections(client, wav)
+    before = client.get(f"/api/meetings/{mid}").json()
+    record_path = cfg.meetings_dir / f"{mid}.json"
+    original = record_path.read_bytes()
+    invalid = {
+        "revision": 0,
+        "edits": [
+            {"turn_ids": ["t1"], "text": "Changed"},
+            {"turn_ids": ["missing"], "speaker": "SPEAKER_01"},
+        ],
+    }
+    assert client.patch(f"/api/meetings/{mid}/transcript", json=invalid).status_code == 400
+    assert record_path.read_bytes() == original
+    note = Path(before["note"]["path"])
+    note.write_text(note.read_text() + "\n## Personal notes\n\nKeep this text.\n")
+    response = client.patch(
+        f"/api/meetings/{mid}/transcript",
+        json={"revision": 0, "edits": [{"turn_ids": ["t1"], "text": "A corrected opening."}]},
+    )
+    assert response.status_code == 200
+    assert response.json()["session_id"] is None
+    assert "manual edits" in response.json()["warning"]
+    assert "Keep this text." in note.read_text()
+    assert "A corrected opening." in note.read_text()
+    assert client.get(f"/api/meetings/{mid}").json()["notes_stale"] is True
+
+
+def test_live_edit_can_split_a_full_pass_turn_at_real_word_boundaries(setup):
+    client, wav = setup
+    manager = client.app.state.manager
+    s = manager.create(SessionMeta(), "recording")
+    s.state = "recording"
+    s.put_live(live_segment(1, 0, 1.9, "Speaker 1"))
+    s.put_live(live_segment(2, 1.9, 4, "Speaker 1"))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[1], name="Alice"))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[2], name="Bob"))
+    analysis = manager.pipeline.analyze(wav)
+    words_before = " ".join(turn.text for turn in analysis.record.turns)
+    manager._apply_live_review(s, analysis)
+    assert " ".join(turn.text for turn in analysis.record.turns) == words_before
+    assert len(analysis.record.turns) == 4
+    assert analysis.record.assignments[analysis.record.turns[0].speaker].suggestion == "Alice"
+    assert analysis.record.assignments[analysis.record.turns[1].speaker].suggestion == "Bob"
+    assert analysis.record.turns[1].start in {round(word.start, 2) for word in analysis.words}
+
+
+def test_dragging_to_an_anonymous_live_speaker_does_not_create_a_person(setup):
+    client, wav = setup
+    manager = client.app.state.manager
+    s = manager.create(SessionMeta(), "recording")
+    s.state = "recording"
+    s.put_live(live_segment(1, 0, 4, "Speaker 1"))
+    s.edit_live(LiveSpeakerEdit(segment_ids=[1], name="Speaker 2"))
+    analysis = manager.pipeline.analyze(wav)
+    manager._apply_live_review(s, analysis)
+    assignment = analysis.record.assignments[analysis.record.turns[0].speaker]
+    assert assignment.unknown_label == "Speaker 2"
+    assert assignment.name is None and assignment.suggestion is None
+    assert assignment.status == "unknown"

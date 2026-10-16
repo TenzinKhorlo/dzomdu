@@ -301,11 +301,11 @@ deployment. The dashboard is available at **http://localhost:8765**.
 | Page | What it does |
 |---|---|
 | **Dashboard** | Meetings and hours over the last 30 days with trends, time in meetings per day, who talks most, recent meetings, and open action items. Tick an item off, or swipe it to the right. |
-| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record: words show up about a second after they're spoken, in a lighter tone until the speaker pauses, with the timer and **Stop & process** on a floating bar at the bottom. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. If you give two voices the same name, you're told they'll be merged into one person. You can also drop in an existing recording instead. |
-| **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. A player bar plays the recording: the transcript follows along, clicking a turn or a timestamp in the notes plays from that moment, and you can drag the scrubber or use the arrow keys. |
+| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record: words show up about a second after they're spoken, in a lighter tone until the speaker pauses, with the timer and **Stop & process** on a floating bar at the bottom. **Edit speakers** optionally assigns or renames a voice during recording; a turn can be reassigned with Edit or dragged onto the right speaker. These live corrections carry into the final review using word timestamps. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. If you give two voices the same name, you're told they'll be merged into one person. You can also drop in an existing recording instead. |
+| **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. **Edit transcript** optionally corrects speaker names, reassigns individual turns (including drag-and-drop), and fixes transcript text. Changes can be undone or discarded before **Save corrections**, which saves the batch and automatically regenerates the summary and minutes. Existing notes remain available if rewriting fails, and manually edited notes retain overwrite protection. A player bar plays the recording: the transcript follows along, clicking a turn or a timestamp in the notes plays from that moment, and you can drag the scrubber or use the arrow keys. |
 | **Tasks** | Action items from all saved meetings, linked to their source meeting and its project. Search or filter by project and completion status. Each new task gets a reminder seven days after it is added, independently of any deadline stated in the meeting; click the reminder date to choose a custom date. Due and overdue reminders appear in **Reminders** and the sidebar count. Completion updates checkbox notes; table-style actions are tracked in the meeting record. Task status and custom dates survive restarts, reordering and regeneration of the same action items. |
 | **Ask Dzomdu** | Ask questions across your meeting notes or choose specific meetings. Follow up on answers and open the cited source notes. Answers stream as they are generated. The sidebar shows three conversations, with pinned chats first; **More** opens searchable history. The conversation menu lets you rename, pin/unpin, delete, or move a chat to a project. **Ask about this meeting** on a meeting page starts a focused chat. |
-| **People** | Everyone whose voice is known, with role, organisation and bio. These are used as LLM context and saved in `People/` in your vault. You can also rename a person or forget their voice. |
+| **People** | Everyone whose voice is known, with role, organisation and bio saved in `People/` in your vault. Names and roles supply participant details in minutes; biographies stay separate from summary generation. You can also rename a person or forget their voice. |
 | **Projects** | Open a project to see its assigned team, meeting participants, meeting history, and remaining tasks with assignees. **Manage team** assigns members; tasks can be filtered by assignee, completed, or given a custom reminder from the project page. Each project also has an overview note and glossary. The sidebar shows the three most recent projects; **More** opens the full list. The project menu supports rename and delete, with confirmation before deleting its related meetings, notes, and saved recordings. |
 | **Settings** | Model and LLM status, vault location, minutes formats. |
 
@@ -313,6 +313,15 @@ Action items are the Obsidian Tasks lines in your notes. Ticking one in the dash
 the note, and ticking it in Obsidian shows up in the dashboard. Every change offers **Undo** for
 a few seconds, so only actions that can't be undone, like forgetting a voice or discarding a
 recording, ask for confirmation.
+
+For a browser call, choose **Record an online meeting** and share the meeting tab with
+**Also share tab audio** enabled. **Include my microphone** is off by default: Dzomdu captures
+only the shared meeting audio and does not open your microphone, so nearby sounds are not added
+by Dzomdu. Your own voice may be missing from the tab audio. Turn the toggle on to include
+your voice; **Reduce microphone background noise** then defaults to on. Turn noise reduction
+off if you want surrounding sounds included. Browser noise reduction is best effort; it may
+leave some noise or nearby speech. These controls affect Dzomdu's recording, not the microphone
+you send to Google Meet, Zoom or Teams, or noise already present in the shared meeting audio.
 
 The interface follows your system settings: light or dark appearance (the button in the top
 right cycles through them), **Reduce motion** (animations become instant cross-fades),
@@ -403,11 +412,18 @@ attendees: ['[[Karma Wangmo]]', '[[Tenzin Dorji]]']
 Every decision and action item links to the transcript turn it came from, so you can check
 it against what was actually said.
 
+Summary, decisions, action items and discussion content are generated from the transcript.
+Minutes formats and extra instructions control presentation; people biographies and project
+background are not sent as summary evidence. Participant lists come from entered attendees
+and identified speakers, with roles added from People profiles when the note is rendered.
+Unknown speakers remain unidentified. Attendance does not require someone to speak, and an
+action owner is included only when the transcript assigns or accepts the task.
+
 ### The vault
 
 | Path | Contents |
 |---|---|
-| `People/` | One note per person. The role and bio are used as LLM context. |
+| `People/` | One note per person. Roles supply participant details in minutes; biographies stay separate from transcript-based summaries. |
 | `Projects/<name>/` | The project overview and glossary, plus that project's meetings. |
 | `Templates/Minutes/` | Minutes formats. Copy one and edit it to make your own. |
 

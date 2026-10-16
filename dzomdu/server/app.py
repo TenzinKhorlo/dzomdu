@@ -56,7 +56,13 @@ from ..persistence import meeting_locked
 from ..pipeline import Pipeline
 from ..projects import ProjectConflict, ProjectManager
 from ..tasks import TaskConflict, TaskManager
-from ..vault import Vault, safe_filename
+from ..transcript import (
+    LiveSpeakerEdit,
+    TranscriptConflict,
+    TranscriptUpdate,
+    save_corrections,
+)
+from ..vault import Vault, safe_filename, split_frontmatter
 from .markdown import chat_to_html, note_to_html
 from .sessions import ACTIVE_STATES, SessionManager, SessionMeta
 
@@ -644,6 +650,17 @@ def create_app(
     def get_session(sid: str, live_since: int = 0, live_rev: int | None = None) -> dict[str, Any]:
         return manager.snapshot(session_or_404(sid), live_since, live_rev)
 
+    @app.patch("/api/sessions/{sid}/live-speakers")
+    def edit_live_speakers(sid: str, body: LiveSpeakerEdit) -> dict[str, Any]:
+        s = session_or_404(sid)
+        try:
+            s.edit_live(body)
+        except TranscriptConflict as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return manager.snapshot(s, live_rev=0)
+
     @app.post("/api/warmup")
     def warmup() -> dict[str, bool]:
         """Called when the Record page opens, so models are ready before the first word."""
@@ -770,6 +787,11 @@ def create_app(
         return {
             **dashboard.meeting_row(r),
             "attendees": r.get("attendees", []),
+            "transcript_revision": r.get("transcript_revision", 0),
+            "notes_stale": r.get("notes_stale", False),
+            "notes_session_id": next((s.id for s in manager.sessions.values()
+                                      if s.record is not None and s.record.id == meeting_id
+                                      and s.state == "summarizing"), None),
             "speakers": speakers,
             "turns": [
                 {
@@ -787,6 +809,52 @@ def create_app(
             "note": note,
             "models": {"asr": r.get("asr_model"), "diarization": r.get("diarization_model")},
         }
+
+    @app.patch("/api/meetings/{meeting_id}/transcript")
+    def edit_transcript(meeting_id: str, body: TranscriptUpdate) -> dict[str, Any]:
+        with project_lock:
+            related = [s for s in manager.sessions.values()
+                       if s.record is not None and s.record.id == meeting_id]
+            if any(s.state in ACTIVE_STATES | {"review"} for s in related):
+                raise HTTPException(409, "Wait for this meeting to finish processing")
+            try:
+                record = save_corrections(cfg, meeting_id, body)
+            except FileNotFoundError as exc:
+                raise HTTPException(404, str(exc)) from exc
+            except TranscriptConflict as exc:
+                raise HTTPException(409, str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+            for existing in related:
+                existing.record = record
+            if not record.notes_stale:
+                return {"revision": record.transcript_revision, "session_id": None}
+            # Each automatic rewrite has its own polling identity. Reusing a completed
+            # session would let a client mistake its cached "done" result for this rewrite.
+            previous_meta = related[-1].meta if related else SessionMeta()
+            s = manager.create(SessionMeta(
+                title=record.title, project=record.project,
+                template=previous_meta.template, instructions=previous_meta.instructions,
+            ), "existing")
+            s.record = record
+            s.note_path = Path(record.note_path) if record.note_path else None
+            s.state = "done"
+            template = s.meta.template
+            try:
+                if record.note_path and Path(record.note_path).exists():
+                    meta, _ = split_frontmatter(Path(record.note_path).read_text(encoding="utf-8"))
+                    template = meta.get("template") or template
+                manager.regenerate(s, template, s.meta.instructions)
+            except PermissionError:
+                # Corrections are saved; retain the normal protection for edited summaries.
+                return {"revision": record.transcript_revision, "session_id": None,
+                        "warning": "Corrections saved. Your notes contain manual edits; use "
+                                   "Rewrite with AI to review replacing them."}
+            except YAMLError:
+                return {"revision": record.transcript_revision, "session_id": None,
+                        "warning": "Corrections saved. Fix the note's frontmatter before "
+                                   "rewriting the summary and minutes."}
+            return {"revision": record.transcript_revision, "session_id": s.id}
 
     @app.patch("/api/meetings/{meeting_id}")
     def rename_meeting(meeting_id: str, body: MeetingTitleBody) -> dict[str, str]:

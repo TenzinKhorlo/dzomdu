@@ -77,6 +77,8 @@ class MeetingRecord:
     attendees: list[str] = field(default_factory=list)
     note_path: str | None = None
     title_pending: bool = False  # a fallback name awaiting successful note generation
+    transcript_revision: int = 0
+    notes_stale: bool = False  # transcript changed since the last explicit note generation
 
     def name_for(self, cluster: str) -> str:
         assignment = self.assignments.get(cluster)

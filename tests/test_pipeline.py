@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
 from conftest import FakeASR, FakeDiarizer, make_meeting
 
 from dzomdu.pipeline import Pipeline
@@ -147,7 +148,10 @@ def test_note_written_and_regenerated(cfg, tmp_path, fake_llm):
     assert pipe.note_was_edited(loaded, sha)
 
 
-def test_llm_receives_people_and_project_context(cfg, tmp_path):
+@pytest.mark.parametrize("chunk_tokens", [6000, 50])
+def test_summary_uses_transcript_while_attendees_and_roles_render_separately(
+    cfg, tmp_path, monkeypatch, chunk_tokens
+):
     import httpx
     from conftest import ollama_transport
 
@@ -157,17 +161,42 @@ def test_llm_receives_people_and_project_context(cfg, tmp_path):
     log: list[dict] = []
     llm = LLMClient(LLMConfig(), http=httpx.Client(transport=ollama_transport(log=log)))
     pipe, _, _ = _pipeline(cfg, tmp_path, llm)
+    cfg.llm.max_chunk_tokens = chunk_tokens
     pipe.vault.ensure_person("Alice", role="Director", bio="Leads the energy division.")
+    pipe.vault.ensure_person("Silent Guest", role="Observer", bio="Approved an unrelated project.")
+    project_path = pipe.vault.ensure_project("Solar Microgrid")
+    project_path.write_text(project_path.read_text() + "\nUnrelated project background.\n")
     analysis = pipe.analyze(tmp_path / "m1.wav", project="Solar Microgrid")
     pipe.apply_review(analysis, {"SPEAKER_00": "Alice", "SPEAKER_01": None})
-    pipe.summarize(analysis.record, pipe.template("executive"))
+    analysis.record.attendees = ["Silent Guest"]
 
-    prompt = log[0]["messages"][1]["content"]
-    assert "- Alice: Director. Leads the energy division." in prompt
-    assert "Project: Solar Microgrid" in prompt
-    assert "busy director" in prompt  # template style instructions
-    assert "] Unknown speaker 2: Thanks." in prompt
+    def forbidden(*args):
+        raise AssertionError("Summary generation must not fetch people or project profiles")
+
+    with monkeypatch.context() as patch:
+        for method in ("person_profile", "person_context", "project_context"):
+            patch.setattr(pipe.vault, method, forbidden)
+        notes = pipe.summarize(analysis.record, pipe.template("executive"))
+
+    prompts = [payload["messages"][1]["content"] for payload in log]
+    for prompt in prompts:
+        assert "Leads the energy division" not in prompt
+        assert "Silent Guest" not in prompt
+        assert "Solar Microgrid" not in prompt
+        assert "Unrelated project background" not in prompt
+        assert "Meeting date:" not in prompt
+        assert "busy director" in prompt  # template guidance is still sent
+    assert any("] Alice: Good morning" in prompt for prompt in prompts)
+    assert any("] Unknown speaker 2: Thanks." in prompt for prompt in prompts)
+    if chunk_tokens == 50:
+        assert "## Partial notes" in prompts[-1]
     assert log[0]["options"]["num_ctx"] == 16384
+
+    text = pipe.write_note(analysis.record, notes, pipe.template("internal-discussion")).read_text()
+    assert "1. Director [[Alice]]" in text
+    assert "2. Observer [[Silent Guest]]" in text
+    assert "Unknown speaker 2 (not identified)" in text
+    assert "Leads the energy division" not in text
 
 
 def test_standing_summary_instructions_reach_the_llm(cfg, tmp_path):

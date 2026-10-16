@@ -44,11 +44,14 @@ version the API is on the same origin.
 - **Type.** Locally bundled Geist Sans for the interface and Geist Mono for timestamps.
   Page titles are 22px; body and table text are 13px, secondary labels 11–12px, and metrics 30px.
 - **Colour.**
-  - Primary actions are near-black (`bg-primary`).
-  - The `brand` accent is muted terracotta for the activity chart and open-item chips.
+  - Primary actions and the `brand` accent use deep blue (`#004182`), with a lighter blue
+    (`#80B6EC`) for legibility in dark mode. Navigation, focus rings, charts and highlights
+    share these tokens.
     Primary recording actions live in the page header; the global header contains search,
     breadcrumbs, appearance, and an active recording indicator.
-  - Sage green indicates local model readiness. Metric icons use subdued tinted backgrounds.
+  - Green indicates approval, completed tasks and model readiness; information uses a separate
+    blue, warnings use yellow, and destructive actions and recording indicators remain red.
+    Metric icons use subdued tinted backgrounds.
   - Speaker and project colours come from `colorFor()`.
 - **Charts.**
   - One hue on the neutral `track` colour, with 3px gaps between activity marks.
@@ -85,3 +88,17 @@ npx shadcn@latest add @animate-ui/components-radix-accordion
 
 The repo's `.mcp.json` also gives Claude Code the **shadcn** MCP server, for browsing and
 adding components, and the **next-devtools** MCP server, for inspecting the running dev server.
+
+## Transcript corrections
+
+- Live **Edit speakers** is optional. Names and per-turn assignments survive late model updates
+  and carry into the final review through overlapping word timestamps. Final review still
+  confirms identities before corrected audio clips become voiceprints.
+- Finished **Edit transcript** stages a batch of speaker renames, turn reassignment and text
+  corrections. Drag a turn onto a speaker chip or another turn, or use the keyboard-accessible
+  edit button. Undo or discard pending changes before saving.
+- **Save corrections** updates the saved record and the Markdown transcript, preserves turn
+  IDs and audio timestamps, and starts one automatic rewrite. Concurrent edits are rejected
+  by transcript revision. Failed rewrites retain the corrected transcript and previous notes;
+  manually edited notes keep the existing overwrite protection. Finished transcript edits
+  do not modify stored voiceprints.

@@ -5,6 +5,7 @@ import pytest
 
 from dzomdu.config import LLMConfig
 from dzomdu.llm.client import LLMClient, LLMError, extract_json
+from dzomdu.llm.schema import ActionItem
 from dzomdu.llm.summarize import chunk_lines, summarize
 from dzomdu.models import Turn
 
@@ -119,6 +120,104 @@ def test_empty_meeting_needs_no_llm():
         raise AssertionError("should not be called")
 
     assert "No speech" in summarize(_client(handler), [], str).summary
+
+
+def test_cited_topic_point_objects_keep_text_and_valid_citations():
+    body = {
+        "summary": "The team reviewed deployment.",
+        "topics": [{
+            "title": "Deployment",
+            "points": [
+                {"text": "Deploy two agents.", "source_turns": ["t1", "t999"]},
+                "Measure productivity.",
+                {"text": "Report the results.", "source_turns": ["t2", "t1"]},
+            ],
+            "source_turns": ["t2"],
+        }],
+    }
+    client = _client(lambda _: httpx.Response(200, json={
+        "message": {"content": json.dumps(body)},
+    }))
+    turns = [Turn("t1", "S0", 0, 5, "Deploy two agents."),
+             Turn("t2", "S0", 5, 10, "Measure productivity and report results.")]
+    notes = summarize(client, turns, str)
+    assert notes.topics[0].points == [
+        "Deploy two agents.", "Measure productivity.", "Report the results.",
+    ]
+    assert notes.topics[0].source_turns == ["t2", "t1"]
+
+
+def test_schema_validation_retries_with_correction_instructions():
+    seen = []
+
+    def handler(request):
+        payload = json.loads(request.content)
+        seen.append(payload["messages"][-1]["content"])
+        body = {"summary": ["Wrong shape"]} if len(seen) == 1 else {"summary": "Corrected."}
+        return httpx.Response(200, json={"message": {"content": json.dumps(body)}})
+
+    notes = summarize(_client(handler), [Turn("t1", "S0", 0, 5, "Discuss the plan.")], str)
+    assert notes.summary == "Corrected."
+    assert len(seen) == 2
+    assert "previous reply did not match" in seen[1]
+    assert "summary: Input should be a valid string" in seen[1]
+    assert "Discuss the plan." in seen[1]
+
+
+@pytest.mark.parametrize("alternate", ["action", "action_item", "description", "text"])
+def test_action_task_alias_keeps_owner_deadline_and_citations(alternate):
+    body = {
+        "summary": "The team agreed to draft the plan.",
+        "action_items": [{alternate: "Draft the plan", "owner": "Alice",
+                          "due": "next Tuesday", "source_turns": ["t1", "t99"]}],
+    }
+    payloads = []
+
+    def handler(request):
+        payloads.append(json.loads(request.content))
+        return httpx.Response(200, json={"message": {"content": json.dumps(body)}})
+
+    notes = summarize(
+        _client(handler), [Turn("t1", "S0", 0, 5, "I'll draft the plan next Tuesday.")],
+        lambda _: "Alice",
+    )
+    item = notes.action_items[0]
+    assert item.task == "Draft the plan" and item.owner == "Alice"
+    assert item.due == "next Tuesday" and item.source_turns == ["t1"]
+    assert len(payloads) == 1
+    prompt = payloads[0]["messages"][-1]["content"]
+    assert "## Required JSON schema" in prompt
+    assert '"required": ["task"]' in prompt
+
+
+@pytest.mark.parametrize("item", [
+    {"owner": "Alice"},
+    {"task": ""},
+    {"task": "   "},
+    {"action": ""},
+    {"text": {"description": "Nested content"}},
+    {"action": "Send the plan", "description": "Cancel the plan"},
+])
+def test_missing_or_ambiguous_task_is_not_invented(item):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ActionItem.model_validate(item)
+
+
+@pytest.mark.parametrize("point", [{"unknown": "bad"}, {"text": 42},
+                                   {"text": "A point", "source_turns": [42]}])
+def test_unrecognised_point_objects_still_fail_validation_after_one_retry(point):
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        body = {"summary": "Summary.", "topics": [{"title": "Plan", "points": [point]}]}
+        return httpx.Response(200, json={"message": {"content": json.dumps(body)}})
+
+    with pytest.raises(LLMError, match="topics.0.points.0"):
+        summarize(_client(handler), [Turn("t1", "S0", 0, 5, "Discuss the plan.")], str)
+    assert len(calls) == 2
 
 
 def test_openai_stream_yields_content_without_reasoning():

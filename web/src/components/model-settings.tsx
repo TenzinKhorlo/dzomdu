@@ -131,7 +131,7 @@ function DefaultsForm({ models, saved, onSaved }: {
           </div>
         </div>
         {limited && (
-          <p role="status" className="rounded-lg bg-warning/10 p-3 text-sm text-warning">
+          <p role="status" className="rounded-lg bg-warning-subtle p-3 text-sm text-warning">
             Nemotron supports up to eight speakers. This limit is applied automatically.
             For larger meetings, choose Pyannote.
           </p>

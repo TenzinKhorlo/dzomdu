@@ -1,0 +1,233 @@
+[
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 11534,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.8823529411764706,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 11306,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.9294117647058824,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 11078,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.9294117647058824,
+        0.8901960784313725,
+        0.8313725490196079,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 12837,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.8823529411764706,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 12423,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.9294117647058824,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 9693,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.9294117647058824,
+        0.8901960784313725,
+        0.8313725490196079,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 10098,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.9294117647058824,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": 10503,
+      "path": "contents/group/contents/fill/color",
+      "value": [
+        0.8823529411764706,
+        0.8823529411764706,
+        0.8392156862745098,
+        1
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / transcript timestamp 0",
+      "path": "transform/position",
+      "value": [
+        520.25,
+        561,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / transcript timestamp 1",
+      "path": "transform/position",
+      "value": [
+        509.565,
+        675,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / transcript timestamp 2",
+      "path": "transform/position",
+      "value": [
+        527.645,
+        789,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / completed action strike",
+      "path": "contents/group/contents/path/path",
+      "value": {
+        "t": "Path",
+        "v": {
+          "vertices": [
+            [
+              153.9312,
+              153
+            ],
+            [
+              383.8466,
+              153
+            ]
+          ],
+          "closed": false,
+          "in_tangents": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "out_tangents": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / exact checkbox check",
+      "path": "contents/group/contents/stroke/cap",
+      "value": 1
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / exact checkbox check",
+      "path": "contents/group/contents/stroke/join",
+      "value": 1
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "Brand / exact checkbox check",
+      "path": "contents/group/contents/trim/end",
+      "time": 6.9,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "Brand / exact checkbox check",
+      "path": "contents/group/contents/trim/end",
+      "time": 7.1,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "Brand / due date",
+      "path": "transform/position",
+      "value": [
+        1494,
+        750,
+        0
+      ]
+    }
+  }
+]

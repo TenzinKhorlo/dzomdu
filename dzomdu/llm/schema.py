@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Cited(BaseModel):
@@ -18,15 +18,63 @@ class Topic(Cited):
     title: str
     points: list[str] = Field(default_factory=list, description="Key points discussed")
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalise_cited_points(cls, data: Any) -> Any:
+        """Some models cite individual bullet objects instead of the topic itself.
+
+        Keep their text and promote the citations to the topic, which is how our layouts
+        represent them. Other malformed values still go through normal validation.
+        """
+        if not isinstance(data, dict) or not isinstance(data.get("points"), list):
+            return data
+        sources = data.get("source_turns", [])
+        if not isinstance(sources, list) or any(not isinstance(s, str) for s in sources):
+            return data
+        sources = list(sources)
+        points = []
+        for point in data["points"]:
+            if isinstance(point, dict) and isinstance(point.get("text"), str):
+                refs = point.get("source_turns", [])
+                if isinstance(refs, list) and all(isinstance(s, str) for s in refs):
+                    points.append(point["text"])
+                    sources.extend(refs)
+                    continue
+            points.append(point)
+        return {**data, "points": points, "source_turns": list(dict.fromkeys(sources))}
+
 
 class Decision(Cited):
     decision: str
 
 
 class ActionItem(Cited):
-    task: str
+    task: str = Field(min_length=1, description="The specific work agreed in the transcript")
     owner: str | None = Field(None, description="Person responsible, only if stated")
     due: str | None = Field(None, description="Due date as said; YYYY-MM-DD if a date is clear")
+
+    @field_validator("task")
+    @classmethod
+    def require_task_text(cls, task: str) -> str:
+        task = task.strip()
+        if not task:
+            raise ValueError("Task must describe the agreed work")
+        return task
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalise_task_name(cls, data: Any) -> Any:
+        """Accept a clearly named task under a common alternate key, without inventing one."""
+        if not isinstance(data, dict) or "task" in data:
+            return data
+        candidates = {
+            data[key].strip()
+            for key in ("action", "action_item", "description", "text")
+            if isinstance(data.get(key), str) and data[key].strip()
+        }
+        if len(candidates) == 1:
+            return {**data, "task": candidates.pop()}
+        return data
 
 
 SECTION_TYPES = ("text", "list", "items")

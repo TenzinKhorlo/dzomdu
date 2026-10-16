@@ -43,6 +43,7 @@ class Analysis:
     audio: Audio
     voices: dict[str, ClusterVoice]
     predicted: dict[str, SpeakerAssignment] = field(default_factory=dict)
+    words: list[Word] = field(default_factory=list)
 
 
 def _slug_key(model_id: str) -> str:
@@ -187,7 +188,7 @@ class Pipeline:
             diarization_model=self.diarizer.model_id,
             attendees=list(attendees or []),
         )
-        return Analysis(record, audio, voices, copy.deepcopy(assignments))
+        return Analysis(record, audio, voices, copy.deepcopy(assignments), words)
 
     def _diarize(
         self, audio: Audio, work: Path, num: int | None, lo: int | None, hi: int | None
@@ -331,20 +332,6 @@ class Pipeline:
 
     # -- step 3: notes ----------------------------------------------------------------------
 
-    def context_for(self, record: MeetingRecord) -> str:
-        lines = [f"Meeting date: {record.date[:10]}"]
-        if record.project:
-            lines.append(f"Project: {record.project}")
-            if project := self.vault.project_context(record.project):
-                lines.append(project)
-        people = sorted(
-            {a.name for a in record.assignments.values() if a.name} | set(record.attendees)
-        )
-        bios = [b for name in people if (b := self.vault.person_context(name))]
-        if bios:
-            lines.append("People in this meeting:\n" + "\n".join(bios))
-        return "\n".join(lines)
-
     def summarize(
         self, record: MeetingRecord, template: MinutesTemplate, extra_instructions: str = ""
     ) -> MeetingNotes:
@@ -355,7 +342,6 @@ class Pipeline:
             self.llm,
             record.turns,
             record.name_for,
-            context=self.context_for(record),
             instructions=instructions,
             max_chunk_tokens=self.cfg.llm.max_chunk_tokens,
             progress=self.progress,
@@ -432,6 +418,7 @@ class Pipeline:
         path.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_text(path, text)
         record.note_path = str(path)
+        record.notes_stale = False
         self.save_record(record, note_sha=hashlib.sha256(text.encode()).hexdigest(), notes=notes)
         return path
 

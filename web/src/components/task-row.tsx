@@ -164,7 +164,7 @@ export function TaskRow({
     <li className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <Checkbox
-          className="mt-0.5"
+          className="mt-0.5 [--primary:var(--success)] [--primary-foreground:var(--success-foreground)]"
           checked={done}
           disabled={saving}
           aria-label={`Mark ${task.text} as ${done ? "open" : "done"}`}

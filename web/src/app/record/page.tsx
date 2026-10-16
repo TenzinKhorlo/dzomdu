@@ -31,6 +31,16 @@ function SessionFlow({ id }: { id: string }) {
   const [error, setError] = React.useState<string>()
   const since = React.useRef(0)
 
+  const receiveLive = React.useCallback((s: Session) => {
+    setLive(previous => {
+      const byId = new Map(previous.map(seg => [seg.id, seg]))
+      for (const seg of s.live) {
+        if (seg.rev >= (byId.get(seg.id)?.rev ?? 0)) byId.set(seg.id, seg)
+      }
+      return [...byId.values()].filter(seg => seg.text).sort((a, b) => a.id - b.id)
+    })
+  }, [])
+
   React.useEffect(() => {
     let timer: number | undefined
     let stopped = false
@@ -39,14 +49,10 @@ function SessionFlow({ id }: { id: string }) {
       try {
         const s = await api<Session>(`/api/sessions/${id}?live_rev=${since.current}`)
         if (stopped) return
-        since.current = s.live_rev
+        since.current = Math.max(since.current, s.live_rev)
         if (s.live.length) {
           // a segment comes back with the same id as it improves (interim → final → labelled)
-          setLive((prev) => {
-            const byId = new Map(prev.map((seg) => [seg.id, seg]))
-            for (const seg of s.live) byId.set(seg.id, seg)
-            return [...byId.values()].filter((seg) => seg.text).sort((a, b) => a.id - b.id)
-          })
+          receiveLive(s)
         }
         setSession(s)
         if (s.state === "done" && s.meeting_id) {
@@ -78,7 +84,7 @@ function SessionFlow({ id }: { id: string }) {
       stopped = true
       window.clearTimeout(timer)
     }
-  }, [id, router, reloadInfo])
+  }, [id, router, reloadInfo, receiveLive])
 
   if (error || session?.state === "error") {
     return (
@@ -110,7 +116,7 @@ function SessionFlow({ id }: { id: string }) {
     <>
       <PageHeader title={title} description={description} />
       {(session.state === "new" || session.state === "recording") && (
-        <RecordingView session={session} live={live} />
+        <RecordingView session={session} live={live} onCorrected={receiveLive} />
       )}
       {(session.state === "processing" || session.state === "summarizing") && (
         <ProcessingView session={session} />
@@ -123,7 +129,7 @@ function SessionFlow({ id }: { id: string }) {
 function RecordPageInner() {
   const session = useSearchParams().get("session")
 
-  return session ? <SessionFlow id={session} /> : <NewMeeting />
+  return session ? <SessionFlow key={session} id={session} /> : <NewMeeting />
 }
 
 function NewMeeting() {

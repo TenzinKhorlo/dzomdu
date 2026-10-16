@@ -100,7 +100,7 @@ export function ActionList({
               >
                 <div className="flex items-start gap-3 px-2 py-2.5">
                   <Checkbox
-                    className="mt-0.5"
+                    className="mt-0.5 [--primary:var(--success)] [--primary-foreground:var(--success-foreground)]"
                     checked={checked}
                     disabled={!item.editable && !item.id}
                     onCheckedChange={(v) => void setTask(item, v === true)}

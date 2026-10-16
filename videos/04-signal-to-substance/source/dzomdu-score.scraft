@@ -1,0 +1,843 @@
+{
+  "format_version": 1,
+  "name": "dzomdu-score",
+  "sample_rate": 48000,
+  "bit_depth": "Int24",
+  "frame_rate": "Fps30",
+  "timecode_start": 0,
+  "tempo": {
+    "tempos": [
+      {
+        "tick": 0,
+        "bpm": 120.0
+      }
+    ],
+    "meters": [
+      {
+        "tick": 0,
+        "numerator": 4,
+        "denominator": 4
+      }
+    ]
+  },
+  "key_signatures": [],
+  "tracks": [
+    {
+      "id": 1,
+      "name": "Rhythm",
+      "kind": "Audio",
+      "format": "Stereo",
+      "color": [
+        86,
+        132,
+        214
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Rhythm",
+          "clips": [
+            {
+              "id": 7,
+              "name": "rhythm",
+              "start": 0,
+              "length": 720000,
+              "content": {
+                "Audio": {
+                  "source": 6,
+                  "offset": 0
+                }
+              },
+              "gain_db": 0.0,
+              "gain_env": [],
+              "fade_in": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "fade_out": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "muted": false,
+              "edit_locked": false,
+              "time_locked": false,
+              "rating": 0,
+              "sync_point": 0,
+              "color": null,
+              "stretch": 1.0,
+              "group": null
+            }
+          ]
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": -5.0,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "None",
+        "output": "Main",
+        "inserts": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [],
+      "view": "waveform",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    },
+    {
+      "id": 2,
+      "name": "Bass",
+      "kind": "Audio",
+      "format": "Stereo",
+      "color": [
+        94,
+        170,
+        214
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Bass",
+          "clips": [
+            {
+              "id": 9,
+              "name": "bass",
+              "start": 0,
+              "length": 720000,
+              "content": {
+                "Audio": {
+                  "source": 8,
+                  "offset": 0
+                }
+              },
+              "gain_db": 0.0,
+              "gain_env": [],
+              "fade_in": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "fade_out": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "muted": false,
+              "edit_locked": false,
+              "time_locked": false,
+              "rating": 0,
+              "sync_point": 0,
+              "color": null,
+              "stretch": 1.0,
+              "group": null
+            }
+          ]
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": 2.0,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "None",
+        "output": "Main",
+        "inserts": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [],
+      "view": "waveform",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    },
+    {
+      "id": 3,
+      "name": "Glass",
+      "kind": "Audio",
+      "format": "Stereo",
+      "color": [
+        80,
+        190,
+        168
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Glass",
+          "clips": [
+            {
+              "id": 11,
+              "name": "glass",
+              "start": 0,
+              "length": 720000,
+              "content": {
+                "Audio": {
+                  "source": 10,
+                  "offset": 0
+                }
+              },
+              "gain_db": 0.0,
+              "gain_env": [],
+              "fade_in": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "fade_out": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "muted": false,
+              "edit_locked": false,
+              "time_locked": false,
+              "rating": 0,
+              "sync_point": 0,
+              "color": null,
+              "stretch": 1.0,
+              "group": null
+            }
+          ]
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": 1.0,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "None",
+        "output": "Main",
+        "inserts": [
+          {
+            "plugin": "room_reverb",
+            "params": {
+              "damping": 5200.0,
+              "decay": 0.8,
+              "diffusion": 70.0,
+              "low_cut": 220.0,
+              "mix": 12.0,
+              "pre_delay": 15.0,
+              "size": 35.0,
+              "width": 100.0
+            },
+            "bypass": false,
+            "active": true,
+            "preset": "<factory default>"
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [],
+      "view": "waveform",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    },
+    {
+      "id": 4,
+      "name": "Atmosphere",
+      "kind": "Audio",
+      "format": "Stereo",
+      "color": [
+        104,
+        186,
+        98
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Atmosphere",
+          "clips": [
+            {
+              "id": 13,
+              "name": "atmosphere",
+              "start": 0,
+              "length": 720000,
+              "content": {
+                "Audio": {
+                  "source": 12,
+                  "offset": 0
+                }
+              },
+              "gain_db": 0.0,
+              "gain_env": [],
+              "fade_in": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "fade_out": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "muted": false,
+              "edit_locked": false,
+              "time_locked": false,
+              "rating": 0,
+              "sync_point": 0,
+              "color": null,
+              "stretch": 1.0,
+              "group": null
+            }
+          ]
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": 1.0,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "None",
+        "output": "Main",
+        "inserts": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [],
+      "view": "waveform",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    },
+    {
+      "id": 5,
+      "name": "Transitions",
+      "kind": "Audio",
+      "format": "Stereo",
+      "color": [
+        168,
+        196,
+        76
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Transitions",
+          "clips": [
+            {
+              "id": 15,
+              "name": "transitions",
+              "start": 0,
+              "length": 720000,
+              "content": {
+                "Audio": {
+                  "source": 14,
+                  "offset": 0
+                }
+              },
+              "gain_db": 0.0,
+              "gain_env": [],
+              "fade_in": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "fade_out": {
+                "len": 0,
+                "shape": "EqualPower"
+              },
+              "muted": false,
+              "edit_locked": false,
+              "time_locked": false,
+              "rating": 0,
+              "sync_point": 0,
+              "color": null,
+              "stretch": 1.0,
+              "group": null
+            }
+          ]
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": -1.0,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "None",
+        "output": "Main",
+        "inserts": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [],
+      "view": "waveform",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    },
+    {
+      "id": 16,
+      "name": "Master 1",
+      "kind": "Master",
+      "format": "Stereo",
+      "color": [
+        140,
+        140,
+        140
+      ],
+      "height": "Medium",
+      "playlists": [
+        {
+          "name": "Master 1",
+          "clips": []
+        }
+      ],
+      "active_playlist": 0,
+      "mixer": {
+        "volume_db": 2.5,
+        "pan": [
+          -1.0,
+          1.0
+        ],
+        "mute": false,
+        "solo": false,
+        "solo_safe": false,
+        "record_arm": false,
+        "input_monitor": false,
+        "phase_invert": false,
+        "input": "Main",
+        "output": "Main",
+        "inserts": [
+          {
+            "plugin": "compressor",
+            "params": {
+              "attack": 25.0,
+              "knee": 5.0,
+              "limiter": 0.0,
+              "lookahead": 0.0,
+              "makeup": 0.5,
+              "mix": 100.0,
+              "ratio": 1.4,
+              "release": 110.0,
+              "sc_hpf_freq": 90.0,
+              "sc_hpf_on": 1.0,
+              "threshold": -10.0
+            },
+            "bypass": false,
+            "active": true,
+            "preset": "<factory default>"
+          },
+          {
+            "plugin": "maximizer",
+            "params": {
+              "ceiling": -1.0,
+              "release": 80.0,
+              "threshold": 0.0
+            },
+            "bypass": false,
+            "active": true,
+            "preset": "<factory default>"
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "sends": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "automation_mode": "Read",
+        "trim_db": 0.0,
+        "vca": null,
+        "surround": null
+      },
+      "automation": [
+        {
+          "param": "Volume",
+          "points": [
+            {
+              "at": 0,
+              "value": 2.5
+            },
+            {
+              "at": 652800,
+              "value": 2.5
+            },
+            {
+              "at": 708000,
+              "value": -9.0
+            },
+            {
+              "at": 720000,
+              "value": -96.0
+            }
+          ],
+          "enabled": true
+        }
+      ],
+      "view": "volume",
+      "hidden": false,
+      "inactive": false,
+      "frozen": false,
+      "comments": "",
+      "folder": null,
+      "folder_open": true,
+      "instrument": null,
+      "ticks_timebase": false,
+      "elastic": null,
+      "pinned": false
+    }
+  ],
+  "sources": [
+    {
+      "id": 6,
+      "name": "rhythm",
+      "path": "Audio Files/rhythm.wav",
+      "channels": 2,
+      "frames": 720000,
+      "sample_rate": 48000,
+      "format": "Wav",
+      "time_reference": 0,
+      "unsaved": false
+    },
+    {
+      "id": 8,
+      "name": "bass",
+      "path": "Audio Files/bass.wav",
+      "channels": 2,
+      "frames": 720000,
+      "sample_rate": 48000,
+      "format": "Wav",
+      "time_reference": 0,
+      "unsaved": false
+    },
+    {
+      "id": 10,
+      "name": "glass",
+      "path": "Audio Files/glass.wav",
+      "channels": 2,
+      "frames": 720000,
+      "sample_rate": 48000,
+      "format": "Wav",
+      "time_reference": 0,
+      "unsaved": false
+    },
+    {
+      "id": 12,
+      "name": "atmosphere",
+      "path": "Audio Files/atmosphere.wav",
+      "channels": 2,
+      "frames": 720000,
+      "sample_rate": 48000,
+      "format": "Wav",
+      "time_reference": 0,
+      "unsaved": false
+    },
+    {
+      "id": 14,
+      "name": "transitions",
+      "path": "Audio Files/transitions.wav",
+      "channels": 2,
+      "frames": 720000,
+      "sample_rate": 48000,
+      "format": "Wav",
+      "time_reference": 0,
+      "unsaved": false
+    }
+  ],
+  "videos": [],
+  "busses": [],
+  "outputs": [
+    {
+      "name": "Out 1-2",
+      "first_channel": 0,
+      "format": "Stereo"
+    }
+  ],
+  "markers": [],
+  "groups": [],
+  "edit": {
+    "tool": "Smart",
+    "edit_mode": "Slip",
+    "selection": {
+      "start": 0,
+      "end": 0
+    },
+    "selected_tracks": [
+      16
+    ],
+    "selected_clips": [],
+    "playhead": 0,
+    "grid": {
+      "Note": {
+        "value": "Sixteenth",
+        "dotted": false,
+        "triplet": false
+      }
+    },
+    "nudge": {
+      "Seconds": 1.0
+    },
+    "grid_lines": true,
+    "main_counter": "MinSecs",
+    "sub_counter": "Samples",
+    "zoom": {
+      "samples_per_px": 1024.0,
+      "scroll": 0,
+      "waveform_zoom": 1.0,
+      "presets": [
+        64.0,
+        256.0,
+        1024.0,
+        4096.0,
+        16384.0
+      ]
+    },
+    "rulers": [
+      "bars_beats",
+      "min_secs",
+      "tempo",
+      "meter",
+      "markers"
+    ],
+    "link_timeline_edit": true,
+    "link_track_edit": false,
+    "insertion_follows_playback": false,
+    "loop_playback": false,
+    "pre_post_roll": false,
+    "pre_roll": 96000,
+    "post_roll": 96000,
+    "tab_to_transient": false,
+    "automation_follows_edit": true,
+    "markers_follow_edit": false,
+    "layered_editing": false,
+    "mirrored_midi": false,
+    "click": false,
+    "countoff": false,
+    "countoff_bars": 2,
+    "midi_merge": false,
+    "record_mode": "normal",
+    "loop_record": false,
+    "quickpunch": false,
+    "scrolling": "page",
+    "solo_mode": "sip",
+    "pre_fader_metering": false,
+    "delay_compensation": true,
+    "keyboard_focus": "commands",
+    "timeline_selection": {
+      "start": 0,
+      "end": 0
+    },
+    "flags": [
+      "view.clip.gain_line",
+      "view.clip.name",
+      "view.clip.overlap_shadows",
+      "view.marker.ruler_lines",
+      "waveform.peak"
+    ],
+    "values": {}
+  },
+  "next_id": 17,
+  "comments": "",
+  "midi_originals": {}
+}

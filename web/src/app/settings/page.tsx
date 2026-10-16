@@ -44,7 +44,7 @@ function StatusCard({
             Ready
           </Badge>
         ) : (
-          <Badge className="gap-1 bg-warning/15 text-warning">
+          <Badge className="gap-1 bg-warning-subtle text-warning">
             <TriangleAlert />
             Needs attention
           </Badge>

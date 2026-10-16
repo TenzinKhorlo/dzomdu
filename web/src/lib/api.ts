@@ -205,6 +205,9 @@ export type Turn = {
 }
 
 export type MeetingDetail = MeetingRow & {
+  transcript_revision: number
+  notes_stale: boolean
+  notes_session_id?: string | null
   attendees: string[]
   speakers: {
     cluster: string
@@ -243,6 +246,7 @@ export type ReviewSpeaker = {
   turns: number
   quotes: { start: number; text: string }[]
   has_clip: boolean
+  live_assigned?: boolean
 }
 
 export type LiveSegment = {
@@ -251,6 +255,8 @@ export type LiveSegment = {
   start: number
   end: number
   speaker: string | null
+  speaker_key?: string | null
+  corrected?: boolean
   text: string
   /** interim words while the person is still talking; replaced (same id) after the pause */
   partial: boolean

@@ -1,0 +1,2708 @@
+[
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "01 / lime atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1000,
+        1000
+      ],
+      "position": [
+        380,
+        260
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$1.layer"
+      ],
+      "in": 0,
+      "out": 2.75,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$1.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.13
+            ],
+            [
+              0.4,
+              0.065
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$1.layer"
+      ],
+      "above": "Atmosphere probe",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$1.layer",
+      "path": "transform/position",
+      "time": 0,
+      "value": [
+        200,
+        390,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$1.layer",
+      "path": "transform/position",
+      "time": 2.75,
+      "value": [
+        510,
+        180,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "02 / blue atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1350,
+        1350
+      ],
+      "position": [
+        1330,
+        450
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$7.layer"
+      ],
+      "in": 2.78,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$7.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.32
+            ],
+            [
+              0.4,
+              0.16
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$7.layer"
+      ],
+      "above": "02 / blue iris",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$7.layer",
+      "path": "transform/position",
+      "time": 2.78,
+      "value": [
+        1150,
+        580,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$7.layer",
+      "path": "transform/position",
+      "time": 5.4,
+      "value": [
+        1460,
+        370,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "03 / blue atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1250,
+        1250
+      ],
+      "position": [
+        1590,
+        860
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$13.layer"
+      ],
+      "in": 5.46,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$13.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.25
+            ],
+            [
+              0.4,
+              0.125
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$13.layer"
+      ],
+      "above": "03 / paper reveal",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$13.layer",
+      "path": "transform/position",
+      "time": 5.46,
+      "value": [
+        1410,
+        990,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$13.layer",
+      "path": "transform/position",
+      "time": 9.5,
+      "value": [
+        1720,
+        780,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "03 / lime atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1000,
+        1000
+      ],
+      "position": [
+        260,
+        240
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$19.layer"
+      ],
+      "in": 5.46,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$19.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.18
+            ],
+            [
+              0.4,
+              0.09
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$19.layer"
+      ],
+      "above": "03 / blue atmosphere",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$19.layer",
+      "path": "transform/position",
+      "time": 5.46,
+      "value": [
+        80,
+        370,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$19.layer",
+      "path": "transform/position",
+      "time": 9.5,
+      "value": [
+        390,
+        160,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / sphere atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1200,
+        1200
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$25.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$25.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.27
+            ],
+            [
+              0.4,
+              0.135
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$25.layer"
+      ],
+      "above": "04 / blue reveal",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$25.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        780,
+        630,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$25.layer",
+      "path": "transform/position",
+      "time": 12.1,
+      "value": [
+        1090,
+        420,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "05 / blue atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1100,
+        1100
+      ],
+      "position": [
+        1320,
+        390
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$31.layer"
+      ],
+      "in": 12.2,
+      "out": 15,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$31.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.5,
+                0.71,
+                0.93,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.22
+            ],
+            [
+              0.4,
+              0.11
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$31.layer"
+      ],
+      "above": "05 / warm paper iris",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$31.layer",
+      "path": "transform/position",
+      "time": 12.2,
+      "value": [
+        1140,
+        520,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$31.layer",
+      "path": "transform/position",
+      "time": 15,
+      "value": [
+        1450,
+        310,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "05 / lime atmosphere",
+      "kind": "ellipse",
+      "size": [
+        1100,
+        1100
+      ],
+      "position": [
+        420,
+        700
+      ],
+      "fillType": "radial",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$37.layer"
+      ],
+      "in": 12.2,
+      "out": 15,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$37.layer",
+      "path": "contents/group/contents/gfill/colors",
+      "value": {
+        "t": "Gradient",
+        "v": {
+          "colors": [
+            [
+              0,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ],
+            [
+              1,
+              [
+                0.82,
+                0.93,
+                0.45,
+                1
+              ]
+            ]
+          ],
+          "opacities": [
+            [
+              0,
+              0.13
+            ],
+            [
+              0.4,
+              0.065
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$37.layer"
+      ],
+      "above": "05 / blue atmosphere",
+      "to": "backward"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$37.layer",
+      "path": "transform/position",
+      "time": 12.2,
+      "value": [
+        240,
+        830,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$37.layer",
+      "path": "transform/position",
+      "time": 15,
+      "value": [
+        550,
+        620,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d0",
+      "path": "transform/position",
+      "time": 12.24,
+      "value": [
+        614,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d0",
+      "path": "transform/position",
+      "time": 12.58,
+      "value": [
+        614,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d0",
+      "path": "transform/position",
+      "time": 12.76,
+      "value": [
+        614,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark z1",
+      "path": "transform/position",
+      "time": 12.295,
+      "value": [
+        732,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark z1",
+      "path": "transform/position",
+      "time": 12.635,
+      "value": [
+        732,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark z1",
+      "path": "transform/position",
+      "time": 12.815,
+      "value": [
+        732,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark o2",
+      "path": "transform/position",
+      "time": 12.35,
+      "value": [
+        844,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark o2",
+      "path": "transform/position",
+      "time": 12.69,
+      "value": [
+        844,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark o2",
+      "path": "transform/position",
+      "time": 12.87,
+      "value": [
+        844,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark m3",
+      "path": "transform/position",
+      "time": 12.405,
+      "value": [
+        990,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark m3",
+      "path": "transform/position",
+      "time": 12.745,
+      "value": [
+        990,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark m3",
+      "path": "transform/position",
+      "time": 12.924999999999999,
+      "value": [
+        990,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d4",
+      "path": "transform/position",
+      "time": 12.46,
+      "value": [
+        1142,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d4",
+      "path": "transform/position",
+      "time": 12.8,
+      "value": [
+        1142,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark d4",
+      "path": "transform/position",
+      "time": 12.98,
+      "value": [
+        1142,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark u5",
+      "path": "transform/position",
+      "time": 12.515,
+      "value": [
+        1268,
+        822,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark u5",
+      "path": "transform/position",
+      "time": 12.855,
+      "value": [
+        1268,
+        642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "05 / wordmark u5",
+      "path": "transform/position",
+      "time": 13.035,
+      "value": [
+        1268,
+        652,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        5894,
+        5849,
+        5810,
+        5771,
+        5725,
+        5686,
+        5641,
+        5602,
+        5563,
+        5517,
+        5478,
+        5433,
+        5394,
+        5355,
+        5309,
+        5270,
+        5231,
+        5192,
+        5153,
+        5114,
+        5075,
+        5029,
+        4951,
+        4905,
+        4859,
+        4813,
+        4735,
+        4689,
+        4643,
+        4565
+      ],
+      "parent": "03 / notes rig",
+      "compensate": true
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/scale",
+      "time": 5.4,
+      "value": [
+        88,
+        88,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/scale",
+      "time": 6.2,
+      "value": [
+        97,
+        97,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/scale",
+      "time": 8.5,
+      "value": [
+        101,
+        101,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/scale",
+      "time": 9.5,
+      "value": [
+        112,
+        112,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/rotation",
+      "time": 5.4,
+      "value": -3,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/rotation",
+      "time": 6.6,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/rotation",
+      "time": 8.7,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "03 / notes rig",
+      "path": "transform/rotation",
+      "time": 9.5,
+      "value": 3,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 0",
+      "kind": "ellipse",
+      "size": [
+        20,
+        20
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#d1ed72",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$70.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$70.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        1385,
+        500,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        1383.2799115300977,
+        532.805670457274,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        1378.1335694349516,
+        565.3457943004258,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        1369.6026309555034,
+        597.3569743914234,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        1357.7561500631223,
+        628.5800951454078,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        1342.6900184998876,
+        658.762419950599,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        1324.5261895796252,
+        687.6596369533863,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        1303.4116910326645,
+        715.0378366489283,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$70.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        1279.5174348848805,
+        740.6754052695877,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 1",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$82.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$82.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        1285.5688883255657,
+        734.6174775355869,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        1259.6977765460633,
+        758.7985195205351,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        1231.400750931774,
+        780.8847080962829,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        1200.906862717952,
+        800.6972658590032,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        1168.4629457188055,
+        818.0758193867341,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        1134.3316183227987,
+        832.8796973874914,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        1098.7891577191847,
+        844.9890693678212,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        1062.123263562911,
+        854.3059156048006,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$82.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        1024.630729179986,
+        860.754820570015,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 2",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$94.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$94.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        1033.8004755084455,
+        859.4548298494559,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        995.8837211463525,
+        863.6966650749746,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        957.6765047842548,
+        864.9945452880816,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        919.488096033124,
+        863.3379647532954,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        881.6276122650859,
+        858.7403327180389,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        844.4015164523493,
+        851.2388648710305,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        808.1111364922644,
+        840.8942820986279,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        773.0502260984208,
+        827.7903189775499,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$94.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        739.5025870012313,
+        812.0330459825004,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 3",
+      "kind": "ellipse",
+      "size": [
+        20,
+        20
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#d1ed72",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$106.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$106.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        747.5000000000001,
+        816.0992723813201,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        715.2792738191254,
+        798.4170990026416,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        685.0394478709558,
+        778.3193782770634,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        657.0252994540577,
+        755.968791887839,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        631.4635900446008,
+        731.5462574158801,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        608.5612297678846,
+        705.2494638962498,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        588.5036025572999,
+        677.2912716175533,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        571.4530655577811,
+        647.8979891170982,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$106.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        557.5476349203798,
+        617.3075413187509,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 4",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$118.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$118.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        560.630636165989,
+        624.8373523138691,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        549.1823740398472,
+        593.5048557703445,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        541.0594891449844,
+        561.4154809948647,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        536.3277324491651,
+        528.828976521819,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        535.0254053177298,
+        496.00911491882374,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        537.1630494818919,
+        463.22155767071246,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        542.7233617083359,
+        430.7317047736202,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        551.6613338608277,
+        398.80254644569845,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$118.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        563.9046172201022,
+        367.69253434385763,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 5",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$130.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$130.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        560.6306361659889,
+        375.1626476861309,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        575.3116071766631,
+        344.8406513323863,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        593.1064514532231,
+        315.77459759812723,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        613.8711280240743,
+        288.1997626428547,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        637.4375565092132,
+        262.33935190499693,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        663.6149776525735,
+        238.40269335790504,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        692.1914974293063,
+        216.58354309746045,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        722.935802229162,
+        197.0585169767745,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$130.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        755.5990312323697,
+        179.98566098316337,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 6",
+      "kind": "ellipse",
+      "size": [
+        20,
+        20
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#d1ed72",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$142.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$142.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        747.4999999999998,
+        183.90072761867998,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        781.4408146507769,
+        168.77723054008453,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        816.8269826940923,
+        156.33482742251095,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        853.3720695904389,
+        146.67423372073767,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        890.780259892277,
+        139.87364743871223,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        928.7487517322277,
+        135.98811615315122,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        966.9702078630747,
+        135.04909142906052,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        1005.1352434095542,
+        137.06417423397352,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$142.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        1042.9349301947395,
+        142.01705341166138,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 7",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$154.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$154.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        1033.8004755084453,
+        140.54517015054404,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        1071.1198494140892,
+        147.69662470912044,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        1107.5397599232415,
+        157.69981090885233,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        1142.7654048328825,
+        170.47375761917772,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        1176.5116489634647,
+        185.9150656944422,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        1208.5053321953094,
+        203.89874494179622,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        1238.4874805724792,
+        224.27922585855856,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        1266.215402576261,
+        246.89153794950096,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$154.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        1291.4646535999118,
+        271.5526450861271,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "04 / orbital node 8",
+      "kind": "ellipse",
+      "size": [
+        12,
+        12
+      ],
+      "position": [
+        960,
+        500
+      ],
+      "fill": "#80b6ec",
+      "strokeType": "none"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$166.layer"
+      ],
+      "in": 9.56,
+      "out": 12.1
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$166.layer"
+      ],
+      "to": "front"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 9.56,
+      "value": [
+        1285.5688883255657,
+        265.38252246441306,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 9.877500000000001,
+      "value": [
+        1308.8046716769843,
+        291.46268359263917,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 10.195,
+      "value": [
+        1329.217043762522,
+        319.2308571137909,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 10.512500000000001,
+      "value": [
+        1346.6407759428018,
+        348.46227260384984,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 10.83,
+      "value": [
+        1360.934831225701,
+        378.9203153769642,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 11.1475,
+      "value": [
+        1371.983505895077,
+        410.35844177106446,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 11.465,
+      "value": [
+        1379.6973660784292,
+        442.52217480391147,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 11.7825,
+      "value": [
+        1384.0139716724173,
+        475.15116404567544,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$166.layer",
+      "path": "transform/position",
+      "time": 12.100000000000001,
+      "value": [
+        1384.898381766399,
+        507.98129303433603,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        8772,
+        8733,
+        8694,
+        8655,
+        8616,
+        8577,
+        8538,
+        8499,
+        8460,
+        8421,
+        8375,
+        8329,
+        8283,
+        8237,
+        8191,
+        7843,
+        7758,
+        7719,
+        7680,
+        7641,
+        5972,
+        5933,
+        5894,
+        5810,
+        5771,
+        5686,
+        5602,
+        5563,
+        5478,
+        5394,
+        5355,
+        5270,
+        5231,
+        5192,
+        5153,
+        5114,
+        5075,
+        4990,
+        4951,
+        4905,
+        4859,
+        4774,
+        4735,
+        4689,
+        4643,
+        4604,
+        4565,
+        4526,
+        4442,
+        4035,
+        3996,
+        3905,
+        3432,
+        3393,
+        3302,
+        2829,
+        2790,
+        2699,
+        2594,
+        2555,
+        2516,
+        2477,
+        2438,
+        2354,
+        429,
+        390,
+        351,
+        312
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  }
+]

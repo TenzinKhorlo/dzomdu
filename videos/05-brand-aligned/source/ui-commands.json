@@ -1,0 +1,3233 @@
+[
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker card 0",
+      "kind": "rounded",
+      "size": [
+        590,
+        134
+      ],
+      "position": [
+        1305,
+        345
+      ],
+      "fill": "#ffffff",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$1.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$1.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker avatar 0 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        1080.4,
+        345
+      ],
+      "fill": "#f3dfdc",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$4.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker avatar 0 letter",
+      "text": "T",
+      "position": [
+        1080.4,
+        356.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#c46761",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$6.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker name 0",
+      "text": "Tenzin",
+      "position": [
+        1142,
+        337
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$8.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker detail 0",
+      "text": "Voice remembered",
+      "position": [
+        1142,
+        377
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$10.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker share 0",
+      "text": "42%",
+      "position": [
+        1510,
+        337
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "center",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$12.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker track 0",
+      "kind": "rounded",
+      "size": [
+        130,
+        4.4
+      ],
+      "position": [
+        1500,
+        365
+      ],
+      "fill": "#f0efed",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$14.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$14.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker progress 0",
+      "kind": "rounded",
+      "size": [
+        54.6,
+        4.4
+      ],
+      "position": [
+        1462,
+        365
+      ],
+      "fill": "#c46761",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$17.layer"
+      ],
+      "in": 2.94,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$17.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$17.layer",
+      "path": "transform/scale",
+      "time": 3.14,
+      "value": [
+        0,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$17.layer",
+      "path": "transform/scale",
+      "time": 3.6399999999999997,
+      "value": [
+        100,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$17.layer",
+      "path": "transform/scale",
+      "time": 4.95,
+      "value": [
+        110,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newNull",
+    "params": {
+      "name": "Brand / speaker rig 0"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/anchor",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/position",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$1.layer",
+        "$4.layer",
+        "$6.layer",
+        "$8.layer",
+        "$10.layer",
+        "$12.layer",
+        "$14.layer",
+        "$17.layer"
+      ],
+      "parent": "$23.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$1.layer",
+        "$4.layer",
+        "$6.layer",
+        "$8.layer",
+        "$10.layer",
+        "$12.layer",
+        "$14.layer",
+        "$17.layer"
+      ],
+      "to": "backward",
+      "above": "02 / blue atmosphere"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/position",
+      "time": 2.94,
+      "value": [
+        460,
+        60,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/position",
+      "time": 3.29,
+      "value": [
+        0,
+        -7,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/position",
+      "time": 3.49,
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/opacity",
+      "time": 2.94,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$23.layer",
+      "path": "transform/opacity",
+      "time": 3.12,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        "$1.layer",
+        "$4.layer",
+        "$6.layer",
+        "$8.layer",
+        "$10.layer",
+        "$12.layer",
+        "$14.layer",
+        "$17.layer"
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker card 1",
+      "kind": "rounded",
+      "size": [
+        590,
+        134
+      ],
+      "position": [
+        1305,
+        530
+      ],
+      "fill": "#ffffff",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$34.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$34.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker avatar 1 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        1080.4,
+        530
+      ],
+      "fill": "#e5e1ed",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$37.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker avatar 1 letter",
+      "text": "P",
+      "position": [
+        1080.4,
+        541.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#8972b3",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$39.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker name 1",
+      "text": "Pema",
+      "position": [
+        1142,
+        522
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$41.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker detail 1",
+      "text": "Voice remembered",
+      "position": [
+        1142,
+        562
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$43.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker share 1",
+      "text": "33%",
+      "position": [
+        1510,
+        522
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "center",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$45.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker track 1",
+      "kind": "rounded",
+      "size": [
+        130,
+        4.4
+      ],
+      "position": [
+        1500,
+        550
+      ],
+      "fill": "#f0efed",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$47.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$47.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker progress 1",
+      "kind": "rounded",
+      "size": [
+        42.9,
+        4.4
+      ],
+      "position": [
+        1469,
+        550
+      ],
+      "fill": "#8972b3",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$50.layer"
+      ],
+      "in": 3.08,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$50.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$50.layer",
+      "path": "transform/scale",
+      "time": 3.2800000000000002,
+      "value": [
+        0,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$50.layer",
+      "path": "transform/scale",
+      "time": 3.7800000000000002,
+      "value": [
+        100,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$50.layer",
+      "path": "transform/scale",
+      "time": 4.95,
+      "value": [
+        110,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newNull",
+    "params": {
+      "name": "Brand / speaker rig 1"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/anchor",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/position",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$34.layer",
+        "$37.layer",
+        "$39.layer",
+        "$41.layer",
+        "$43.layer",
+        "$45.layer",
+        "$47.layer",
+        "$50.layer"
+      ],
+      "parent": "$56.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$34.layer",
+        "$37.layer",
+        "$39.layer",
+        "$41.layer",
+        "$43.layer",
+        "$45.layer",
+        "$47.layer",
+        "$50.layer"
+      ],
+      "to": "backward",
+      "above": "02 / blue atmosphere"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/position",
+      "time": 3.08,
+      "value": [
+        460,
+        60,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/position",
+      "time": 3.43,
+      "value": [
+        0,
+        -7,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/position",
+      "time": 3.63,
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/opacity",
+      "time": 3.08,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$56.layer",
+      "path": "transform/opacity",
+      "time": 3.2600000000000002,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        "$34.layer",
+        "$37.layer",
+        "$39.layer",
+        "$41.layer",
+        "$43.layer",
+        "$45.layer",
+        "$47.layer",
+        "$50.layer"
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker card 2",
+      "kind": "rounded",
+      "size": [
+        590,
+        134
+      ],
+      "position": [
+        1305,
+        715
+      ],
+      "fill": "#ffffff",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$67.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$67.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker avatar 2 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        1080.4,
+        715
+      ],
+      "fill": "#d8e3de",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$70.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker avatar 2 letter",
+      "text": "S",
+      "position": [
+        1080.4,
+        726.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#3f806b",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$72.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker name 2",
+      "text": "Sonam",
+      "position": [
+        1142,
+        707
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$74.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker detail 2",
+      "text": "Voice remembered",
+      "position": [
+        1142,
+        747
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$76.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / speaker share 2",
+      "text": "25%",
+      "position": [
+        1510,
+        707
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "center",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$78.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker track 2",
+      "kind": "rounded",
+      "size": [
+        130,
+        4.4
+      ],
+      "position": [
+        1500,
+        735
+      ],
+      "fill": "#f0efed",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$80.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$80.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / speaker progress 2",
+      "kind": "rounded",
+      "size": [
+        32.5,
+        4.4
+      ],
+      "position": [
+        1476,
+        735
+      ],
+      "fill": "#3f806b",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$83.layer"
+      ],
+      "in": 3.2199999999999998,
+      "out": 5.4,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$83.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 2.2
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$83.layer",
+      "path": "transform/scale",
+      "time": 3.42,
+      "value": [
+        0,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$83.layer",
+      "path": "transform/scale",
+      "time": 3.92,
+      "value": [
+        100,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$83.layer",
+      "path": "transform/scale",
+      "time": 4.95,
+      "value": [
+        110,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newNull",
+    "params": {
+      "name": "Brand / speaker rig 2"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/anchor",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/position",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$67.layer",
+        "$70.layer",
+        "$72.layer",
+        "$74.layer",
+        "$76.layer",
+        "$78.layer",
+        "$80.layer",
+        "$83.layer"
+      ],
+      "parent": "$89.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$67.layer",
+        "$70.layer",
+        "$72.layer",
+        "$74.layer",
+        "$76.layer",
+        "$78.layer",
+        "$80.layer",
+        "$83.layer"
+      ],
+      "to": "backward",
+      "above": "02 / blue atmosphere"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/position",
+      "time": 3.2199999999999998,
+      "value": [
+        460,
+        60,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/position",
+      "time": 3.57,
+      "value": [
+        0,
+        -7,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/position",
+      "time": 3.7699999999999996,
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/opacity",
+      "time": 3.2199999999999998,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$89.layer",
+      "path": "transform/opacity",
+      "time": 3.4,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        "$67.layer",
+        "$70.layer",
+        "$72.layer",
+        "$74.layer",
+        "$76.layer",
+        "$78.layer",
+        "$80.layer",
+        "$83.layer"
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / transcript card",
+      "kind": "rounded",
+      "size": [
+        665,
+        516
+      ],
+      "position": [
+        585,
+        620
+      ],
+      "fill": "#ffffff",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$100.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$100.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript heading",
+      "text": "Transcript",
+      "position": [
+        296.5,
+        425
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 33,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$103.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript description",
+      "text": "Weekly product sync · 3 speakers",
+      "position": [
+        296.5,
+        471
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 28.6,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$105.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / transcript divider",
+      "kind": "rect",
+      "size": [
+        577,
+        2.2
+      ],
+      "position": [
+        585,
+        506
+      ],
+      "fill": "#e4e4e2",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$107.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / active transcript row",
+      "kind": "rounded",
+      "size": [
+        612.2,
+        105
+      ],
+      "position": [
+        585,
+        577
+      ],
+      "fill": "#eff3f8",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$109.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$109.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / transcript avatar 0 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        349.3,
+        571
+      ],
+      "fill": "#f3dfdc",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$112.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript avatar 0 letter",
+      "text": "T",
+      "position": [
+        349.3,
+        582.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#c46761",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$114.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript speaker 0",
+      "text": "Tenzin",
+      "position": [
+        410.9,
+        561
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#c46761",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$116.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript timestamp 0",
+      "text": "00:12",
+      "position": [
+        630,
+        561
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$118.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript sentence 0",
+      "text": "Let’s ship the next version.",
+      "position": [
+        410.9,
+        603
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$120.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$120.layer",
+      "path": "transform/opacity",
+      "time": 5.9,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$120.layer",
+      "path": "transform/opacity",
+      "time": 6.17,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / transcript avatar 1 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        349.3,
+        685
+      ],
+      "fill": "#e5e1ed",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$124.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript avatar 1 letter",
+      "text": "P",
+      "position": [
+        349.3,
+        696.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#8972b3",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$126.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript speaker 1",
+      "text": "Pema",
+      "position": [
+        410.9,
+        675
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#8972b3",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$128.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript timestamp 1",
+      "text": "00:18",
+      "position": [
+        630,
+        675
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$130.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript sentence 1",
+      "text": "I’ll finish the onboarding.",
+      "position": [
+        410.9,
+        717
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$132.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$132.layer",
+      "path": "transform/opacity",
+      "time": 6.04,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$132.layer",
+      "path": "transform/opacity",
+      "time": 6.31,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / transcript avatar 2 circle",
+      "kind": "ellipse",
+      "size": [
+        70.4,
+        70.4
+      ],
+      "position": [
+        349.3,
+        799
+      ],
+      "fill": "#d8e3de",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$136.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript avatar 2 letter",
+      "text": "S",
+      "position": [
+        349.3,
+        810.264
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 26.400000000000002,
+      "fill": "#3f806b",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$138.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript speaker 2",
+      "text": "Sonam",
+      "position": [
+        410.9,
+        789
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 30.8,
+      "fill": "#3f806b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$140.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript timestamp 2",
+      "text": "00:24",
+      "position": [
+        630,
+        789
+      ],
+      "font": "Geist Mono",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$142.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / transcript sentence 2",
+      "text": "Friday works for the review.",
+      "position": [
+        410.9,
+        831
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 30.8,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$144.layer"
+      ],
+      "in": 5.52,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$144.layer",
+      "path": "transform/opacity",
+      "time": 6.180000000000001,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$144.layer",
+      "path": "transform/opacity",
+      "time": 6.45,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newNull",
+    "params": {
+      "name": "Brand / transcript assembly"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/anchor",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/position",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$100.layer",
+        "$103.layer",
+        "$105.layer",
+        "$107.layer",
+        "$109.layer",
+        "$112.layer",
+        "$114.layer",
+        "$116.layer",
+        "$118.layer",
+        "$120.layer",
+        "$124.layer",
+        "$126.layer",
+        "$128.layer",
+        "$130.layer",
+        "$132.layer",
+        "$136.layer",
+        "$138.layer",
+        "$140.layer",
+        "$142.layer",
+        "$144.layer"
+      ],
+      "parent": "$148.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$100.layer",
+        "$103.layer",
+        "$105.layer",
+        "$107.layer",
+        "$109.layer",
+        "$112.layer",
+        "$114.layer",
+        "$116.layer",
+        "$118.layer",
+        "$120.layer",
+        "$124.layer",
+        "$126.layer",
+        "$128.layer",
+        "$130.layer",
+        "$132.layer",
+        "$136.layer",
+        "$138.layer",
+        "$140.layer",
+        "$142.layer",
+        "$144.layer"
+      ],
+      "to": "backward",
+      "above": "03 / lime atmosphere"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/position",
+      "time": 5.52,
+      "value": [
+        -60,
+        100,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/position",
+      "time": 5.869999999999999,
+      "value": [
+        0,
+        -7,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/position",
+      "time": 6.069999999999999,
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/opacity",
+      "time": 5.52,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$148.layer",
+      "path": "transform/opacity",
+      "time": 5.699999999999999,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        "$100.layer",
+        "$103.layer",
+        "$105.layer",
+        "$107.layer",
+        "$109.layer",
+        "$112.layer",
+        "$114.layer",
+        "$116.layer",
+        "$118.layer",
+        "$120.layer",
+        "$124.layer",
+        "$126.layer",
+        "$128.layer",
+        "$130.layer",
+        "$132.layer",
+        "$136.layer",
+        "$138.layer",
+        "$140.layer",
+        "$142.layer",
+        "$144.layer"
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / notes card",
+      "kind": "rounded",
+      "size": [
+        665,
+        516
+      ],
+      "position": [
+        1325,
+        620
+      ],
+      "fill": "#ffffff",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$159.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$159.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 17.6
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / notes heading",
+      "text": "Meeting notes",
+      "position": [
+        1036.5,
+        425
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 33,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$162.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / notes description",
+      "text": "Decisions and action items",
+      "position": [
+        1036.5,
+        471
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 28.6,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$164.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / notes divider",
+      "kind": "rect",
+      "size": [
+        577,
+        2.2
+      ],
+      "position": [
+        1325,
+        506
+      ],
+      "fill": "#e4e4e2",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$166.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / decisions heading",
+      "text": "Decisions",
+      "position": [
+        1036.5,
+        549
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 28.6,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$168.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / decision index box",
+      "kind": "rounded",
+      "size": [
+        44,
+        44
+      ],
+      "position": [
+        1076.1,
+        581
+      ],
+      "fill": "#f7f7f5",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$170.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$170.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 8.8
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / decision index",
+      "text": "1",
+      "position": [
+        1076.1,
+        589
+      ],
+      "font": "Geist",
+      "style": "Medium",
+      "size": 24.2,
+      "fill": "#696563",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$173.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / decision text",
+      "text": "Ship the next version.",
+      "position": [
+        1111.3,
+        591
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 28.6,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$175.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / decision separator",
+      "kind": "rect",
+      "size": [
+        577,
+        1.54
+      ],
+      "position": [
+        1325,
+        618
+      ],
+      "fill": "#e4e4e2",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$177.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / actions heading",
+      "text": "Action items",
+      "position": [
+        1036.5,
+        650
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 28.6,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$179.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / completed checkbox",
+      "kind": "rounded",
+      "size": [
+        44,
+        44
+      ],
+      "position": [
+        1076.1,
+        692
+      ],
+      "fill": "#15803d",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$181.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$181.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 4.4
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$181.layer",
+      "path": "transform/scale",
+      "time": 6.7,
+      "value": [
+        92,
+        92,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$181.layer",
+      "path": "transform/scale",
+      "time": 6.9,
+      "value": [
+        105,
+        105,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$181.layer",
+      "path": "transform/scale",
+      "time": 7.05,
+      "value": [
+        100,
+        100,
+        100
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / completed action",
+      "text": "Finish onboarding.",
+      "position": [
+        1111.3,
+        702
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 28.6,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$187.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "shape.newPath",
+    "params": {
+      "name": "Brand / completed action strike",
+      "vertices": [
+        [
+          1111.3,
+          693
+        ],
+        [
+          1360,
+          693
+        ]
+      ],
+      "closed": false,
+      "fill": false,
+      "stroke": "#696563",
+      "strokeWidth": 1.5,
+      "space": "comp"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$189.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$189.layer",
+      "path": "transform/opacity",
+      "time": 6.9,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$189.layer",
+      "path": "transform/opacity",
+      "time": 7.1,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / action owner Pema circle",
+      "kind": "ellipse",
+      "size": [
+        52.8,
+        52.8
+      ],
+      "position": [
+        1137.7,
+        741
+      ],
+      "fill": "#e5e1ed",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$193.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / action owner Pema letter",
+      "text": "P",
+      "position": [
+        1137.7,
+        749.448
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 19.799999999999997,
+      "fill": "#8972b3",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$195.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / action owner name",
+      "text": "Pema",
+      "position": [
+        1177.3,
+        750
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$197.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / due date badge",
+      "kind": "rounded",
+      "size": [
+        156,
+        44
+      ],
+      "position": [
+        1475,
+        741
+      ],
+      "fill": false,
+      "fillType": "none",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$199.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$199.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 8.8
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / due date",
+      "text": "Friday",
+      "position": [
+        1485,
+        750
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 26.4,
+      "fill": "#1e1c1b",
+      "justify": "center",
+      "tracking": 6
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$202.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / action separator",
+      "kind": "rect",
+      "size": [
+        577,
+        1.54
+      ],
+      "position": [
+        1325,
+        777
+      ],
+      "fill": "#e4e4e2",
+      "fillType": "solid",
+      "stroke": false,
+      "strokeType": "none",
+      "strokeWidth": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$204.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / open checkbox",
+      "kind": "rounded",
+      "size": [
+        44,
+        44
+      ],
+      "position": [
+        1076.1,
+        806
+      ],
+      "fill": "#fafaf9",
+      "fillType": "solid",
+      "stroke": "#e4e4e2",
+      "strokeType": "solid",
+      "strokeWidth": 2.2
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$206.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$206.layer",
+      "path": "contents/group/contents/rect/roundness",
+      "value": 4.4
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / open action",
+      "text": "Review together.",
+      "position": [
+        1111.3,
+        815
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 28.6,
+      "fill": "#1e1c1b",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$209.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newShape",
+    "params": {
+      "name": "Brand / next owner Sonam circle",
+      "kind": "ellipse",
+      "size": [
+        39.6,
+        39.6
+      ],
+      "position": [
+        1137.7,
+        847
+      ],
+      "fill": "#d8e3de",
+      "fillType": "solid",
+      "stroke": "#fafaf9",
+      "strokeType": "solid",
+      "strokeWidth": 4.4
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$211.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / next owner Sonam letter",
+      "text": "S",
+      "position": [
+        1137.7,
+        853.336
+      ],
+      "font": "Geist",
+      "style": "SemiBold",
+      "size": 14.850000000000001,
+      "fill": "#3f806b",
+      "justify": "center",
+      "tracking": 0
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$213.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newText",
+    "params": {
+      "name": "Brand / next owner name",
+      "text": "Sonam",
+      "position": [
+        1171,
+        855
+      ],
+      "font": "Geist",
+      "style": "Regular",
+      "size": 24.2,
+      "fill": "#696563",
+      "justify": "left",
+      "tracking": -10
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$215.layer"
+      ],
+      "in": 5.72,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.newNull",
+    "params": {
+      "name": "Brand / notes assembly"
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/anchor",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "prop.set",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/position",
+      "value": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$159.layer",
+        "$162.layer",
+        "$164.layer",
+        "$166.layer",
+        "$168.layer",
+        "$170.layer",
+        "$173.layer",
+        "$175.layer",
+        "$177.layer",
+        "$179.layer",
+        "$181.layer",
+        "$187.layer",
+        "$189.layer",
+        "$193.layer",
+        "$195.layer",
+        "$197.layer",
+        "$199.layer",
+        "$202.layer",
+        "$204.layer",
+        "$206.layer",
+        "$209.layer",
+        "$211.layer",
+        "$213.layer",
+        "$215.layer"
+      ],
+      "parent": "$217.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$159.layer",
+        "$162.layer",
+        "$164.layer",
+        "$166.layer",
+        "$168.layer",
+        "$170.layer",
+        "$173.layer",
+        "$175.layer",
+        "$177.layer",
+        "$179.layer",
+        "$181.layer",
+        "$187.layer",
+        "$189.layer",
+        "$193.layer",
+        "$195.layer",
+        "$197.layer",
+        "$199.layer",
+        "$202.layer",
+        "$204.layer",
+        "$206.layer",
+        "$209.layer",
+        "$211.layer",
+        "$213.layer",
+        "$215.layer"
+      ],
+      "to": "backward",
+      "above": "03 / lime atmosphere"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/position",
+      "time": 5.72,
+      "value": [
+        80,
+        -80,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/position",
+      "time": 6.069999999999999,
+      "value": [
+        0,
+        -7,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/position",
+      "time": 6.27,
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/opacity",
+      "time": 5.72,
+      "value": 0,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "prop.addKey",
+    "params": {
+      "layer": "$217.layer",
+      "path": "transform/opacity",
+      "time": 5.8999999999999995,
+      "value": 100,
+      "timeBase": "comp"
+    }
+  },
+  {
+    "command": "layer.setSwitch",
+    "params": {
+      "layers": [
+        "$159.layer",
+        "$162.layer",
+        "$164.layer",
+        "$166.layer",
+        "$168.layer",
+        "$170.layer",
+        "$173.layer",
+        "$175.layer",
+        "$177.layer",
+        "$179.layer",
+        "$181.layer",
+        "$187.layer",
+        "$189.layer",
+        "$193.layer",
+        "$195.layer",
+        "$197.layer",
+        "$199.layer",
+        "$202.layer",
+        "$204.layer",
+        "$206.layer",
+        "$209.layer",
+        "$211.layer",
+        "$213.layer",
+        "$215.layer"
+      ],
+      "switch": "motionBlur",
+      "value": true
+    }
+  },
+  {
+    "command": "shape.newPath",
+    "params": {
+      "name": "Brand / exact checkbox check",
+      "vertices": [
+        [
+          1066.475,
+          692.9625
+        ],
+        [
+          1074.175,
+          700.6625
+        ],
+        [
+          1085.725,
+          683.3375
+        ]
+      ],
+      "closed": false,
+      "fill": false,
+      "stroke": "#ffffff",
+      "strokeWidth": 4.491666666666667,
+      "space": "comp"
+    }
+  },
+  {
+    "command": "layer.timing",
+    "params": {
+      "layers": [
+        "$228.layer"
+      ],
+      "in": 6.9,
+      "out": 9.5,
+      "start": 0
+    }
+  },
+  {
+    "command": "layer.setParent",
+    "params": {
+      "layers": [
+        "$228.layer"
+      ],
+      "parent": "$217.layer",
+      "compensate": false
+    }
+  },
+  {
+    "command": "layer.arrange",
+    "params": {
+      "layers": [
+        "$228.layer"
+      ],
+      "to": "backward",
+      "above": "03 / lime atmosphere"
+    }
+  },
+  {
+    "command": "layer.addShapeItem",
+    "params": {
+      "layer": "$228.layer",
+      "kind": "trim",
+      "group": "contents/group/contents"
+    }
+  }
+]

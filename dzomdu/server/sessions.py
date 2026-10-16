@@ -7,6 +7,7 @@ speaker and LLM models never compete for memory and are only touched from one th
 
 from __future__ import annotations
 
+import re
 import secrets
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -17,12 +18,16 @@ from typing import Any, BinaryIO
 
 import numpy as np
 
+from ..align import assign_speakers, build_turns
 from ..audio import SAMPLE_RATE, Audio, write_wav
 from ..config import Config
 from ..live import LiveSpeakerTracker, LiveTranscriber
 from ..llm.client import LLMError
+from ..models import SpeakerAssignment, SpeakerSegment
 from ..noise import NoiseSuppressor
 from ..pipeline import Analysis, Pipeline
+from ..speakers.matching import cluster_voices
+from ..transcript import LiveSpeakerEdit, TranscriptConflict, clean_name
 
 ACTIVE_STATES = {"recording", "processing", "summarizing"}
 
@@ -72,6 +77,8 @@ class Session:
         self.live_segments: list[dict[str, Any]] = []
         self.live_rev = 0  # bumped on every change, so clients can fetch only what changed
         self._live_index: dict[int, int] = {}  # segment id → position in live_segments
+        self.live_names: dict[str, str] = {}
+        self.live_overrides: dict[int, str] = {}
         self.created = datetime.now()
         self.started_at: datetime | None = None
         self.audio_path: Path | None = None
@@ -87,14 +94,66 @@ class Session:
     def put_live(self, seg: dict[str, Any]) -> None:
         """Add a live segment, or replace an earlier version of it (same id)."""
         with self.lock:
-            self.live_rev += 1
-            seg = seg | {"rev": self.live_rev}
-            i = self._live_index.get(seg["id"])
-            if i is None:
-                self._live_index[seg["id"]] = len(self.live_segments)
-                self.live_segments.append(seg)
+            key = seg.get("speaker")
+            seg = seg | {"speaker_key": key}
+            self._store_live(seg)
+
+    def _store_live(self, seg: dict[str, Any]) -> None:
+        """Called under the session lock; late model results cannot overwrite human labels."""
+        self.live_rev += 1
+        key = seg.get("speaker_key")
+        seg = seg | {
+            "speaker": self.live_overrides.get(seg["id"], self.live_names.get(key, key)),
+            "corrected": seg["id"] in self.live_overrides or key in self.live_names,
+            "rev": self.live_rev,
+        }
+        i = self._live_index.get(seg["id"])
+        if i is None:
+            self._live_index[seg["id"]] = len(self.live_segments)
+            self.live_segments.append(seg)
+        else:
+            self.live_segments[i] = seg
+
+    def edit_live(self, edit: LiveSpeakerEdit) -> None:
+        name = clean_name(edit.name)
+        with self.lock:
+            if self.state != "recording":
+                raise TranscriptConflict("Live corrections are available while recording")
+            if any(sid not in self._live_index for sid in edit.segment_ids):
+                raise ValueError("This transcript segment no longer exists")
+            selected = [self.live_segments[self._live_index[sid]] for sid in edit.segment_ids]
+            if any(seg.get("partial") or not seg.get("text") for seg in selected):
+                raise TranscriptConflict("Wait for this sentence to finish before assigning it")
+            if any(
+                seg["id"] in edit.revisions and edit.revisions[seg["id"]] != seg["rev"]
+                for seg in selected
+            ):
+                raise TranscriptConflict("This sentence was updated. Try the correction again.")
+            if edit.rename_speaker:
+                if len(selected) != 1 or not selected[0].get("speaker"):
+                    raise ValueError("Choose one labelled speaker to rename")
+                old = selected[0]["speaker"]
+                keys = {key for key, value in self.live_names.items() if value == old} | {
+                    seg["speaker_key"] for seg in self.live_segments
+                    if seg.get("speaker_key") and seg["id"] not in self.live_overrides
+                    and seg.get("speaker") == old
+                }
+                for key in keys:
+                    self.live_names[key] = name
+                for sid, previous in list(self.live_overrides.items()):
+                    if previous == old:
+                        self.live_overrides[sid] = name
+                changed = [seg for seg in self.live_segments if seg.get("speaker") == old]
+                # Preserve an explicit human assignment even if a late model changes its
+                # provisional cluster key. Future utterances still use the voice-name map.
+                for seg in changed:
+                    self.live_overrides[seg["id"]] = name
             else:
-                self.live_segments[i] = seg
+                for seg in selected:
+                    self.live_overrides[seg["id"]] = name
+                changed = selected
+            for seg in changed:
+                self._store_live(seg)
 
     def log(self, message: str) -> None:
         with self.lock:
@@ -275,6 +334,7 @@ class SessionManager:
                 attendees=s.meta.attendees or None,
                 num_speakers=s.meta.num_speakers,
             )
+            self._apply_live_review(s, analysis)
         except Exception as exc:
             s.state, s.error = "error", f"{exc.__class__.__name__}: {exc}"
             return
@@ -284,6 +344,54 @@ class SessionManager:
         else:
             s.warning = "No speech was found in this recording."
             self._summarize_job(s, s.meta.template, s.meta.instructions, overwrite=False)
+
+    def _apply_live_review(self, s: Session, analysis: Analysis) -> None:
+        """Carry timed human labels into pass 2 using word timestamps, not text guessing.
+
+        A live voice can split or merge in the full pass. Assign the overlapping words,
+        rebuild the turns and voice clips, then let the ordinary review confirm names.
+        """
+        with s.lock:
+            corrections = [dict(seg) for seg in s.live_segments
+                           if seg.get("corrected") and not seg.get("partial")
+                           and seg.get("text") and seg.get("speaker")]
+        if not corrections or not analysis.words:
+            return
+        s.log("Carrying live speaker corrections into review")
+        record = analysis.record
+        labels = assign_speakers(analysis.words, [
+            SpeakerSegment(t.start, t.end, t.speaker) for t in record.turns
+        ])
+        targets: dict[str, str] = {}
+        for i, word in enumerate(analysis.words):
+            match = max(corrections, key=lambda seg: min(word.end, seg["end"])
+                        - max(word.start, seg["start"]))
+            if min(word.end, match["end"]) <= max(word.start, match["start"]):
+                continue
+            name = match["speaker"]
+            if name not in targets:
+                key = f"LIVE_{len(targets)}"
+                while key in record.assignments:
+                    key += "_"
+                targets[name] = key
+                record.assignments[key] = SpeakerAssignment(
+                    cluster=key,
+                    suggestion=None if re.fullmatch(r"Speaker \d+", name) else name,
+                    status="unknown" if re.fullmatch(r"Speaker \d+", name) else "suggested",
+                    unknown_label=name if re.fullmatch(r"Speaker \d+", name)
+                    else f"Live speaker {len(targets)}",
+                )
+            labels[i] = targets[name]
+        record.turns = build_turns(analysis.words, labels)
+        used = {turn.speaker for turn in record.turns}
+        record.assignments = {key: a for key, a in record.assignments.items() if key in used}
+        cfg = self.cfg.speakers
+        # Voiceprints must be based on the corrected audio spans, never the old mixed cluster.
+        analysis.voices = cluster_voices(
+            analysis.audio, [SpeakerSegment(t.start, t.end, t.speaker) for t in record.turns],
+            self.pipeline.diarizer, min_duration=cfg.min_segment_duration,
+            max_segments=cfg.max_segments_per_cluster, clip_duration=cfg.clip_duration,
+        )
 
     def submit_review(self, s: Session, names: dict[str, str | None]) -> None:
         if s.state != "review" or s.analysis is None:
@@ -310,13 +418,14 @@ class SessionManager:
     def regenerate(
         self, s: Session, template: str | None, instructions: str, force: bool = False
     ) -> None:
-        if s.state not in ("done",) or s.record is None:
+        retryable = s.state == "error" and s.note_path is not None
+        if (s.state != "done" and not retryable) or s.record is None:
             raise ValueError("Notes can be regenerated once the meeting is processed")
         _record, note_sha = self.pipeline.load_record(s.record.id)
         if not force and self.pipeline.note_was_edited(s.record, note_sha):
             raise PermissionError(f"{s.record.note_path} was edited after it was generated")
         s.meta.template, s.meta.instructions, s.meta.summarize = template, instructions, True
-        s.state, s.warning = "summarizing", None
+        s.state, s.warning, s.error = "summarizing", None, None
         s.messages.clear()
         self.submit(lambda: self._summarize_job(s, template, instructions, overwrite=True))
 
@@ -328,11 +437,17 @@ class SessionManager:
         try:
             tmpl = pipe.template(template)
             notes = None
+            if overwrite and not s.record.turns:
+                raise ValueError("This meeting has no transcript to generate notes from")
             if s.meta.summarize and s.record.turns:
                 s.log(f"Writing notes with {self.cfg.llm.model}")
                 try:
                     notes = pipe.summarize(s.record, tmpl, instructions)
                 except LLMError as exc:
+                    if overwrite:
+                        raise LLMError(
+                            f"Rewriting failed. Your existing notes were kept. {exc}"
+                        ) from exc
                     s.warning = f"Summary skipped: {exc}"
             s.note_path = pipe.write_note(s.record, notes, tmpl if notes else None, overwrite)
             s.state = "done"
@@ -413,6 +528,7 @@ class SessionManager:
                     "turns": len(turns),
                     "quotes": [{"start": q.start, "text": q.text} for q in quotes],
                     "has_clip": bool(voice and voice.clip),
+                    "live_assigned": cluster.startswith("LIVE_"),
                 }
             )
         return out

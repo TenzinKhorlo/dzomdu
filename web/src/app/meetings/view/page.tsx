@@ -15,13 +15,12 @@ import {
   ListChecks,
   Loader2,
   MessagesSquare,
-  Play,
   Search,
   Sparkles,
   Trash2,
   Users,
 } from "lucide-react"
-import { motion, useReducedMotion } from "motion/react"
+import { useReducedMotion } from "motion/react"
 import { toast } from "sonner"
 
 import { ActionList } from "@/components/action-list"
@@ -43,6 +42,7 @@ import {
 } from "@/components/animate-ui/components/animate/tabs"
 import { AvatarStack, EmptyState, SpeakerAvatar, StatTile } from "@/components/common"
 import { useInfo } from "@/components/providers"
+import { TranscriptEditor } from "@/components/transcript-editor"
 import { useTasks } from "@/components/task-provider"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -63,8 +63,9 @@ import { api, projectHref, type MeetingDetail, type Session } from "@/lib/api"
 import { PlayerBar, PlayerProvider, turnAt, usePlayer } from "@/components/meeting/player"
 import { RenameMeetingDialog } from "@/components/meeting/rename-dialog"
 import { useConfirm } from "@/components/confirm"
-import { clock, colorFor, duration, longDate } from "@/lib/format"
+import { colorFor, duration, longDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { type TranscriptEdit } from "@/lib/transcript-edits"
 
 function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: () => void }) {
   const { info } = useInfo()
@@ -208,7 +209,11 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
   )
 }
 
-function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string | null }) {
+function Transcript({ meeting, focus, reload, onRewriting, rewriting }: {
+  meeting: MeetingDetail; focus: string | null; reload: () => void
+  onRewriting: (id: string) => void; rewriting: boolean
+}) {
+  const { info } = useInfo()
   const [q, setQ] = React.useState("")
   const player = usePlayer()
   const reduce = useReducedMotion()
@@ -247,65 +252,29 @@ function Transcript({ meeting, focus }: { meeting: MeetingDetail; focus: string 
     return () => window.clearTimeout(t)
   }, [focus, reduce])
 
-  const query = q.trim().toLowerCase()
-  const turns = query
-    ? meeting.turns.filter((t) => (t.text + " " + t.label).toLowerCase().includes(query))
-    : meeting.turns
+  async function saveCorrections(edits: TranscriptEdit[]) {
+    const result = await api<{ session_id: string | null; warning?: string }>(
+      `/api/meetings/${encodeURIComponent(meeting.id)}/transcript`, {
+        method: "PATCH", json: { revision: meeting.transcript_revision, edits },
+      },
+    )
+    reload()
+    if (result.session_id) onRewriting(result.session_id)
+    if (result.warning) toast.warning(result.warning)
+    else toast.success(result.session_id ? "Corrections saved. Updating your notes…" : "Corrections saved")
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search the transcript…"
-          className="pl-9"
-          aria-label="Search the transcript"
-        />
+        <Input value={q} onChange={event => setQ(event.target.value)}
+          placeholder="Search the transcript…" className="pl-9" aria-label="Search the transcript" />
       </div>
-      <ul className="space-y-1">
-        {turns.map((t) => {
-          const active = t.id === activeId
-          return (
-            <li key={t.id} id={`turn-${t.id}`}>
-              <button
-                type="button"
-                onClick={() => player?.seek(t.start, true)}
-                disabled={!player?.available}
-                aria-current={active ? "true" : undefined}
-                className={cn(
-                  "group pressable relative -mx-2 flex w-[calc(100%+1rem)] gap-3 rounded-xl px-2 py-2 text-left transition-colors duration-300",
-                  "hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-transparent",
-                  (active || focus === t.id) && "bg-brand/[0.06] hover:bg-brand/10",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="active-turn"
-                    className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-brand"
-                  />
-                )}
-                <SpeakerAvatar name={t.label} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2 text-sm">
-                    <span className="font-semibold" style={{ color: colorFor(t.label) }}>
-                      {t.label}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {clock(t.start)}
-                    </span>
-                    {player?.available && (
-                      <Play className="size-3 self-center fill-current text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                    )}
-                  </div>
-                  <p className="text-sm leading-relaxed">{t.text}</p>
-                </div>
-              </button>
-            </li>
-          )
-        })}
-        {!turns.length && <li className="text-sm text-muted-foreground">No matches.</li>}
-      </ul>
+      <TranscriptEditor rows={meeting.turns} speakers={meeting.speakers.map(speaker => ({ key: speaker.cluster, label: speaker.label }))}
+        people={info?.people} query={q.trim().toLowerCase()} activeId={activeId} focusId={focus}
+        onSeek={player?.available ? row => player.seek(row.start, true) : undefined}
+        onSave={saveCorrections} disabled={rewriting} />
     </div>
   )
 }
@@ -347,6 +316,24 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
   const router = useRouter()
   const confirm = useConfirm()
   const [deleting, setDeleting] = React.useState(false)
+  const [rewriteId, setRewriteId] = React.useState<string | null>(null)
+  const activeRewrite = rewriteId ?? m.notes_session_id ?? null
+  const rewrite = useApi<Session>(activeRewrite ? `/api/sessions/${activeRewrite}` : null, { interval: 1000 })
+  const completedRewrite = React.useRef<string | null>(null)
+  React.useEffect(() => {
+    const session = rewrite.data
+    if (!activeRewrite || !session || session.id !== activeRewrite || completedRewrite.current === activeRewrite) return
+    if (session.state === "done" || session.state === "error") {
+      completedRewrite.current = activeRewrite
+      setRewriteId(null)
+      reload()
+      reloadTasks()
+      if (session.state === "error") toast.error("Transcript saved; notes could not be updated", { description: session.error })
+      else toast.success("Summary and minutes updated")
+    }
+  }, [activeRewrite, rewrite.data, reload, reloadTasks])
+  const rewriting = !!activeRewrite && completedRewrite.current !== activeRewrite
+
 
   async function deleteMeeting() {
     const ok = await confirm({
@@ -468,6 +455,13 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
         </div>
       </div>
 
+      {(rewriting || m.notes_stale) && (
+        <p role="status" className="flex items-start gap-2 rounded-lg border bg-information/5 p-3 text-sm">
+          {rewriting && <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-information" />}
+          {rewriting ? "Transcript corrections saved. Updating the summary and minutes…"
+            : "The transcript has been corrected. The notes still reflect the earlier transcript; use Rewrite with AI to update them."}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
         <StatTile
           label="Length"
@@ -533,7 +527,7 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
                     )}
                   </TabsContent>
                   <TabsContent value="transcript">
-                    <Transcript meeting={m} focus={focus} />
+                    <Transcript meeting={m} focus={focus} reload={reload} onRewriting={setRewriteId} rewriting={rewriting} />
                   </TabsContent>
                   <TabsContent value="actions">
                     {m.tasks.length ? (

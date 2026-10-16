@@ -63,14 +63,14 @@ PERSON_STUB = """# {name}
 
 ## Bio
 
-_Role, responsibilities and background. Dzomdu passes this to the LLM as context._
+_Role, responsibilities and background. Kept separately from transcript-based summaries._
 """
 
 PROJECT_STUB = """# {name}
 
 ## Overview
 
-_Goals, scope, team and status. Dzomdu passes this to the LLM as context._
+_Goals, scope, team and status. Kept separately from transcript-based summaries._
 
 ## Glossary
 
@@ -137,8 +137,8 @@ class Vault:
         body = PERSON_STUB.format(name=name)
         if bio:
             body = body.replace(
-                "_Role, responsibilities and background. Dzomdu passes this to the LLM as "
-                "context._",
+                "_Role, responsibilities and background. Kept separately from "
+                "transcript-based summaries._",
                 bio.strip(),
             )
         path.write_text(dump_frontmatter(meta) + "\n" + body, encoding="utf-8")

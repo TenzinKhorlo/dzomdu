@@ -389,7 +389,7 @@ def people_add(
     bio: Annotated[str | None, typer.Option()] = None,
     config: ConfigOpt = None,
 ) -> None:
-    """Create or update a person's profile note (role and bio are used as LLM context)."""
+    """Create or update a person's profile note (roles supply participant details in minutes)."""
     cfg = _cfg(config)
     path = Vault(cfg.vault).ensure_person(name, role=role, organisation=organisation, bio=bio)
     console.print(f"[green]Saved[/] {path}")

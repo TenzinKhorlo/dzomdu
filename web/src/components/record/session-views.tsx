@@ -10,6 +10,7 @@ import { ShimmeringText } from "@/components/animate-ui/primitives/texts/shimmer
 import { SpeakerAvatar } from "@/components/common"
 import { useConfirm } from "@/components/confirm"
 import { useInfo } from "@/components/providers"
+import { TranscriptEditor } from "@/components/transcript-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +20,7 @@ import { clock, colorFor, duration } from "@/lib/format"
 import { springSnappy } from "@/lib/motion"
 import { recorder, useRecorder } from "@/lib/recorder"
 import { cn } from "@/lib/utils"
+import { type TranscriptEdit } from "@/lib/transcript-edits"
 
 // -- recording ---------------------------------------------------------------------------------
 
@@ -37,7 +39,11 @@ function Waveform({ levels }: { levels: number[] }) {
   )
 }
 
-export function RecordingView({ session, live }: { session: Session; live: LiveSegment[] }) {
+export function RecordingView({ session, live, onCorrected }: {
+  session: Session; live: LiveSegment[]; onCorrected: (session: Session) => void
+}) {
+  const { info } = useInfo()
+  const [editingSpeakers, setEditingSpeakers] = React.useState(false)
   const rec = useRecorder()
   const local = rec.sessionId === session.id
   const [now, setNow] = React.useState(() => Date.now())
@@ -52,10 +58,11 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
   // follow the newest words, but only while the reader is already at the end of the page
   const lastRev = live.reduce((m, seg) => Math.max(m, seg.rev ?? 0), 0)
   React.useEffect(() => {
+    if (editingSpeakers) return
     const doc = document.scrollingElement
     if (!doc || doc.scrollHeight - doc.scrollTop - doc.clientHeight > 160) return
     window.scrollTo({ top: doc.scrollHeight, behavior: reduce ? "auto" : "smooth" })
-  }, [lastRev, reduce])
+  }, [lastRev, reduce, editingSpeakers])
 
   const elapsed = local ? (now - rec.startedAt) / 1000 : session.elapsed
 
@@ -75,6 +82,29 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
     },
     [],
   )
+
+  const rows = live.map(seg => ({
+    ...seg, id: String(seg.id), speaker: seg.speaker ? `live:${seg.speaker}` : null,
+    label: seg.speaker ?? "Speaker",
+  }))
+  const speakers = [...new Set(live.flatMap(seg => seg.speaker ? [seg.speaker] : []))]
+    .map(label => ({ key: `live:${label}`, label }))
+
+  async function correctSpeaker(edit: TranscriptEdit) {
+    const selected = edit.rename_speaker
+      ? rows.filter(row => row.speaker === edit.speaker && !row.partial).slice(0, 1)
+      : rows.filter(row => edit.turn_ids.includes(row.id))
+    const name = edit.name ?? speakers.find(speaker => speaker.key === edit.speaker)?.label
+    if (!selected.length || !name) throw new Error("This speaker is still being identified")
+    const result = await api<Session>(`/api/sessions/${session.id}/live-speakers`, {
+      method: "PATCH", json: {
+        segment_ids: selected.map(row => Number(row.id)), name,
+        rename_speaker: !!edit.rename_speaker,
+        revisions: Object.fromEntries(selected.map(row => [row.id, row.rev])),
+      },
+    })
+    onCorrected(result)
+  }
 
   async function stop() {
     setStopping(true)
@@ -126,7 +156,7 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
           <Button
             onClick={stop}
             disabled={!local || stopping}
-            className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+            className="rounded-full"
           >
             {stopping ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}
             Stop &amp; process
@@ -139,15 +169,15 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
   return (
     <div className="flex flex-col gap-6">
       {session.warning && (
-        <p className="rounded-lg bg-warning/10 px-4 py-2 text-sm text-warning">{session.warning}</p>
+        <p className="rounded-lg bg-warning-subtle px-4 py-2 text-sm text-warning">{session.warning}</p>
       )}
 
       <Card className="gap-0">
         <CardHeader className="border-b pb-4">
           <CardTitle>{session.meta.title || "Live transcript"}</CardTitle>
           <CardDescription>
-            A live preview. When you stop, the whole recording is processed again and you confirm
-            each speaker.
+            A live preview. You can assign names now, or confirm speakers when the meeting ends.
+            Live corrections carry into that final review.
           </CardDescription>
           {local && rec.source === "meeting" && (
             <Badge variant="secondary" className="w-fit">
@@ -170,6 +200,8 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
               />
             </div>
           ) : (
+            <TranscriptEditor rows={rows} speakers={speakers} people={info?.people}
+              live onEdit={correctSpeaker} onEditingChange={setEditingSpeakers} disabled={stopping}>
             <ul className="space-y-4">
               {turns.map((t) => (
                 <motion.li
@@ -213,6 +245,7 @@ export function RecordingView({ session, live }: { session: Session; live: LiveS
                 </motion.li>
               ))}
             </ul>
+            </TranscriptEditor>
           )}
         </CardContent>
       </Card>
@@ -363,12 +396,14 @@ export function ReviewView({ session }: { session: Session }) {
                       {duration(s.talk_seconds)} · {s.turns} turn{s.turns === 1 ? "" : "s"}
                     </CardDescription>
                   </div>
-                  {s.status === "auto" ? (
+                  {s.live_assigned ? (
+                    <Badge className="bg-brand/10 text-brand">Assigned live</Badge>
+                  ) : s.status === "auto" ? (
                     <Badge className="bg-success/15 text-success">
                       Recognised · {s.score?.toFixed(2)}
                     </Badge>
                   ) : s.status === "suggested" ? (
-                    <Badge className="bg-warning/15 text-warning">
+                    <Badge className="bg-warning-subtle text-warning">
                       Maybe {s.suggestion} · {s.score?.toFixed(2)}
                     </Badge>
                   ) : (
@@ -434,7 +469,7 @@ export function ReviewView({ session }: { session: Session }) {
         <p className="text-sm text-muted-foreground">
           Confirmed voices are remembered for future meetings.
         </p>
-        <Button size="lg" onClick={submit} disabled={busy}>
+        <Button variant="success" size="lg" onClick={submit} disabled={busy}>
           {busy && <Loader2 className="animate-spin" />}
           Confirm &amp; write notes
         </Button>

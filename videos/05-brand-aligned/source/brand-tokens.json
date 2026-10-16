@@ -1,0 +1,49 @@
+{
+  "background": "#fafaf9",
+  "foreground": "#1e1c1b",
+  "muted": "#f4f4f1",
+  "muted-foreground": "#696563",
+  "border": "#e4e4e2",
+  "track": "#f0efed",
+  "card-foreground": "#121212",
+  "chart-1": "#3f806b",
+  "chart-2": "#507cb5",
+  "chart-3": "#8972b3",
+  "chart-4": "#c08e43",
+  "chart-5": "#c46761",
+  "speakers": {
+    "Tenzin": {
+      "color": "#c46761",
+      "tint": "#ede3d4"
+    },
+    "Pema": {
+      "color": "#8972b3",
+      "tint": "#ede1d6"
+    },
+    "Sonam": {
+      "color": "#3f806b",
+      "tint": "#e1e1d6"
+    }
+  },
+  "primary": "#004182",
+  "accent": "#edf3fa",
+  "success": "#15803d",
+  "card": "#ffffff",
+  "fonts": {
+    "sans": "Geist",
+    "mono": "Geist Mono"
+  },
+  "css_px": {
+    "card_radius": 8,
+    "control_radius": 6,
+    "badge_radius": 4,
+    "checkbox_radius": 2,
+    "card_padding": 20,
+    "avatar_gap": 12,
+    "avatar_md": 32,
+    "avatar_sm": 24,
+    "checkbox_size": 20
+  },
+  "film_ui_scale": 2.2,
+  "avatar_mix": "color-mix(in oklch, speaker-color 18%, background)"
+}
