@@ -1,0 +1,5 @@
+chess==1.11.2
+pytest>=8
+# for --laya-check / the laya_library validator check / training and evaluation:
+laya==0.4.8
+transformers>=4.48

@@ -1,0 +1,4 @@
+{
+  "about": "Manual tier-D decisions by exact Event header. 'classical' forces inclusion, 'exclude' forces exclusion. Every override is echoed into the build log with its reason.",
+  "overrides": []
+}

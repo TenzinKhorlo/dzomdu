@@ -1,0 +1,195 @@
+{
+  "about": "Carlsen's World Chess Championship matches. The windows and dates decide which source games belong to a match. The expected_* fields are claims compiled before any source was read; build_dataset.py checks every one of them against the downloaded PGNs and reports each disagreement instead of following either side silently.",
+  "player": {
+    "surname": "carlsen",
+    "first_initial": "m",
+    "display": "Magnus Carlsen"
+  },
+  "matches": [
+    {
+      "match_id": "2013_wcc",
+      "year": 2013,
+      "title": "FIDE World Chess Championship 2013, Chennai",
+      "opponent": {
+        "surname": "anand",
+        "display": "Viswanathan Anand"
+      },
+      "classical_window": [
+        "2013-11-08",
+        "2013-11-23"
+      ],
+      "tiebreak_dates": [],
+      "expected_classical_games": 10,
+      "expected_carlsen_classical_wins": [
+        5,
+        6,
+        9
+      ],
+      "expected_carlsen_classical_losses": [],
+      "expected_tiebreak_carlsen_wins": 0
+    },
+    {
+      "match_id": "2014_wcc",
+      "year": 2014,
+      "title": "FIDE World Chess Championship 2014, Sochi",
+      "opponent": {
+        "surname": "anand",
+        "display": "Viswanathan Anand"
+      },
+      "classical_window": [
+        "2014-11-07",
+        "2014-11-24"
+      ],
+      "tiebreak_dates": [],
+      "expected_classical_games": 11,
+      "expected_carlsen_classical_wins": [
+        2,
+        6,
+        11
+      ],
+      "expected_carlsen_classical_losses": [
+        3
+      ],
+      "expected_tiebreak_carlsen_wins": 0
+    },
+    {
+      "match_id": "2016_wcc",
+      "year": 2016,
+      "title": "FIDE World Chess Championship 2016, New York",
+      "opponent": {
+        "surname": "karjakin",
+        "display": "Sergey Karjakin"
+      },
+      "classical_window": [
+        "2016-11-10",
+        "2016-11-29"
+      ],
+      "tiebreak_dates": [
+        "2016-11-30"
+      ],
+      "expected_classical_games": 12,
+      "expected_carlsen_classical_wins": [
+        10
+      ],
+      "expected_carlsen_classical_losses": [
+        8
+      ],
+      "expected_tiebreak_carlsen_wins": 2
+    },
+    {
+      "match_id": "2018_wcc",
+      "year": 2018,
+      "title": "FIDE World Chess Championship 2018, London",
+      "opponent": {
+        "surname": "caruana",
+        "display": "Fabiano Caruana"
+      },
+      "classical_window": [
+        "2018-11-08",
+        "2018-11-27"
+      ],
+      "tiebreak_dates": [
+        "2018-11-28"
+      ],
+      "expected_classical_games": 12,
+      "expected_carlsen_classical_wins": [],
+      "expected_carlsen_classical_losses": [],
+      "expected_tiebreak_carlsen_wins": 3
+    },
+    {
+      "match_id": "2021_wcc",
+      "year": 2021,
+      "title": "FIDE World Chess Championship 2021, Dubai",
+      "opponent": {
+        "surname": "nepomniachtchi",
+        "display": "Ian Nepomniachtchi"
+      },
+      "classical_window": [
+        "2021-11-25",
+        "2021-12-11"
+      ],
+      "tiebreak_dates": [],
+      "expected_classical_games": 11,
+      "expected_carlsen_classical_wins": [
+        6,
+        8,
+        9,
+        11
+      ],
+      "expected_carlsen_classical_losses": [],
+      "expected_tiebreak_carlsen_wins": 0
+    }
+  ],
+  "tiers": {
+    "A": "World Championship classical games Carlsen won (the original research scope)",
+    "B": "World Championship classical games Carlsen drew or lost (optional)",
+    "C": "World Championship rapid/blitz tiebreak games, any result (optional; never mixed into A/B without its tier label)",
+    "D": "Carlsen's won games in other over-the-board classical events (the main expansion)",
+    "E": "Carlsen's drawn or lost games in other over-the-board classical events (optional)"
+  },
+  "non_classical_event_keywords": [
+    "rapid",
+    "blitz",
+    "bullet",
+    "armageddon",
+    "online",
+    "titled tuesday",
+    "banter",
+    "speed",
+    "simul",
+    "exhibition",
+    "blindfold",
+    "fischer random",
+    "chess960",
+    "960",
+    "freestyle",
+    "champions tour",
+    "meltwater",
+    "invitational",
+    "tour final",
+    "bughouse",
+    "odds",
+    "casual",
+    "training",
+    "thematic",
+    "puzzle",
+    "basque",
+    "skilling",
+    "airthings",
+    "ftx crypto",
+    "opera euro",
+    "new in chess classic",
+    "aimchess",
+    "chessable masters",
+    "goldmoney",
+    "magnus carlsen chess tour",
+    "lindores abbey",
+    "steinitz memorial",
+    "clutch",
+    "play magnus",
+    "pro chess league",
+    "speed chess championship",
+    "esports",
+    "e-sports",
+    "global championship",
+    "tiebreak",
+    "tie-break",
+    "playoff",
+    "play-off",
+    "match tb",
+    "kings tournament",
+    "superbet rapid",
+    "fide grand swiss rapid"
+  ],
+  "non_classical_site_keywords": [
+    "chess.com",
+    "lichess",
+    "internet",
+    "chess24",
+    "playmagnus"
+  ],
+  "non_classical_site_exact": [
+    "INT"
+  ],
+  "classification_notes": "Tiers D and E need a classical time control. A TimeControl header decides when present (base time >= 3600 s, or a moves/seconds first period of at least 3600 s, is classical). Otherwise the event-name and site filters above exclude rapid, blitz, online and odd-format events, and two games between the same players on the same day of the same event are excluded as probable armageddon/tiebreak games. Override individual events in event_overrides.json."
+}
