@@ -90,6 +90,17 @@ CATALOG = [
         "English · smaller CPU model · word timestamps",
     ),
     ModelOption(
+        "whistle",
+        "Cactus Whistle",
+        "asr",
+        "whistle",
+        "Cactus-Compute/whistle",
+        "needle",
+        0.02,
+        "English · auto-detects 6 European languages · tiny CPU model · word timestamps",
+        languages=("en", "auto"),
+    ),
+    ModelOption(
         "qwen-small",
         "Qwen3-ASR 0.6B",
         "asr",
@@ -180,6 +191,7 @@ def runtime_command(option: ModelOption) -> str:
         "mlx-whisper": "mac",
         "mlx-audio": "speech-models",
         "moonshine": "moonshine",
+        "whistle": "whistle",
         "pyannote": "diarize",
         "nemotron-mlx": "speech-models,diarize",
         "faster-whisper": "whisper",
@@ -195,6 +207,7 @@ def current_id(cfg: Config, kind: str) -> str | None:
             "parakeet": OPTIONS["parakeet"].repo,
             "mlx-whisper": OPTIONS["whisper-turbo"].repo,
             "faster-whisper": OPTIONS["whisper-turbo-cuda"].repo,
+            "whistle": OPTIONS["whistle"].repo,
         }.get(section.backend)
     if section.backend == "faster-whisper" and model in (
         "large-v3-turbo", "turbo", "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
@@ -261,7 +274,7 @@ class ModelLibrary:
         receipt = self.receipts.get(model_id, {})
         if files := receipt.get("files"):
             return all(Path(p).is_file() and Path(p).stat().st_size == size for p, size in files)
-        if option.backend == "moonshine":
+        if option.backend in ("moonshine", "whistle"):
             return False
         # Recognise models installed before the library existed, without network access.
         from huggingface_hub import snapshot_download
@@ -325,6 +338,8 @@ class ModelLibrary:
                 raise ValueError(reason)
             if OPTIONS[model_id].backend == "moonshine" and not is_installed("moonshine_voice"):
                 raise ValueError("Install the speech-models runtime before downloading Moonshine.")
+            if OPTIONS[model_id].backend == "whistle" and not is_installed("needle"):
+                raise ValueError("Install the whistle runtime before downloading Whistle.")
         with self.lock:
             for model_id in ids:
                 for dep in OPTIONS[model_id].dependencies:
@@ -366,6 +381,10 @@ class ModelLibrary:
                     ),
                 )
                 paths = [p for p in Path(path).rglob("*") if p.is_file()]
+            elif option.backend == "whistle":
+                from .asr.whistle import download
+
+                paths = download()
             else:
                 from fnmatch import fnmatch
 

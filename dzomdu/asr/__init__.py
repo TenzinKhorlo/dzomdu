@@ -60,6 +60,12 @@ def _moonshine(cfg: ASRConfig) -> ASRBackend:
     return MoonshineBackend(cfg.model)
 
 
+def _whistle(cfg: ASRConfig) -> ASRBackend:
+    from .whistle import WhistleBackend
+
+    return WhistleBackend(cfg)
+
+
 # name -> factory. Tests and plug-ins (e.g. a future Dzongkha model) register here.
 BACKENDS: dict[str, Callable[[ASRConfig], ASRBackend]] = {
     "parakeet": _parakeet,
@@ -67,6 +73,7 @@ BACKENDS: dict[str, Callable[[ASRConfig], ASRBackend]] = {
     "faster-whisper": _faster_whisper,
     "mlx-audio": _mlx_audio,
     "moonshine": _moonshine,
+    "whistle": _whistle,
 }
 
 

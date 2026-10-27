@@ -421,9 +421,10 @@ def doctor(config: ConfigOpt = None) -> None:
         check(
             f"ASR backend '{cfg.asr.backend}'",
             is_installed(asr_pkg),
-            "pip install -e '.[mac]'"
-            if asr_pkg != "faster_whisper"
-            else "pip install -e '.[whisper]'",
+            {
+                "faster_whisper": "pip install -e '.[whisper]'",
+                "needle": "pip install -e '.[whistle]'",
+            }.get(asr_pkg, "pip install -e '.[mac]'"),
         )
     check(
         "Diarization (pyannote.audio)",

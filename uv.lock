@@ -365,6 +365,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cactus-needle"
+version = "3.2.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2b/98/5578ac0b4906ad19ecac3228e903fb1188b720a3bb226501f5d9fa5f82fb/cactus_needle-3.2.8.tar.gz", hash = "sha256:49f5019681aca447a860e53c411f45d7a9b1726d1672959459c1dc3dd0dfb158", size = 165056, upload-time = "2026-10-19T12:06:57.77Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/14/a3f3101da8c99c59ceb7847e4d199a1adcdc944645b63be754d2913320f9/cactus_needle-3.2.8-py3-none-any.whl", hash = "sha256:1a0f58430041574de6e823f5db47a3b9b72286da265af11817fe6e97ee9930ed", size = 130098, upload-time = "2026-10-19T12:06:56.418Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1024,6 +1036,9 @@ speech-models = [
 whisper = [
     { name = "faster-whisper" },
 ]
+whistle = [
+    { name = "cactus-needle" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1033,6 +1048,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cactus-needle", marker = "extra == 'whistle'", specifier = ">=3.2.8" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "faster-whisper", marker = "extra == 'whisper'", specifier = ">=1.1" },
     { name = "httpx", specifier = ">=0.27" },
@@ -1057,7 +1073,7 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.30" },
     { name = "websockets", specifier = ">=12" },
 ]
-provides-extras = ["mac", "speech-models", "moonshine", "denoise", "diarize", "whisper", "bench"]
+provides-extras = ["mac", "speech-models", "moonshine", "whistle", "denoise", "diarize", "whisper", "bench"]
 
 [package.metadata.requires-dev]
 dev = [

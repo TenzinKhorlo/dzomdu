@@ -29,6 +29,7 @@ def default_data_dir() -> Path:
 @dataclass
 class ASRConfig:
     # parakeet (Apple Silicon, English) | mlx-whisper (Apple Silicon) | faster-whisper (CPU/CUDA)
+    # | whistle (any CPU, English and six European languages)
     backend: str = "parakeet"
     model: str | None = None  # None = the backend's default model
     language: str = "en"  # en | ne | auto
@@ -230,4 +231,5 @@ ASR_PACKAGES = {
     "faster-whisper": "faster_whisper",
     "mlx-audio": "mlx_audio",
     "moonshine": "moonshine_voice",
+    "whistle": "needle",
 }

@@ -79,10 +79,11 @@ dzomdu ui
 Open **http://localhost:8765**. The native default is **Parakeet for English** with
 **Pyannote for speakers**. For Nepali or automatic language detection, select **Whisper
 large-v3 Turbo** in **Settings → Model library**, download it, and save it as the default.
-To enable the optional Qwen, Moonshine and Nemotron-3-Diarization runtimes for testing:
+To enable the optional Qwen, Moonshine, Whistle and Nemotron-3-Diarization runtimes for
+testing:
 
 ```bash
-python -m pip install -e '.[mac,speech-models,diarize,denoise]'
+python -m pip install -e '.[mac,speech-models,whistle,diarize,denoise]'
 ```
 
 Restart Dzomdu after installing additional runtimes. Installing a runtime does not download
@@ -480,11 +481,15 @@ survives server restarts and completed files are reused from the local caches.
 On Apple Silicon, install the optional alternatives in the same environment as Dzomdu:
 
 ```sh
-python -m pip install -e '.[mac,speech-models,diarize,denoise]'
+python -m pip install -e '.[mac,speech-models,whistle,diarize,denoise]'
 ```
 
-The catalog includes Parakeet, Whisper large-v3 Turbo (MLX on Mac, CPU/CUDA on Linux/Windows), Moonshine Small/Medium Streaming
-and Qwen3-ASR 0.6B/1.7B.
+The catalog includes Parakeet, Whisper large-v3 Turbo (MLX on Mac, CPU/CUDA on Linux/Windows), Moonshine Small/Medium Streaming,
+Cactus Whistle and Qwen3-ASR 0.6B/1.7B.
+Whistle is a 17 MB CPU model that runs on Mac, Linux and Windows (`pip install -e '.[whistle]'`).
+It transcribes English, and with the language set to auto it also detects German, French,
+Spanish, Italian, Dutch and Polish; it does not support Nepali. Dzomdu turns off
+cactus-needle's anonymous usage counts unless `NEEDLE_TELEMETRY` is already set.
 The MLX Qwen adapters use a shared Qwen forced aligner for word timestamps. These
 adapters currently expose English; use Whisper for Nepali or automatic language detection.
 Dzomdu's live preview still processes utterance chunks; selecting a model with a streaming

@@ -29,6 +29,8 @@ mac = ["parakeet-mlx>=0.5", "mlx-whisper>=0.4"]
 # Optional model library for testing alternative speech models on Apple Silicon.
 speech-models = ["mlx-audio[stt]>=0.5.8", "moonshine-voice>=0.1.5"]
 moonshine = ["moonshine-voice>=0.1.5"]
+# Cactus Whistle: a 17 MB CPU speech model for Mac, Linux and Windows
+whistle = ["cactus-needle>=3.2.8"]
 # RNNoise's bundled model is BSD-3-Clause; the Python wrapper is Apache-2.0.
 denoise = ["pyrnnoise==0.4.3", "scipy>=1.11"]
 # Speaker diarization + voiceprints (pyannote community-1)

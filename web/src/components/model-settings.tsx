@@ -171,7 +171,7 @@ export function ModelSettings() {
   if (!data) return <Skeleton className="h-72 rounded-xl" />
   const pending = data.models.filter((m) => m.compatible && !m.downloaded &&
     m.state !== "queued" && m.state !== "downloading" && (m.kind !== "asr" ||
-      m.runtime_installed || !m.id.startsWith("moonshine")))
+      m.runtime_installed || !(m.id.startsWith("moonshine") || m.id === "whistle")))
 
   return (
     <div className="grid gap-4">
@@ -218,7 +218,7 @@ export function ModelSettings() {
                         {m.downloaded && !active ? <span className="flex items-center gap-1 text-xs text-success">
                           <Check className="size-3.5" />{m.ready ? "Ready" : "Downloaded"}
                         </span> : <Button size="sm" variant="outline" disabled={!!requesting || active || !m.compatible ||
-                          (m.id.startsWith("moonshine") && !m.runtime_installed)}
+                          ((m.id.startsWith("moonshine") || m.id === "whistle") && !m.runtime_installed)}
                           onClick={() => download([m.id], m.id)}>
                           {active ? <Loader2 className="animate-spin" /> : <Download />}
                           {active ? m.state === "queued" ? "Queued" : "Downloading" : m.state === "error" ? "Retry" : "Download"}
