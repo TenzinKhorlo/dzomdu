@@ -148,6 +148,18 @@ CATALOG = [
         dependencies=("pyannote",),
     ),
     ModelOption(
+        "who",
+        "Desert Ant Who",
+        "diarization",
+        "who",
+        "desert-ant-labs/who",
+        "onnxruntime",
+        0.1,
+        "Fast CPU model · 4 speakers per 5 minutes, more across a long recording · "
+        "reuses Pyannote voice recognition",
+        dependencies=("pyannote",),
+    ),
+    ModelOption(
         ALIGNER,
         "Qwen3 word aligner",
         "alignment",
@@ -194,6 +206,7 @@ def runtime_command(option: ModelOption) -> str:
         "whistle": "whistle",
         "pyannote": "diarize",
         "nemotron-mlx": "speech-models,diarize",
+        "who": "who,diarize",
         "faster-whisper": "whisper",
     }[option.backend]
     return f"python -m pip install -e '.[{extra}]'"
@@ -274,7 +287,7 @@ class ModelLibrary:
         receipt = self.receipts.get(model_id, {})
         if files := receipt.get("files"):
             return all(Path(p).is_file() and Path(p).stat().st_size == size for p, size in files)
-        if option.backend in ("moonshine", "whistle"):
+        if option.backend in ("moonshine", "whistle", "who"):
             return False
         # Recognise models installed before the library existed, without network access.
         from huggingface_hub import snapshot_download
@@ -340,6 +353,8 @@ class ModelLibrary:
                 raise ValueError("Install the speech-models runtime before downloading Moonshine.")
             if OPTIONS[model_id].backend == "whistle" and not is_installed("needle"):
                 raise ValueError("Install the whistle runtime before downloading Whistle.")
+            if OPTIONS[model_id].backend == "who" and not is_installed("onnxruntime"):
+                raise ValueError("Install the who runtime before downloading Who.")
         with self.lock:
             for model_id in ids:
                 for dep in OPTIONS[model_id].dependencies:
@@ -385,6 +400,10 @@ class ModelLibrary:
                 from .asr.whistle import download
 
                 paths = download()
+            elif option.backend == "who":
+                from .diarize.who import download as download_who
+
+                paths = download_who()
             else:
                 from fnmatch import fnmatch
 

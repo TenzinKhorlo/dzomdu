@@ -32,6 +32,10 @@ work. Use "task", not "action", "description" or "text", as the field name. Retu
 empty action_items list if no tasks were agreed.
 - Keep relative dates as spoken unless the transcript itself establishes the calendar date.
 - A decision is something the group agreed on, not a suggestion.
+- If the note-taker's own notes are given, they show what mattered to that person. Make sure \
+each point they wrote is covered in the topics, decisions or action items, with the detail \
+and "source_turns" the transcript supplies. The notes are not evidence: leave out anything \
+in them that the transcript does not support.
 - If the schema has an "extra" object, fill every field in it as its description asks, \
 using only what the transcript supports (an empty string or list if it is not covered).
 - Reply with a single JSON object that matches the schema. No other text."""
@@ -66,12 +70,17 @@ def chunk_lines(lines: list[str], max_tokens: int) -> list[list[str]]:
     return [c for c in chunks if c]
 
 
-def _user_prompt(instructions: str, heading: str, body: str) -> str:
+def _user_prompt(instructions: str, heading: str, body: str, user_notes: str = "") -> str:
     sections = []
     if instructions.strip():
         sections.append(
             "## Format guidance (controls presentation; it is not meeting evidence)\n"
             + instructions.strip()
+        )
+    if user_notes.strip():
+        sections.append(
+            "## Note-taker's own notes (what to make sure is covered; not meeting evidence)\n"
+            + user_notes.strip()
         )
     sections.append(f"## {heading}\n{body}")
     return "\n\n".join(sections)
@@ -121,6 +130,7 @@ def summarize(
     max_chunk_tokens: int = 6000,
     progress: Callable[[str], None] | None = None,
     sections: list[SectionSpec] | None = None,
+    user_notes: str = "",
 ) -> MeetingNotes:
     sections = sections or []
     if not turns:
@@ -138,7 +148,7 @@ def summarize(
         if progress:
             progress(f"LLM: part {i}/{len(chunks)}" if len(chunks) > 1 else "LLM: extracting")
         heading = f"Transcript (part {i} of {len(chunks)})" if len(chunks) > 1 else "Transcript"
-        user = _user_prompt(instructions, heading, "\n".join(chunk))
+        user = _user_prompt(instructions, heading, "\n".join(chunk), user_notes)
         partials.append(_request_notes(client, SYSTEM, user, schema))
 
     if len(partials) == 1:
@@ -147,7 +157,7 @@ def summarize(
         if progress:
             progress("LLM: merging parts")
         payload = json.dumps([p.model_dump() for p in partials], ensure_ascii=False, indent=1)
-        user = _user_prompt(instructions, "Partial notes", payload)
+        user = _user_prompt(instructions, "Partial notes", payload, user_notes)
         notes = _request_notes(client, MERGE, user, schema)
     notes.normalise_extra(sections)
     return _drop_bad_citations(notes, {t.id for t in turns})

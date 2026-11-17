@@ -7,9 +7,11 @@ speaker and LLM models never compete for memory and are only touched from one th
 
 from __future__ import annotations
 
+import json
 import re
 import secrets
 import threading
+import wave
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -30,6 +32,8 @@ from ..speakers.matching import cluster_voices
 from ..transcript import LiveSpeakerEdit, TranscriptConflict, clean_name
 
 ACTIVE_STATES = {"recording", "processing", "summarizing"}
+# The note-taker's own notes feed the minutes, so they can change until the minutes are written.
+NOTES_EDITABLE_STATES = {"new", "recording", "processing", "review"}
 
 
 @dataclass
@@ -42,6 +46,7 @@ class SessionMeta:
     num_speakers: int | None = None
     live: bool = True
     summarize: bool = True
+    user_notes: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SessionMeta:
@@ -62,6 +67,7 @@ class SessionMeta:
             num_speakers=int(num) if num not in (None, "", 0, "0") else None,
             live=bool(data.get("live", True)),
             summarize=bool(data.get("summarize", True)),
+            user_notes=text("user_notes") or "",
         )
 
 
@@ -214,6 +220,12 @@ class SessionManager:
     def submit(self, fn) -> Future[Any]:
         return self.worker.submit(fn)
 
+    def set_notes(self, s: Session, notes: str) -> None:
+        with s.lock:
+            if s.state not in NOTES_EDITABLE_STATES:
+                raise ValueError("The minutes are already being written from your notes")
+            s.meta.user_notes = notes
+
     # -- recording --------------------------------------------------------------------------
 
     def start_recording(self, s: Session) -> None:
@@ -308,6 +320,30 @@ class SessionManager:
             if pcm.stat().st_size >= 2 * SAMPLE_RATE:
                 recovered.append(self._pcm_to_wav(pcm))
         return recovered
+
+    def unprocessed_recordings(self) -> list[tuple[Path, float]]:
+        """Saved recordings (path, seconds) that never became a meeting: recovered after a
+        crash, or left behind when processing failed before a record was written."""
+        in_use = {s.audio_path.name for s in self.sessions.values() if s.audio_path is not None}
+        for record in self.cfg.meetings_dir.glob("*.json"):
+            try:
+                source = json.loads(record.read_text(encoding="utf-8")).get("source_audio")
+            except (OSError, ValueError, AttributeError):
+                continue
+            if isinstance(source, str):
+                in_use.add(Path(source).name)
+        found = []
+        for wav in sorted(self.recordings_dir.glob("*.wav")):
+            if wav.name in in_use:
+                continue
+            try:
+                with wave.open(str(wav), "rb") as fh:
+                    seconds = fh.getnframes() / (fh.getframerate() or SAMPLE_RATE)
+            except (OSError, EOFError, wave.Error):
+                continue  # not a readable recording; nothing useful to offer
+            if seconds >= 2:
+                found.append((wav, seconds))
+        return found
 
     # -- uploads ----------------------------------------------------------------------------
 
@@ -437,6 +473,9 @@ class SessionManager:
         try:
             tmpl = pipe.template(template)
             notes = None
+            if s.meta.user_notes.strip():
+                # A reopened meeting has none on its session and keeps what its record holds.
+                s.record.user_notes = s.meta.user_notes.strip()
             if overwrite and not s.record.turns:
                 raise ValueError("This meeting has no transcript to generate notes from")
             if s.meta.summarize and s.record.turns:

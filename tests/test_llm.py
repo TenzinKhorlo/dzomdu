@@ -115,6 +115,28 @@ def test_map_reduce_summary():
     assert notes.decisions[0].source_turns == ["t1", "t3"]  # t42 does not exist
 
 
+def test_note_takers_own_notes_reach_every_part_and_the_merge():
+    calls = []
+
+    def handler(request):
+        calls.append(json.loads(request.content)["messages"][1]["content"])
+        return httpx.Response(200, json={"message": {"content": '{"summary": "Ok."}'}})
+
+    turns = [Turn(f"t{i}", "S0", i * 10.0, i * 10.0 + 5, "word " * 200) for i in range(1, 5)]
+    summarize(
+        _client(handler), turns, lambda s: "Alice", max_chunk_tokens=600,
+        user_notes="  ask about the pilot budget\n",
+    )
+    assert len(calls) == 3  # two parts + merge
+    for user in calls:
+        assert "## Note-taker's own notes" in user
+        assert "ask about the pilot budget" in user
+
+    calls.clear()
+    summarize(_client(handler), turns[:1], lambda s: "Alice")
+    assert "Note-taker's own notes" not in calls[0]
+
+
 def test_empty_meeting_needs_no_llm():
     def handler(request):  # pragma: no cover
         raise AssertionError("should not be called")

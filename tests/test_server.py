@@ -9,7 +9,7 @@ from conftest import FakeASR, FakeDiarizer, make_meeting
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocket
 
-from dzomdu.audio import read_wav
+from dzomdu.audio import read_wav, write_wav
 from dzomdu.llm.client import LLMError
 from dzomdu.models import Word
 from dzomdu.pipeline import Pipeline
@@ -126,6 +126,41 @@ def test_upload_review_notes_regenerate(setup, cfg):
     assert client.get("/api/meetings").json()["meetings"] == []
     assert client.get(f"/api/meetings/{meeting_id}").status_code == 404
     assert client.delete(f"/api/meetings/{meeting_id}").status_code == 404
+
+
+def test_notes_typed_during_the_meeting_are_kept_with_the_minutes(setup, cfg):
+    client, wav = setup
+    with wav.open("rb") as fh:
+        res = client.post("/api/upload", files={"file": ("kickoff.wav", fh, "audio/wav")})
+    sid = res.json()["id"]
+    wait_for(client, sid, {"review"})
+
+    typed = "check the budget with Bob\n# not a real heading"
+    assert client.put(f"/api/sessions/{sid}/notes", json={"notes": typed}).json() == {"ok": True}
+    assert client.get(f"/api/sessions/{sid}").json()["meta"]["user_notes"] == typed
+    assert client.put(f"/api/sessions/{sid}/notes", json={"notes": "x" * 20001}).status_code == 422
+    assert client.put("/api/sessions/nope/notes", json={"notes": "x"}).status_code == 404
+
+    client.post(
+        f"/api/sessions/{sid}/review", json={"names": {"SPEAKER_00": "Alice", "SPEAKER_01": "Bob"}}
+    )
+    s = wait_for(client, sid, {"done"})
+    markdown = client.get(f"/api/sessions/{sid}/note").json()["markdown"]
+    own = markdown.split("## My notes\n\n")[1].split("## Transcript")[0]
+    assert own.strip() == "check the budget with Bob\n\\# not a real heading"
+    record = json.loads((cfg.meetings_dir / f"{s['meeting_id']}.json").read_text())
+    assert record["user_notes"] == typed
+
+    # once the minutes exist the notes are part of the record, not the live session
+    late = client.put(f"/api/sessions/{sid}/notes", json={"notes": "too late"})
+    assert late.status_code == 409
+
+    # rewriting from the meeting list, on a fresh session, keeps them
+    reopened = client.post(f"/api/meetings/{s['meeting_id']}/open").json()["id"]
+    client.post(f"/api/sessions/{reopened}/regenerate", json={"template": "board"})
+    wait_for(client, reopened, {"done"})
+    rewritten = client.get(f"/api/sessions/{reopened}/note").json()["markdown"]
+    assert "check the budget with Bob" in rewritten
 
 
 @pytest.mark.parametrize("initial_summary", [True, False])
@@ -267,6 +302,34 @@ def test_interrupted_recordings_are_recovered(cfg, fake_llm):
     (rec / "crashed.pcm").write_bytes(b"\x00\x10" * 32000)
     with TestClient(create_app(cfg, Pipeline(cfg, llm=fake_llm))) as client:
         assert client.get("/api/info").json()["recovered"] == [str(rec / "crashed.wav")]
+
+
+def test_unprocessed_recordings_are_listed_and_can_become_meetings(setup, cfg):
+    client, wav = setup
+    rec = cfg.data_dir / "recordings"
+    (rec / "left-behind.wav").write_bytes(wav.read_bytes())
+    write_wav(rec / "too-short.wav", np.zeros(8000, dtype=np.float32))  # half a second
+    (rec / "broken.wav").write_bytes(b"not audio")
+
+    listed = client.get("/api/recordings/unprocessed").json()
+    assert [r["name"] for r in listed] == ["left-behind.wav"]
+    assert round(listed[0]["seconds"]) == 13
+
+    # only names from the list are accepted, never a path
+    for name in ("nope.wav", "..%2Fmeeting.wav", "too-short.wav"):
+        assert client.post(f"/api/recordings/unprocessed/{name}/process").status_code == 404
+
+    sid = client.post("/api/recordings/unprocessed/left-behind.wav/process").json()["id"]
+    wait_for(client, sid, {"review"})
+    assert client.get("/api/recordings/unprocessed").json() == []  # being worked on
+    client.post(
+        f"/api/sessions/{sid}/review", json={"names": {"SPEAKER_00": "Alice", "SPEAKER_01": "Bob"}}
+    )
+    wait_for(client, sid, {"done"})
+
+    # a restart forgets the session; the saved meeting record still claims the audio
+    with TestClient(create_app(cfg, Pipeline(cfg))) as restarted:
+        assert restarted.get("/api/recordings/unprocessed").json() == []
 
 
 def test_note_html_translates_obsidian_syntax():

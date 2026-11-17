@@ -79,6 +79,7 @@ class MeetingRecord:
     title_pending: bool = False  # a fallback name awaiting successful note generation
     transcript_revision: int = 0
     notes_stale: bool = False  # transcript changed since the last explicit note generation
+    user_notes: str = ""  # what the note-taker typed during the meeting; guides the minutes
 
     def name_for(self, cluster: str) -> str:
         assignment = self.assignments.get(cluster)

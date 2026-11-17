@@ -113,6 +113,10 @@ class ReviewBody(BaseModel):
     names: dict[str, str | None]
 
 
+class SessionNotesBody(BaseModel):
+    notes: str = Field(max_length=20000)
+
+
 class RegenerateBody(BaseModel):
     template: str | None = None
     instructions: str = ""
@@ -288,7 +292,10 @@ def create_app(
                 "asr": {"ok": asr_pkg is None or is_installed(asr_pkg)},
                 "diarization": {
                     "ok": is_installed("pyannote.audio")
-                    and (cfg.diarization.backend == "pyannote" or is_installed("mlx_audio"))
+                    and {
+                        "pyannote": True,
+                        "who": is_installed("onnxruntime"),
+                    }.get(cfg.diarization.backend, is_installed("mlx_audio"))
                 },
             },
             "recovered": [str(p) for p in manager.recovered],
@@ -646,6 +653,27 @@ def create_app(
         manager.start_upload(s, dest)
         return {"id": s.id}
 
+    @app.get("/api/recordings/unprocessed")
+    def unprocessed_recordings() -> list[dict[str, Any]]:
+        return [
+            {
+                "name": path.name,
+                "seconds": round(seconds, 1),
+                "modified": datetime.fromtimestamp(path.stat().st_mtime).astimezone().isoformat(),
+            }
+            for path, seconds in manager.unprocessed_recordings()
+        ]
+
+    @app.post("/api/recordings/unprocessed/{name}/process")
+    def process_unprocessed_recording(name: str) -> dict[str, str]:
+        # The client only ever picks from the list above; a path is never taken from it.
+        path = next((p for p, _ in manager.unprocessed_recordings() if p.name == name), None)
+        if path is None:
+            raise HTTPException(404, "No such unprocessed recording")
+        s = manager.create(meeting_meta({}), "upload")
+        manager.start_upload(s, path)
+        return {"id": s.id}
+
     @app.get("/api/sessions/{sid}")
     def get_session(sid: str, live_since: int = 0, live_rev: int | None = None) -> dict[str, Any]:
         return manager.snapshot(session_or_404(sid), live_since, live_rev)
@@ -660,6 +688,15 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
         return manager.snapshot(s, live_rev=0)
+
+    @app.put("/api/sessions/{sid}/notes")
+    def set_session_notes(sid: str, body: SessionNotesBody) -> dict[str, bool]:
+        """What the note-taker types while the meeting runs; the summariser is told to cover it."""
+        try:
+            manager.set_notes(session_or_404(sid), body.notes)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return {"ok": True}
 
     @app.post("/api/warmup")
     def warmup() -> dict[str, bool]:

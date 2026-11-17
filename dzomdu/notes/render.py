@@ -207,6 +207,11 @@ def render_note(
             "## Summary\n\n_Not generated yet. Run `dzomdu regenerate "
             f"{record.id}` once the LLM is available._\n"
         )
+    if record.user_notes.strip():
+        # Kept word for word, so nothing the note-taker wrote is lost if the minutes omit it.
+        # A leading "#" is escaped so a typed heading can't split the note's own sections.
+        own = re.sub(r"(?m)^(\s*)#", r"\1\\#", record.user_notes.strip())
+        parts.append("## My notes\n\n" + own + "\n")
     parts.append("## Transcript\n\n" + render_transcript(record) + "\n")
     return "\n".join(parts)
 

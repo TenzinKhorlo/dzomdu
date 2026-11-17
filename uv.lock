@@ -1039,6 +1039,9 @@ whisper = [
 whistle = [
     { name = "cactus-needle" },
 ]
+who = [
+    { name = "onnxruntime" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1060,6 +1063,7 @@ requires-dist = [
     { name = "moonshine-voice", marker = "extra == 'moonshine'", specifier = ">=0.1.5" },
     { name = "moonshine-voice", marker = "extra == 'speech-models'", specifier = ">=0.1.5" },
     { name = "numpy", specifier = ">=1.26" },
+    { name = "onnxruntime", marker = "extra == 'who'", specifier = ">=1.20" },
     { name = "parakeet-mlx", marker = "extra == 'mac'", specifier = ">=0.5" },
     { name = "pyannote-audio", marker = "extra == 'diarize'", specifier = ">=4.0" },
     { name = "pydantic", specifier = ">=2.6" },
@@ -1073,7 +1077,7 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.30" },
     { name = "websockets", specifier = ">=12" },
 ]
-provides-extras = ["mac", "speech-models", "moonshine", "whistle", "denoise", "diarize", "whisper", "bench"]
+provides-extras = ["mac", "speech-models", "moonshine", "whistle", "denoise", "diarize", "who", "whisper", "bench"]
 
 [package.metadata.requires-dev]
 dev = [

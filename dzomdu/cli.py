@@ -30,6 +30,7 @@ from .audio import write_wav
 from .config import (
     ASR_PACKAGES,
     Config,
+    DiarizationConfig,
     default_config_path,
     dump_config,
     is_installed,
@@ -426,13 +427,33 @@ def doctor(config: ConfigOpt = None) -> None:
                 "needle": "pip install -e '.[whistle]'",
             }.get(asr_pkg, "pip install -e '.[mac]'"),
         )
+    if cfg.diarization.backend == "who":
+        from .diarize.who import _cached
+
+        check(
+            "Diarization (Who, onnxruntime)",
+            is_installed("onnxruntime"),
+            "pip install -e '.[who]'",
+        )
+        if is_installed("onnxruntime"):
+            cached = _cached() is not None
+            check(
+                "Who model available",
+                cached,
+                "downloaded" if cached else "downloads on first use (about 99 MB)",
+                required=False,
+            )
     check(
         "Diarization (pyannote.audio)",
         is_installed("pyannote.audio"),
         "pip install -e '.[diarize]'",
     )
+    # Who keeps voiceprints in Pyannote's space, so that model is needed either way.
+    voice_model = (
+        DiarizationConfig().model if cfg.diarization.backend == "who" else cfg.diarization.model
+    )
     hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
-    repo_dir = hf_home / "hub" / ("models--" + cfg.diarization.model.replace("/", "--"))
+    repo_dir = hf_home / "hub" / ("models--" + voice_model.replace("/", "--"))
     # a failed download can leave an empty folder behind, so look for the actual config
     if any(repo_dir.glob("snapshots/*/config.yaml")):
         available, detail = True, "downloaded"
@@ -440,13 +461,13 @@ def doctor(config: ConfigOpt = None) -> None:
         from .diarize.pyannote import access_problem
 
         token = os.environ.get(cfg.diarization.hf_token_env) or None
-        problem = access_problem(cfg.diarization.model, token)
+        problem = access_problem(voice_model, token)
         available, detail = problem is None, problem or "access confirmed; downloads on first use"
     else:
         available, detail = (
             False,
             (
-                f"accept the terms at huggingface.co/{cfg.diarization.model}, then run "
+                f"accept the terms at huggingface.co/{voice_model}, then run "
                 "`hf auth login` once"
             ),
         )

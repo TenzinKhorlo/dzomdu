@@ -35,6 +35,8 @@ whistle = ["cactus-needle>=3.2.8"]
 denoise = ["pyrnnoise==0.4.3", "scipy>=1.11"]
 # Speaker diarization + voiceprints (pyannote community-1)
 diarize = ["pyannote.audio>=4.0"]
+# Desert Ant Who: fast CPU speaker diarization (ONNX); voiceprints still need `diarize`
+who = ["onnxruntime>=1.20"]
 # Whisper on CPU / CUDA (Linux, or as a fallback)
 whisper = ["faster-whisper>=1.1"]
 # Faster optimal speaker mapping in the benchmark DER metric

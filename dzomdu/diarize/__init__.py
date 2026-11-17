@@ -53,9 +53,16 @@ def _nemotron(cfg: DiarizationConfig) -> Diarizer:
     return NemotronDiarizer(cfg)
 
 
+def _who(cfg: DiarizationConfig) -> Diarizer:
+    from .who import WhoDiarizer
+
+    return WhoDiarizer(cfg)
+
+
 BACKENDS: dict[str, Callable[[DiarizationConfig], Diarizer]] = {
     "pyannote": _pyannote,
     "nemotron-mlx": _nemotron,
+    "who": _who,
 }
 
 

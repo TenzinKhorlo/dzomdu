@@ -346,6 +346,7 @@ class Pipeline:
             max_chunk_tokens=self.cfg.llm.max_chunk_tokens,
             progress=self.progress,
             sections=template.sections,
+            user_notes=record.user_notes,
         )
         if (not record.title.strip() or record.title_pending) and record.turns:
             if not (notes.title or "").strip():
