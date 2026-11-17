@@ -18,6 +18,7 @@ or host the weights for customers, you take on the attribution duties below.
 | Model | Used for | Licence | What it asks |
 | --- | --- | --- | --- |
 | [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) (pyannote.ai, built from pyannote segmentation, WeSpeaker embeddings and VBx clustering) | Telling speakers apart, voiceprints | CC-BY-4.0 | Credit the authors and link the licence. Access is gated: each user accepts the model's conditions on Hugging Face and uses their own token. |
+| [desert-ant-labs/who](https://huggingface.co/desert-ant-labs/who) (Desert Ant Labs, built on pyannote speaker-diarization-community-1, CC-BY-4.0), ONNX int8 weights | Optional speaker diarization | [Desert Ant Labs Source-Available License 1.0](https://license.desertant.com/1.0) | Free below 100,000 monthly active devices per platform for each model; a commercial licence is needed above that. Credit Desert Ant Labs ([attribution](https://license.desertant.com/attribution)). Do not use the model, its outputs or logs to train a competing on-device model. Dzomdu's `who` backend is a Python port of the published Swift pipeline and never contacts Desert Ant Labs' licence or usage services. |
 | NVIDIA Parakeet TDT 0.6B v2 (`mlx-community/parakeet-tdt-0.6b-v2`, MLX conversion of [nvidia/parakeet-tdt-0.6b-v2](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2)) | Default speech to text | CC-BY-4.0 (**unverified**: NVIDIA's NIM model card cites the NVIDIA Community Model License instead) | Credit NVIDIA and link the licence. Confirm the licence field on the Hugging Face page before shipping. |
 | OpenAI Whisper large-v3-turbo (`mlx-community/whisper-large-v3-turbo`) and the `faster-whisper` models | Optional speech to text | MIT | Keep the copyright and licence notice. |
 | Qwen3 14B (`qwen3:14b`) | Default local summaries | Apache-2.0 (**unverified**) | Keep the licence and notices if you redistribute it. |
@@ -26,7 +27,8 @@ or host the weights for customers, you take on the attribution duties below.
 
 Suggested attribution wherever the app's credits or documentation are shown:
 
-> Speaker separation uses the pyannote community-1 pipeline (CC-BY-4.0, pyannote.ai).
+> Speaker separation uses the pyannote community-1 pipeline (CC-BY-4.0, pyannote.ai), or
+> optionally Who by Desert Ant Labs.
 > Speech recognition uses NVIDIA Parakeet TDT 0.6B v2 (CC-BY-4.0) and OpenAI Whisper (MIT).
 
 ### Hosted language models

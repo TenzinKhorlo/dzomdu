@@ -79,11 +79,11 @@ dzomdu ui
 Open **http://localhost:8765**. The native default is **Parakeet for English** with
 **Pyannote for speakers**. For Nepali or automatic language detection, select **Whisper
 large-v3 Turbo** in **Settings → Model library**, download it, and save it as the default.
-To enable the optional Qwen, Moonshine, Whistle and Nemotron-3-Diarization runtimes for
+To enable the optional Qwen, Moonshine, Whistle, Who and Nemotron-3-Diarization runtimes for
 testing:
 
 ```bash
-python -m pip install -e '.[mac,speech-models,whistle,diarize,denoise]'
+python -m pip install -e '.[mac,speech-models,whistle,who,diarize,denoise]'
 ```
 
 Restart Dzomdu after installing additional runtimes. Installing a runtime does not download
@@ -302,7 +302,7 @@ deployment. The dashboard is available at **http://localhost:8765**.
 | Page | What it does |
 |---|---|
 | **Dashboard** | Meetings and hours over the last 30 days with trends, time in meetings per day, who talks most, recent meetings, and open action items. Tick an item off, or swipe it to the right. |
-| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record: words show up about a second after they're spoken, in a lighter tone until the speaker pauses, with the timer and **Stop & process** on a floating bar at the bottom. **Edit speakers** optionally assigns or renames a voice during recording; a turn can be reassigned with Edit or dragged onto the right speaker. These live corrections carry into the final review using word timestamps. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. If you give two voices the same name, you're told they'll be merged into one person. You can also drop in an existing recording instead. |
+| **Record** | Fill in an optional title, project, attendees and minutes format, then press the red button. A live transcript with speaker labels appears while you record: words show up about a second after they're spoken, in a lighter tone until the speaker pauses, with the timer and **Stop & process** on a floating bar at the bottom. **My notes** beside the transcript is a notepad for whoever runs the meeting: the minutes are written to cover what you type there, and your notes are kept word for word under **My notes** in the saved note. **Edit speakers** optionally assigns or renames a voice during recording; a turn can be reassigned with Edit or dragged onto the right speaker. These live corrections carry into the final review using word timestamps. **Stop & process** runs the full pipeline. On **Who said what?** you confirm each voice (▶ plays a sample), and new names are remembered for next time. If you give two voices the same name, you're told they'll be merged into one person. You can also drop in an existing recording instead. |
 | **Meetings** | Search and filter by project. Each meeting shows the notes, a searchable transcript, its action items, speaking time, decisions, **Open in Obsidian**, and **Rewrite**, which redoes the minutes in another format or with extra instructions. **Edit transcript** optionally corrects speaker names, reassigns individual turns (including drag-and-drop), and fixes transcript text. Changes can be undone or discarded before **Save corrections**, which saves the batch and automatically regenerates the summary and minutes. Existing notes remain available if rewriting fails, and manually edited notes retain overwrite protection. A player bar plays the recording: the transcript follows along, clicking a turn or a timestamp in the notes plays from that moment, and you can drag the scrubber or use the arrow keys. |
 | **Tasks** | Action items from all saved meetings, linked to their source meeting and its project. Search or filter by project and completion status. Each new task gets a reminder seven days after it is added, independently of any deadline stated in the meeting; click the reminder date to choose a custom date. Due and overdue reminders appear in **Reminders** and the sidebar count. Completion updates checkbox notes; table-style actions are tracked in the meeting record. Task status and custom dates survive restarts, reordering and regeneration of the same action items. |
 | **Ask Dzomdu** | Ask questions across your meeting notes or choose specific meetings. Follow up on answers and open the cited source notes. Answers stream as they are generated. The sidebar shows three conversations, with pinned chats first; **More** opens searchable history. The conversation menu lets you rename, pin/unpin, delete, or move a chat to a project. **Ask about this meeting** on a meeting page starts a focused chat. |
@@ -338,7 +338,9 @@ deleted. Project cards link to their conversations. Team assignments stay with t
 renamed and are included in OKF exports.
 
 Audio is saved continuously while recording. If the app or the computer crashes, the recording
-is recovered the next time `dzomdu ui` starts. Everything runs on localhost; nothing is loaded
+is recovered the next time `dzomdu ui` starts, and the Overview page offers to process it. If the
+connection to Dzomdu drops mid-recording, recording stops with a message and what was captured
+is saved. Everything runs on localhost; nothing is loaded
 from the internet. The original single-page interface is still at `/classic/`, and it is used
 automatically if the dashboard isn't built.
 
@@ -481,7 +483,7 @@ survives server restarts and completed files are reused from the local caches.
 On Apple Silicon, install the optional alternatives in the same environment as Dzomdu:
 
 ```sh
-python -m pip install -e '.[mac,speech-models,whistle,diarize,denoise]'
+python -m pip install -e '.[mac,speech-models,whistle,who,diarize,denoise]'
 ```
 
 The catalog includes Parakeet, Whisper large-v3 Turbo (MLX on Mac, CPU/CUDA on Linux/Windows), Moonshine Small/Medium Streaming,
@@ -503,6 +505,22 @@ Larger declared meetings are rejected before recording/upload. Both adapters reu
 Pyannote embedding space, so switching does not discard existing confirmed voice profiles.
 Large-room recognition quality and speed still need evaluation on actual meeting recordings;
 a speaker-count setting is not an accuracy guarantee.
+
+**Desert Ant Who** is a small (about 99 MB) CPU speaker model for Mac, Linux and Windows
+(`pip install -e '.[who,diarize]'`). It is a numpy and ONNX Runtime port of the
+[Who](https://huggingface.co/desert-ant-labs/who) pipeline: it labels up to four speakers in
+each five-minute stretch and joins the stretches by voice, so longer recordings can have more.
+On one 14.5-minute synthetic test recording (three text-to-speech voices) it ran in 9 s on a
+Mac CPU, where Pyannote forced to CPU took 7 minutes; on real meetings, and Pyannote on the Mac
+GPU, expect a smaller gap.
+Who takes no speaker count: a maximum drops the least present extra speakers, and a minimum is
+ignored. Overlapping speech is assigned to the person already talking. Its accuracy was only
+measured on English, and it is weaker on far-field room recordings and with many speakers, so
+keep Pyannote for large meetings. Who reuses the Pyannote embedding space for voice profiles,
+so `.[diarize]` is still required and existing profiles keep matching. The weights use the
+[Desert Ant Labs Source-Available License](https://license.desertant.com/1.0): free below
+100,000 monthly active devices per platform, credit required, and no training a competing
+on-device model on its outputs.
 
 ### Background noise suppression
 
