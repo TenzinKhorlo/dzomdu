@@ -8,7 +8,7 @@ import { Fade } from "@/components/animate-ui/primitives/effects/fade"
 import { EmptyState, PageHeader } from "@/components/common"
 import { NewProjectDialog } from "@/components/new-project-dialog"
 import { ProjectActions } from "@/components/project-actions"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/button"
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { projectHref, type Project } from "@/lib/api"
@@ -60,7 +60,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4 @3xl/main:grid-cols-2 @6xl/main:grid-cols-3">
           {data.map((p, i) => (
-            <Fade key={p.name} delay={i * 40}>
+            <Fade key={p.name} delay={Math.min(i, 6) * 40}>
               <Card className="group relative h-full transition-colors hover:border-foreground/20">
                 <Link
                   href={projectHref(p.name)}
@@ -69,18 +69,20 @@ export default function ProjectsPage() {
                 />
                 <CardHeader>
                   <div className="flex items-start justify-between">
+                    {/* the project's colour as a tint, with an icon dark or light enough to read on it */}
                     <div
-                      className="mb-2 flex size-8 items-center justify-center rounded-lg text-white"
-                      style={{ backgroundColor: colorFor(p.name) }}
+                      className="mb-2 flex size-8 items-center justify-center rounded-lg"
+                      style={{
+                        backgroundColor: `color-mix(in oklch, ${colorFor(p.name)} 18%, transparent)`,
+                        color: `color-mix(in oklch, ${colorFor(p.name)} 55%, var(--foreground))`,
+                      }}
                     >
                       <Folder className="size-4 fill-current" />
                     </div>
                     <ProjectActions project={p} onChanged={reload} />
                   </div>
                   <CardTitle>{p.name}</CardTitle>
-                  <CardDescription>
-                    {p.last ? `Last meeting ${relative(p.last).toLowerCase()}` : "No meetings yet"}
-                  </CardDescription>
+                  {p.last && <CardDescription>Last meeting {relative(p.last).toLowerCase()}</CardDescription>}
                 </CardHeader>
                 <CardContent className="flex-1">
                   <p className="line-clamp-3 text-[13px] text-muted-foreground">

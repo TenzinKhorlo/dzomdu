@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import { useChatHistory } from "@/components/chat/provider"
 import { useConfirm } from "@/components/confirm"

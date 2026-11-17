@@ -1,26 +1,22 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@astryxdesign/core/Button"
+import { ClickableCard } from "@astryxdesign/core/ClickableCard"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Icon } from "@astryxdesign/core/Icon"
+import { Selector } from "@astryxdesign/core/Selector"
+import { Text } from "@astryxdesign/core/Text"
+import { TextInput } from "@astryxdesign/core/TextInput"
 import { MessageSquareText, Mic, Radio, Search } from "lucide-react"
 
-import { EmptyState, PageHeader } from "@/components/common"
+import { EmptyState } from "@/components/common"
 import { MeetingTable } from "@/components/meeting-table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import type { ActiveSession, MeetingRow } from "@/lib/api"
+import { STATE_LABEL } from "@/lib/format"
 
 const ALL = "__all__"
 
@@ -54,66 +50,58 @@ function MeetingsInner() {
 
   return (
     <>
-      <PageHeader
-        title="Meetings"
-        description={data ? `${data.meetings.length} meetings in your vault` : "Loading…"}
-      >
-        <Button asChild>
-          <Link href="/record/">
-            <Mic />
-            New recording
-          </Link>
-        </Button>
-      </PageHeader>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+        <div className="space-y-1.5">
+          <Heading level={1}>Meetings</Heading>
+          {/* the line is always there, so the page doesn't jump when the count arrives */}
+          <Text type="supporting" display="block" className="min-h-5">
+            {data ? `${data.meetings.length} meetings in your vault` : "\u00A0"}
+          </Text>
+        </div>
+        <Button variant="primary" label="New recording" icon={<Icon icon={Mic} />} href="/record/" />
+      </div>
 
       {data?.active.map((s) => (
-        <Link
-          key={s.id}
-          href={`/record/?session=${s.id}`}
-          className="flex items-center gap-3 rounded-xl border border-brand/25 bg-brand/[0.05] px-4 py-3 text-[13px] hover:bg-brand/10"
-        >
-          <Radio className="size-4 text-brand" />
-          <span className="font-medium">{s.title}</span>
-          <Badge variant="secondary">{s.state}</Badge>
-        </Link>
+        <ClickableCard key={s.id} label={s.title} href={`/record/?session=${s.id}`} padding={3}>
+          <div className="flex items-center gap-3">
+            <Icon icon={Radio} color="accent" />
+            <Text weight="medium">{s.title}</Text>
+            <Text type="supporting">{STATE_LABEL[s.state] ?? s.state}</Text>
+          </div>
+        </ClickableCard>
       ))}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-sm">
+          <TextInput
+            label="Search"
+            isLabelHidden
+            type="search"
+            startIcon={Search}
+            placeholder="Search"
+            hasClear
             value={query}
-            onChange={(e) => setParam("q", e.target.value || null)}
-            placeholder="Search titles, summaries, people…"
-            className="pl-9"
+            onChange={(v) => setParam("q", v || null)}
           />
         </div>
-        <Select
-          value={project}
-          onValueChange={(v) => setParam("project", v === ALL ? null : v)}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All projects" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All projects</SelectItem>
-            {projects.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-48">
+          <Selector
+            label="Project"
+            isLabelHidden
+            hasSearch={projects.length > 6}
+            value={project}
+            onChange={(v) => setParam("project", !v || v === ALL ? null : v)}
+            options={[{ value: ALL, label: "All projects" }, ...projects.map((p) => ({ value: p, label: p }))]}
+          />
+        </div>
       </div>
 
       {!data ? (
         <Skeleton className="h-80 rounded-xl" />
       ) : rows.length ? (
-        <Card className="overflow-hidden py-0">
-          <CardContent className="px-0">
-            <MeetingTable meetings={rows} onDeleted={reload} />
-          </CardContent>
-        </Card>
+        <div className="overflow-hidden rounded-[var(--radius-container)] border bg-card">
+          <MeetingTable meetings={rows} onDeleted={reload} />
+        </div>
       ) : (
         <EmptyState
           icon={MessageSquareText}

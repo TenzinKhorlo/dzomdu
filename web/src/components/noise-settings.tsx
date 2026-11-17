@@ -2,15 +2,14 @@
 
 import * as React from "react"
 import { Loader2, Volume2 } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/badge"
+import { Button } from "@/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
+import { Selector } from "@astryxdesign/core/Selector"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Switch } from "@/components/ui/switch"
+import { Switch } from "@astryxdesign/core/Switch"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api"
 
@@ -44,26 +43,27 @@ function NoiseForm({ saved, onSaved }: { saved: NoiseSettings; onSaved: () => vo
 
   return (
     <CardContent className="grid gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Label htmlFor="noise-enabled">Reduce background noise</Label>
-          <p className="text-sm text-muted-foreground">Apply to live transcripts and uploaded recordings.</p>
-        </div>
-        <Switch id="noise-enabled" checked={enabled} onCheckedChange={setEnabled}
-          disabled={!saved.runtime_installed && !enabled} />
-      </div>
-      <div className="grid max-w-sm gap-1.5">
-        <Label htmlFor="noise-strength">Suppression level</Label>
-        <Select value={strength} onValueChange={setStrength} disabled={!enabled}>
-          <SelectTrigger id="noise-strength" className="w-full"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[0.5, 0.75].includes(saved.strength) || (
-              <SelectItem value={saved.strength.toString()}>Custom · {Math.round(saved.strength * 100)}%</SelectItem>
-            )}
-            <SelectItem value="0.5">Light · recommended for meetings</SelectItem>
-            <SelectItem value="0.75">Balanced · more noise reduction</SelectItem>
-          </SelectContent>
-        </Select>
+      <Switch
+        label="Reduce background noise"
+        description="Apply to live transcripts and uploaded recordings."
+        value={enabled}
+        onChange={setEnabled}
+        isDisabled={!saved.runtime_installed && !enabled}
+      />
+      <div className="max-w-sm">
+        <Selector
+          label="Suppression level"
+          value={strength}
+          onChange={(value) => value && setStrength(value)}
+          isDisabled={!enabled}
+          options={[
+            ...([0.5, 0.75].includes(saved.strength)
+              ? []
+              : [{ value: saved.strength.toString(), label: `Custom · ${Math.round(saved.strength * 100)}%` }]),
+            { value: "0.5", label: "Light · recommended for meetings" },
+            { value: "0.75", label: "Balanced · more noise reduction" },
+          ]}
+        />
       </div>
       <p className="text-sm text-muted-foreground">
         Reduces background noise and may reduce music. No speaker is selected or intentionally muted.

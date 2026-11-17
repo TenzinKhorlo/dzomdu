@@ -9,8 +9,8 @@ const code = ts.transpileModule(readFileSync(new URL("../src/lib/recorder.ts", i
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 }).outputText
 
-function setup({ micDenied = false, noTabAudio = false, suppression = true } = {}) {
-  const calls = { mic: [], display: [], sources: [], warnings: [], messages: [], timers: [] }
+function setup({ micDenied = false, noTabAudio = false, suppression = true, workletFails = false } = {}) {
+  const calls = { mic: [], display: [], sources: [], warnings: [], errors: [], messages: [], timers: [], sockets: [] }
   function track(kind) {
     return {
       kind, readyState: "live", ended: null,
@@ -39,7 +39,7 @@ function setup({ micDenied = false, noTabAudio = false, suppression = true } = {
   }
   const connectable = () => ({ connect(next) { return next }, gain: { value: 1 } })
   class AudioContext {
-    audioWorklet = { addModule: async () => {} }
+    audioWorklet = { addModule: async () => { if (workletFails) throw new Error("Worklet failed to load") } }
     destination = connectable()
     createGain = connectable
     createMediaStreamSource(s) { calls.sources.push(s); return connectable() }
@@ -53,6 +53,7 @@ function setup({ micDenied = false, noTabAudio = false, suppression = true } = {
     static OPEN = 1
     static CONNECTING = 0
     readyState = 1
+    constructor() { calls.sockets.push(this) }
     send(m) { calls.messages.push(m) }
     close() {}
   }
@@ -63,7 +64,7 @@ function setup({ micDenied = false, noTabAudio = false, suppression = true } = {
     setTimeout: (callback) => calls.timers.push(callback),
     require(name) {
       if (name === "react") return { useSyncExternalStore: (_, get) => get() }
-      if (name === "sonner") return { toast: { warning: (m) => calls.warnings.push(m) } }
+      if (name === "@/lib/toast") return { toast: { warning: (m) => calls.warnings.push(m), error: (m) => calls.errors.push(m) } }
       if (name === "@/lib/api") return { wsUrl: (url) => url }
       throw new Error(`Unexpected import: ${name}`)
     },
@@ -156,4 +157,42 @@ test("ending sharing while the microphone is live keeps recording with a truthfu
   assert.equal(s.useRecorder().includesMeetingAudio, false)
   assert.equal(s.useRecorder().sessionId, "meeting-1")
   assert.deepEqual(s.calls.messages, [])
+})
+
+test("a failed start releases the microphone instead of leaving it live", async () => {
+  const s = setup({ workletFails: true })
+  await assert.rejects(s.recorder.start("room-1"), /Worklet failed/)
+  assert.equal(s.mic.getAudioTracks()[0].readyState, "ended")
+  assert.equal(s.useRecorder().sessionId, null)
+})
+
+test("a dropped connection stops the recording and says so", async () => {
+  const s = setup()
+  await s.recorder.start("room-1")
+  s.calls.sockets[0].onclose()
+  assert.match(s.calls.errors[0], /Connection to Dzomdu was lost/)
+  assert.equal(s.mic.getAudioTracks()[0].readyState, "ended")
+  assert.equal(s.useRecorder().sessionId, null)
+  // the error event that often accompanies a close must not report it twice
+  s.calls.sockets[0].onerror()
+  assert.equal(s.calls.errors.length, 1)
+})
+
+test("stopping normally is not reported as a lost connection", async () => {
+  const s = setup()
+  await s.recorder.start("room-1")
+  const stopped = s.recorder.stop()
+  s.calls.sockets[0].onclose() // the server closes its side while the last chunk flushes
+  s.calls.timers.shift()()
+  await stopped
+  assert.deepEqual(s.calls.errors, [])
+  assert.equal(s.useRecorder().sessionId, null)
+})
+
+test("starting again while recording leaves the running recording alone", async () => {
+  const s = setup()
+  await s.recorder.start("room-1")
+  await assert.rejects(s.recorder.start("room-2"), /already in progress/)
+  assert.equal(s.mic.getAudioTracks()[0].readyState, "live")
+  assert.equal(s.useRecorder().sessionId, "room-1")
 })

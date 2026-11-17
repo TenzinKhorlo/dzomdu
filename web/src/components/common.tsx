@@ -1,4 +1,6 @@
 import * as React from "react"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Text } from "@astryxdesign/core/Text"
 
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
 import { colorFor, initials } from "@/lib/format"
@@ -18,8 +20,12 @@ export function PageHeader({
   return (
     <Fade className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
       <div className="min-w-0 space-y-1.5">
-        <h1 className="text-[22px] font-semibold">{title}</h1>
-        {description && <p className="max-w-xl text-[13px] leading-relaxed text-muted-foreground">{description}</p>}
+        <Heading level={1}>{title}</Heading>
+        {description && (
+          <Text type="supporting" display="block" className="max-w-xl text-pretty">
+            {description}
+          </Text>
+        )}
       </div>
       {children && <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{children}</div>}
     </Fade>
@@ -31,18 +37,24 @@ export function SpeakerAvatar({
   name,
   size = "md",
   className,
+  label,
+  color: colorOverride,
 }: {
   name: string
   size?: "sm" | "md" | "lg"
   className?: string
+  /** Text shown instead of the initials, like "+3". `name` stays the tooltip. */
+  label?: string
+  /** Replaces the colour derived from `name`. */
+  color?: string
 }) {
-  const color = colorFor(name)
+  const color = colorOverride ?? colorFor(name)
   return (
     <span
       title={name}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full font-semibold ring-2 ring-background",
-        size === "sm" && "size-6 text-[10px]",
+        "inline-flex shrink-0 items-center justify-center rounded-full font-medium ring-2 ring-background",
+        size === "sm" && "size-6 text-[11px]",
         size === "md" && "size-8 text-xs",
         size === "lg" && "size-11 text-sm",
         className,
@@ -52,23 +64,38 @@ export function SpeakerAvatar({
         backgroundColor: `color-mix(in oklch, ${color} 18%, var(--background))`,
       }}
     >
-      {initials(name)}
+      {label ?? initials(name)}
     </span>
   )
 }
 
-export function AvatarStack({ names, max = 4 }: { names: string[]; max?: number }) {
-  if (!names.length) return <span className="text-sm text-muted-foreground">—</span>
+export function AvatarStack({ names, max = 4, unknown = 0 }: { names: string[]; max?: number; unknown?: number }) {
+  if (!names.length && !unknown) return <span className="text-sm text-muted-foreground">—</span>
   const shown = names.slice(0, max)
+  const count = (n: number) => `+${n}`
+  const small = (n: number) => (count(n).length > 3 ? "text-[9px]" : undefined)
   return (
     <div className="flex -space-x-1">
       {shown.map((n) => (
         <SpeakerAvatar key={n} name={n} size="sm" />
       ))}
       {names.length > max && (
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-[10px] font-medium ring-2 ring-background">
-          +{names.length - max}
-        </span>
+        <SpeakerAvatar
+          name={`${names.length - max} more`}
+          label={count(names.length - max)}
+          color="var(--muted-foreground)"
+          size="sm"
+          className={small(names.length - max)}
+        />
+      )}
+      {unknown > 0 && (
+        <SpeakerAvatar
+          name={`${unknown} unidentified ${unknown === 1 ? "speaker" : "speakers"}`}
+          label={count(unknown)}
+          color="var(--muted-foreground)"
+          size="sm"
+          className={small(unknown)}
+        />
       )}
     </div>
   )
@@ -135,7 +162,7 @@ export function StatTile({
       </div>
       {/* the hint moves under the value when the tile is narrow, never squeezing it */}
       <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
-        <span className="text-xl leading-none font-semibold tracking-[-0.02em] whitespace-nowrap tabular-nums">
+        <span className="text-xl leading-none font-medium tracking-[-0.02em] whitespace-nowrap tabular-nums">
           {value}
         </span>
         {hint && <span className="min-w-0 truncate text-xs text-muted-foreground">{hint}</span>}

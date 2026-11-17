@@ -3,13 +3,13 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowRight, ArrowUp, BookOpen, Gavel, ListChecks, Loader2, Sparkles } from "lucide-react"
+import { ArrowRight, ArrowUp, BookOpen, Gavel, ListChecks, Loader2, MessagesSquare } from "lucide-react"
 
 import { Message } from "@/components/chat/message"
 import { useChatHistory } from "@/components/chat/provider"
 import { SourcesPicker } from "@/components/chat/sources-picker"
 import { useInfo } from "@/components/providers"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { api, streamChatAnswer, type Chat, type MeetingRow } from "@/lib/api"
@@ -145,7 +145,7 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
           e.preventDefault()
           void send()
         }}
-        className="rounded-xl border bg-card p-3 shadow-[0_2px_8px_rgb(0_0_0/0.025)] transition-shadow focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/10 sm:p-4"
+        className="rounded-xl border bg-card p-3 shadow-[0_2px_8px_rgb(0_0_0/0.025)] transition-shadow focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30 sm:p-4"
       >
         <label htmlFor="chat-question" className="sr-only">
           Ask a question about your meeting notes
@@ -181,7 +181,7 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
           />
           <div className="flex shrink-0 items-center gap-3">
             <span
-              className="hidden max-w-40 truncate text-[11px] text-muted-foreground sm:block"
+              className="hidden max-w-40 truncate text-xs text-muted-foreground sm:block"
               title={info?.models.llm}
             >
               {info?.models.llm ?? "Configured model"}
@@ -198,7 +198,7 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
           </div>
         </div>
       </form>
-      <p className="text-center text-[11px] leading-5 text-muted-foreground">
+      <p className="text-center text-xs leading-5 text-muted-foreground">
         Answers use your meeting notes. Check the sources for details.
       </p>
     </div>
@@ -250,7 +250,7 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
                         role="status"
                         className="flex items-center gap-2.5 text-[13px] text-muted-foreground"
                       >
-                        <Sparkles className="size-4 text-brand" />
+                        <BookOpen className="size-4 text-brand" />
                         <Loader2 className="size-3.5 animate-spin" />
                         Reading your meeting notes…
                       </div>
@@ -258,7 +258,7 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
                   </>
                 )}
               </div>
-              <div className="sticky bottom-0 mx-auto mt-auto w-full max-w-3xl bg-background pb-3 pt-4">
+              <div className="sticky bottom-0 mx-auto mt-auto w-full max-w-3xl bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-4">
                 {composer}
               </div>
               <div ref={end} />
@@ -267,13 +267,13 @@ function ChatWorkspace({ id, meeting }: { id: string | null; meeting: string | n
             <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center pb-12 pt-8 sm:pb-24">
               <div className="mb-7 space-y-4 text-center">
                 <span className="mx-auto flex size-11 items-center justify-center rounded-xl border border-brand/15 bg-brand/8 text-brand">
-                  <Sparkles className="size-5" />
+                  <MessagesSquare className="size-5" />
                 </span>
                 <div className="space-y-2">
-                  <h2 className="text-[25px] leading-tight font-semibold tracking-[-0.025em] sm:text-[30px]">
+                  <h1 className="text-[24px] leading-tight font-medium tracking-[-0.025em] sm:text-[28px]">
                     Your meetings,
                     <br className="sm:hidden" /> a conversation away.
-                  </h2>
+                  </h1>
                   <p className="mx-auto max-w-md text-[13px] leading-6 text-muted-foreground">
                     Start with a question. We’ll find the notes.
                   </p>

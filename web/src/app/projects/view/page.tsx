@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, CheckCheck, Folder, ListChecks, MessageSquare, Mic, Users } from "lucide-react"
+import { CheckCheck, Folder, ListChecks, MessageSquare, Mic, Users } from "lucide-react"
 
 import { useChatHistory } from "@/components/chat/provider"
 import { EmptyState, PageHeader, SpeakerAvatar } from "@/components/common"
@@ -12,16 +12,16 @@ import { ProjectActions } from "@/components/project-actions"
 import { ProjectTeamDialog } from "@/components/project-team-dialog"
 import { useTasks } from "@/components/task-provider"
 import { TaskRow } from "@/components/task-row"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/badge"
+import { Button } from "@/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { ApiError, projectHref, type ProjectOverview } from "@/lib/api"
@@ -85,13 +85,6 @@ function ProjectView({ name }: { name: string }) {
   const conversations = chats.filter((chat) => chat.project === data.name)
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href="/projects/"
-        className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" />
-        Projects
-      </Link>
       <PageHeader
         title={data.name}
         description={
@@ -138,7 +131,7 @@ function ProjectView({ name }: { name: string }) {
                 <span>{stat.title}</span>
                 <stat.icon className="size-4" />
               </div>
-              <p className="text-2xl font-semibold tabular-nums">{stat.value}</p>
+              <p className="text-2xl font-medium tabular-nums">{stat.value}</p>
               <p className="mt-1 text-xs text-muted-foreground">{stat.detail}</p>
             </CardContent>
           </Card>
@@ -187,11 +180,11 @@ function ProjectView({ name }: { name: string }) {
                                 ? "Meeting participant"
                                 : "Task assignee")}
                         </span>
-                        <span className="mt-2 block text-[11px] text-muted-foreground">
+                        <span className="mt-2 block text-xs text-muted-foreground">
                           {person.meetings} meetings · {person.open_tasks} open tasks
                         </span>
                         {person.assigned && (person.role || person.organisation) && (
-                          <Badge variant="outline" className="mt-2 text-[10px] font-normal">
+                          <Badge variant="outline">
                             Assigned
                           </Badge>
                         )}
@@ -229,7 +222,7 @@ function ProjectView({ name }: { name: string }) {
             </div>
             <CardDescription>Each task links to the meeting where it was recorded.</CardDescription>
           </CardHeader>
-          <CardContent className="px-4 sm:px-5">
+          <CardContent className="px-5">
             {tasks.length ? (
               <ul>
                 {tasks.map((task) => (

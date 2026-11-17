@@ -13,7 +13,7 @@ import {
 } from "motion/react"
 
 import { SpeakerAvatar } from "@/components/common"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/button"
 import { apiUrl, type Turn } from "@/lib/api"
 import { clock } from "@/lib/format"
 import { rubberband, spring, springSnappy } from "@/lib/motion"
@@ -276,7 +276,7 @@ function Scrubber({
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: 4, scale: 0.9, filter: "blur(4px)" }}
               transition={springSnappy}
-              className="material-thick absolute bottom-6 left-1/2 -translate-x-1/2 rounded-md px-2 py-1 font-mono text-xs font-medium tabular-nums"
+              className="raised absolute bottom-6 left-1/2 -translate-x-1/2 rounded-md px-2 py-1 font-mono text-xs font-medium tabular-nums"
             >
               {clock(preview)}
             </motion.div>
@@ -296,7 +296,7 @@ export function PlayerBar({ turns, className }: { turns: Turn[]; className?: str
 
   if (p.available === false) {
     return (
-      <div className={cn("material-thick rounded-2xl px-4 py-3 text-sm text-muted-foreground", className)}>
+      <div className={cn("raised rounded-2xl px-4 py-3 text-sm text-muted-foreground", className)}>
         The recording for this meeting is no longer on disk, so it can&apos;t be played.
       </div>
     )
@@ -305,7 +305,7 @@ export function PlayerBar({ turns, className }: { turns: Turn[]; className?: str
   return (
     <div
       className={cn(
-        "material-thick sticky bottom-4 z-20 flex items-center gap-3 rounded-2xl px-3 py-2.5",
+        "raised sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex items-center gap-3 rounded-2xl px-3 py-2.5",
         className,
       )}
     >

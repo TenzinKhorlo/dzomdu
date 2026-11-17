@@ -1,8 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Pencil } from "lucide-react"
-import { toast } from "sonner"
+import { Button } from "@astryxdesign/core/Button"
+import { Icon } from "@astryxdesign/core/Icon"
+import { IconButton } from "@astryxdesign/core/IconButton"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { Pencil } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 import {
   Dialog,
@@ -12,12 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/animate-ui/components/radix/dialog"
+} from "@/components/dialog"
 import { useInfo } from "@/components/providers"
 import { useTasks } from "@/components/task-provider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 
 export function RenameMeetingDialog({
@@ -33,7 +34,6 @@ export function RenameMeetingDialog({
   const [name, setName] = React.useState(title)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState("")
-  const fieldId = React.useId()
   const { reload: reloadInfo } = useInfo()
   const { reload: reloadTasks } = useTasks()
   const normalized = name.trim().replace(/\s+/g, " ")
@@ -73,15 +73,7 @@ export function RenameMeetingDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          aria-label="Rename meeting"
-          title="Rename meeting"
-        >
-          <Pencil className="size-3.5" />
-        </Button>
+        <IconButton variant="ghost" size="sm" label="Rename meeting" tooltip="Rename meeting" icon={<Icon icon={Pencil} />} />
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={save} className="grid gap-4">
@@ -91,32 +83,23 @@ export function RenameMeetingDialog({
               Choose a name that makes this meeting easy to find.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor={fieldId}>Meeting title</Label>
-            <Input
-              id={fieldId}
-              autoFocus
-              maxLength={120}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              disabled={busy}
-            />
-            {error && (
-              <p role="alert" className="text-xs text-destructive">
-                {error}
-              </p>
-            )}
-          </div>
+          <TextInput
+            label="Meeting title"
+            hasAutoFocus
+            value={name}
+            onChange={(value) => setName(value.slice(0, 120))}
+            isDisabled={busy}
+            status={error ? { type: "error", message: error } : undefined}
+          />
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
+            <Button label="Cancel" variant="secondary" isDisabled={busy} onClick={() => setOpen(false)} />
             <Button
               type="submit"
-              disabled={busy || !normalized || normalized.length > 120 || normalized === title}
-            >
-              {busy && <Loader2 className="animate-spin" />}Save title
-            </Button>
+              variant="primary"
+              label="Save title"
+              isLoading={busy}
+              isDisabled={!normalized || normalized === title}
+            />
           </DialogFooter>
         </form>
       </DialogContent>

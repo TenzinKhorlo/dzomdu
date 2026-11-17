@@ -69,3 +69,11 @@ export function colorFor(label: string | null | undefined): string {
   for (const ch of label.replace(/\?$/, "")) hash = (hash * 31 + ch.charCodeAt(0)) | 0
   return PALETTE[Math.abs(hash) % PALETTE.length]
 }
+
+/** What each recording-session state is called in the interface. */
+export const STATE_LABEL: Record<string, string> = {
+  recording: "Recording",
+  processing: "Processing",
+  review: "Waiting for speaker review",
+  summarizing: "Writing notes",
+}

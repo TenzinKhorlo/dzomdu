@@ -1,8 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { FolderPlus, Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { Button } from "@astryxdesign/core/Button"
+import { Icon } from "@astryxdesign/core/Icon"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { FolderPlus } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 import {
   Dialog,
@@ -12,11 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/animate-ui/components/radix/dialog"
+} from "@/components/dialog"
 import { useInfo } from "@/components/providers"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
 
 /** Creates a project folder in the vault. `children` is the button that opens the dialog. */
@@ -65,21 +65,22 @@ export function NewProjectDialog({
               add goals and a glossary to the overview later.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="project-name">Project name</Label>
-            <Input
-              id="project-name"
-              autoFocus
-              placeholder="e.g. Solar Microgrid"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+          <TextInput
+            label="Project name"
+            hasAutoFocus
+            placeholder="e.g. Solar Microgrid"
+            value={name}
+            onChange={setName}
+          />
           <DialogFooter>
-            <Button type="submit" disabled={busy || !name.trim()}>
-              {busy ? <Loader2 className="animate-spin" /> : <FolderPlus />}
-              Create project
-            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              label="Create project"
+              icon={<Icon icon={FolderPlus} />}
+              isLoading={busy}
+              isDisabled={!name.trim()}
+            />
           </DialogFooter>
         </form>
       </DialogContent>

@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     // Third-party registry code (shadcn/ui, Animate UI), managed with `npx shadcn add`
     "src/components/ui/**",
     "src/components/animate-ui/**",
+    // Built output of `astryx theme build` (the editable source is src/themes/*/*Theme.ts)
+    "src/themes/**/*.d.ts",
+    "src/themes/**/*.js",
+    "src/themes/**/*.mjs",
     "src/hooks/use-mobile.ts",
     "src/hooks/use-controlled-state.tsx",
     "src/hooks/use-data-state.tsx",

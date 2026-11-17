@@ -2,12 +2,12 @@
 
 import * as React from "react"
 import { GripVertical, Loader2, Pencil, Play, Save, UserRoundPen } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/animate-ui/components/radix/dialog"
-import { Checkbox } from "@/components/animate-ui/components/radix/checkbox"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/dialog"
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput"
 import { SpeakerAvatar } from "@/components/common"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -237,10 +237,10 @@ export function TranscriptEditor({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                     {editing && !row.partial ? (
-                      <button type="button" disabled={locked} onClick={() => open(row, true)} className="rounded font-semibold underline decoration-dotted underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring" style={{ color: colorFor(row.label) }}>
+                      <button type="button" disabled={locked} onClick={() => open(row, true)} className="rounded font-medium underline decoration-dotted underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring" style={{ color: colorFor(row.label) }}>
                         {row.label}
                       </button>
-                    ) : <span className="font-semibold" style={{ color: colorFor(row.label) }}>{row.label}</span>}
+                    ) : <span className="font-medium" style={{ color: colorFor(row.label) }}>{row.label}</span>}
                     <button type="button" disabled={!onSeek} onClick={() => onSeek?.(row)} aria-label={`Play from ${clock(row.start)}`} aria-current={active ? "true" : undefined} className="flex items-center gap-1 rounded font-mono text-xs text-muted-foreground enabled:hover:text-brand focus-visible:ring-2 focus-visible:ring-ring">
                       {clock(row.start)}{onSeek && <Play className="size-3" />}
                     </button>
@@ -268,7 +268,7 @@ export function TranscriptEditor({
             <Input id={`${listId}-name`} list={`${listId}-people`} maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Choose or enter a name" disabled={busy} />
             <datalist id={`${listId}-people`}>{[...new Set([...draft.speakers.map(voice => voice.label), ...people])].map(person => <option key={person} value={person} />)}</datalist>
           </div>
-          {dialog?.speaker && <label className="flex items-start gap-2 text-sm"><Checkbox checked={rename} disabled={busy} onCheckedChange={value => setRename(value === true)} />Rename this speaker throughout the transcript</label>}
+          {dialog?.speaker && <CheckboxInput label="Rename this speaker throughout the transcript" value={rename} isDisabled={busy} onChange={setRename} />}
           {!live && !rename && <div className="grid gap-2"><Label htmlFor={`${listId}-text`}>Transcript text</Label><Textarea id={`${listId}-text`} rows={5} value={text} maxLength={20000} onChange={event => setText(event.target.value)} disabled={busy} /></div>}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>

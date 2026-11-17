@@ -275,6 +275,7 @@ export type Session = {
     num_speakers: number | null
     live: boolean
     summarize: boolean
+    user_notes: string
   }
   messages: string[]
   error: string | null

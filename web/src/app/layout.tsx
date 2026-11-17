@@ -1,13 +1,15 @@
-import type { Metadata } from "next"
+// first, so its @layer order (reset < base < astryx-base < astryx-theme) is registered before any component CSS
+import "./globals.css"
+
+import type { Metadata, Viewport } from "next"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarProvider } from "@/components/animate-ui/components/radix/sidebar"
+import { AppChrome } from "@/components/app-chrome"
 import { Providers } from "@/components/providers"
-import { SiteHeader } from "@/components/site-header"
 
-import "./globals.css"
+
+export const viewport: Viewport = { viewportFit: "cover" }
 
 export const metadata: Metadata = {
   title: "Dzomdu",
@@ -16,16 +18,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-astryx-theme="dzomdu" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}>
         <Providers>
-          <SidebarProvider style={{ "--sidebar-width": "14rem" } as React.CSSProperties}>
-            <AppSidebar />
-            <SidebarInset className="min-w-0">
-              <SiteHeader />
-              <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 px-4 py-6 md:px-6 lg:px-8">{children}</div>
-            </SidebarInset>
-          </SidebarProvider>
+          <AppChrome>{children}</AppChrome>
         </Providers>
       </body>
     </html>

@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { ArrowUpRight, BookOpen, Copy, Sparkles } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/button"
 import type { ChatMessage } from "@/lib/api"
 import { shortDate } from "@/lib/format"
 
@@ -38,7 +38,7 @@ export function Message({
       />
       {message.sources.length > 0 && (
         <div className="space-y-2.5">
-          <p className="text-[11px] font-medium text-muted-foreground">
+          <p className="text-xs font-medium text-muted-foreground">
             Sources · {message.sources.length}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -49,7 +49,7 @@ export function Message({
                 className="group min-w-0 rounded-xl border bg-card px-3.5 py-3 transition-colors hover:border-brand/40 hover:bg-brand/[0.025]"
                 aria-label={`Source ${source.number}: ${source.title}. Open meeting notes.`}
               >
-                <div className="mb-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <BookOpen className="size-3.5" />
                   <span>{shortDate(source.date)}</span>
                   <span className="ml-auto font-mono">[{source.number}]</span>
@@ -71,7 +71,7 @@ export function Message({
           Writing…
         </p>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <Button
             variant="ghost"
             size="icon"

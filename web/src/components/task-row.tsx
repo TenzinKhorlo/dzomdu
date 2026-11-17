@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowUpRight, CalendarClock, Folder, Loader2 } from "lucide-react"
-import { toast } from "sonner"
-import { Checkbox } from "@/components/animate-ui/components/radix/checkbox"
+import { Button } from "@astryxdesign/core/Button"
+import { DateInput } from "@astryxdesign/core/DateInput"
+import { ArrowUpRight, Loader2 } from "lucide-react"
+import { toast } from "@/lib/toast"
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput"
 import {
   Dialog,
   DialogContent,
@@ -12,12 +14,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog"
+} from "@/components/dialog"
 import { localDate, reminderIsDue, useTasks } from "@/components/task-provider"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { api, projectHref, type OpenTask } from "@/lib/api"
 import { shortDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -34,7 +32,6 @@ function ReminderDialog({
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState(task.reminder_date ?? "")
   const [saving, setSaving] = React.useState(false)
-  const fieldId = React.useId()
   const due = reminderIsDue(task)
 
   async function save(event: React.FormEvent) {
@@ -47,23 +44,18 @@ function ReminderDialog({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "shrink-0 text-xs font-normal text-muted-foreground",
-          due && "bg-brand/5 text-brand",
-        )}
+      {/* a date chip: it looks like what it is, a date you can change */}
+      <button
+        type="button"
+        className={cn("time-chip text-muted-foreground", due && "text-brand")}
         aria-label={`Change reminder for ${task.text}`}
         onClick={() => {
           setDate(task.reminder_date ?? "")
           setOpen(true)
         }}
       >
-        <CalendarClock className="size-3.5" />
-        {due ? "Reminder due" : "Remind"} ·{" "}
-        {task.reminder_date ? shortDate(task.reminder_date) : "Choose date"}
-      </Button>
+        {task.reminder_date ? `Remind ${shortDate(task.reminder_date)}` : "Set reminder"}
+      </button>
       <Dialog open={open} onOpenChange={(value) => !saving && setOpen(value)}>
         <DialogContent className="sm:max-w-md">
           <form onSubmit={save} className="grid gap-4">
@@ -72,44 +64,37 @@ function ReminderDialog({
               <DialogDescription>{task.text}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-2">
-              <Label htmlFor={fieldId}>Remind me on</Label>
-              <Input
-                id={fieldId}
-                type="date"
-                required
-                value={date}
-                disabled={saving}
-                onChange={(event) => setDate(event.target.value)}
+              <DateInput
+                label="Remind me on"
+                description="Reminders appear in Dzomdu on this date"
+                isRequired
+                isDisabled={saving}
+                value={(date || undefined) as React.ComponentProps<typeof DateInput>["value"]}
+                onChange={(value) => setDate(value ?? "")}
               />
-              <p className="text-xs text-muted-foreground">
-                Reminders appear in Dzomdu on this date.
-              </p>
-              <Button
-                type="button"
-                variant="link"
-                className="w-fit px-0 text-xs"
-                disabled={saving}
-                onClick={() => {
-                  const next = new Date()
-                  next.setDate(next.getDate() + 7)
-                  setDate(localDate(next))
-                }}
-              >
-                In one week
-              </Button>
+              <div className="w-fit">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  label="In one week"
+                  isDisabled={saving}
+                  onClick={() => {
+                    const next = new Date()
+                    next.setDate(next.getDate() + 7)
+                    setDate(localDate(next))
+                  }}
+                />
+              </div>
             </div>
             <DialogFooter>
+              <Button label="Cancel" isDisabled={saving} onClick={() => setOpen(false)} />
               <Button
-                type="button"
-                variant="outline"
-                disabled={saving}
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!date || saving}>
-                {saving && <Loader2 className="animate-spin" />}Save reminder
-              </Button>
+                type="submit"
+                variant="primary"
+                label="Save reminder"
+                isLoading={saving}
+                isDisabled={!date}
+              />
             </DialogFooter>
           </form>
         </DialogContent>
@@ -161,56 +146,45 @@ export function TaskRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
-        <Checkbox
-          className="mt-0.5 [--primary:var(--success)] [--primary-foreground:var(--success-foreground)]"
-          checked={done}
-          disabled={saving}
-          aria-label={`Mark ${task.text} as ${done ? "open" : "done"}`}
-          onCheckedChange={(value) => void update({ done: value === true })}
-        />
-        <div className="min-w-0 flex-1 space-y-2">
-          <p
-            className={cn(
-              "text-[13px] leading-relaxed",
-              done && "text-muted-foreground line-through",
-            )}
-          >
-            {task.text}
-          </p>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
-            {showProject &&
-              (task.project ? (
-                <Link
-                  href={projectHref(task.project)}
-                  className="inline-flex items-center gap-1.5 hover:text-foreground"
-                >
-                  <Folder className="size-3.5" />
-                  {task.project}
-                </Link>
-              ) : (
-                <span>No project</span>
-              ))}
-            <Link
-              href={`/meetings/view/?id=${encodeURIComponent(task.meeting_id)}${task.turn ? `&turn=${encodeURIComponent(task.turn)}` : ""}`}
-              className="inline-flex min-w-0 items-center gap-1 hover:text-foreground hover:underline"
-            >
-              <span className="max-w-56 truncate">{task.meeting_title}</span>
-              <ArrowUpRight className="size-3" />
+    <li className="flex items-start gap-3 border-b px-5 py-4 last:border-b-0">
+      <CheckboxInput
+        label={`Mark ${task.text} as ${done ? "open" : "done"}`}
+        isLabelHidden
+        value={done}
+        isDisabled={saving}
+        onChange={(value) => void update({ done: value })}
+      />
+      <div className="min-w-0 flex-1 space-y-2">
+        <p
+          className={cn(
+            "text-[13px] leading-relaxed",
+            done && "text-muted-foreground line-through",
+          )}
+        >
+          {task.text}
+        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+          {showProject && task.project && (
+            <Link href={projectHref(task.project)} className="hover:text-foreground hover:underline">
+              {task.project}
             </Link>
-            <span>{task.owner ? `Assigned to ${task.owner}` : "Unassigned"}</span>
-            {task.due && (
-              <Badge variant="outline" className="font-normal">
-                Due {/^\d{4}-\d{2}-\d{2}$/.test(task.due) ? shortDate(task.due) : task.due}
-              </Badge>
-            )}
-          </div>
+          )}
+          <Link
+            href={`/meetings/view/?id=${encodeURIComponent(task.meeting_id)}${task.turn ? `&turn=${encodeURIComponent(task.turn)}` : ""}`}
+            className="inline-flex min-w-0 items-center gap-1 hover:text-foreground hover:underline"
+          >
+            <span className="max-w-56 truncate">{task.meeting_title}</span>
+            <ArrowUpRight className="size-3.5" />
+          </Link>
+          <span>{task.owner ? `Assigned to ${task.owner}` : "Unassigned"}</span>
+          {task.due && (
+            <span>
+              Due {/^\d{4}-\d{2}-\d{2}$/.test(task.due) ? shortDate(task.due) : task.due}
+            </span>
+          )}
+          <ReminderDialog task={task} update={update} />
+          {saving && <Loader2 className="size-3.5 animate-spin" />}
         </div>
-      </div>
-      <div className="flex items-center gap-1 pl-7 sm:pl-0">
-        {saving && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
-        <ReminderDialog task={task} update={update} />
       </div>
     </li>
   )

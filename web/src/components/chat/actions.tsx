@@ -1,19 +1,19 @@
 "use client"
 
 import * as React from "react"
+import { Button } from "@astryxdesign/core/Button"
 import {
-  Check,
-  Folder,
-  FolderInput,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Pin,
-  PinOff,
-  Trash2,
-} from "lucide-react"
-import { toast } from "sonner"
+  DropdownMenu,
+  DropdownMenuDivider,
+  DropdownMenuItem,
+  DropdownMenuSubMenu,
+} from "@astryxdesign/core/DropdownMenu"
+import { Icon } from "@astryxdesign/core/Icon"
+import { IconButton } from "@astryxdesign/core/IconButton"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { Check, Folder, FolderInput, Loader2, MoreHorizontal, Pencil, Pin, PinOff, Trash2 } from "lucide-react"
 
+import { useChatHistory } from "@/components/chat/provider"
 import {
   Dialog,
   DialogContent,
@@ -21,26 +21,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/animate-ui/components/radix/dropdown-menu"
-import { useChatHistory } from "@/components/chat/provider"
+} from "@/components/dialog"
 import { useInfo } from "@/components/providers"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useDeleteChat } from "@/hooks/use-delete-chat"
 import { api, type ChatSummary } from "@/lib/api"
+import { toast } from "@/lib/toast"
 
-export function ChatActions({ chat, children }: { chat: ChatSummary; children?: React.ReactNode }) {
+export function ChatActions({ chat }: { chat: ChatSummary }) {
   const { reload } = useChatHistory()
   const { projects, info } = useInfo()
   const projectNames = projects?.map((project) => project.name) ?? info?.projects ?? []
@@ -49,7 +36,6 @@ export function ChatActions({ chat, children }: { chat: ChatSummary; children?: 
   const [name, setName] = React.useState(chat.title)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState("")
-  const fieldId = React.useId()
   const pending = busy || deleting !== null
 
   async function update(
@@ -74,75 +60,72 @@ export function ChatActions({ chat, children }: { chat: ChatSummary; children?: 
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild disabled={pending}>
-          {children ?? (
-            <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${chat.title}`}>
-              {pending ? <Loader2 className="animate-spin" /> : <MoreHorizontal />}
-            </Button>
+      <DropdownMenu
+        placement="below"
+        alignment="end"
+        menuWidth={208}
+        renderTrigger={(props) => (
+          <IconButton
+            {...props}
+            variant="ghost"
+            size="sm"
+            isDisabled={pending}
+            label={`Actions for ${chat.title}`}
+            tooltip="Conversation actions"
+            icon={<Icon icon={pending ? Loader2 : MoreHorizontal} />}
+          />
+        )}
+      >
+        <DropdownMenuItem
+          icon={Pencil}
+          label="Rename"
+          onClick={() => {
+            setName(chat.title)
+            setError("")
+            setOpen(true)
+          }}
+        />
+        <DropdownMenuItem
+          icon={chat.pinned ? PinOff : Pin}
+          label={chat.pinned ? "Unpin" : "Pin to top"}
+          onClick={() =>
+            void update(
+              { pinned: !chat.pinned },
+              chat.pinned ? "Conversation unpinned" : "Conversation pinned",
+            )
+          }
+        />
+        <DropdownMenuDivider />
+        <DropdownMenuSubMenu label="Move to project" icon={FolderInput} menuWidth={224}>
+          <DropdownMenuItem
+            icon={Folder}
+            label="No project"
+            isDisabled={!chat.project}
+            endContent={!chat.project ? <Icon icon={Check} /> : undefined}
+            onClick={() => void update({ project: null }, "Project link removed")}
+          />
+          <DropdownMenuDivider />
+          {projectNames.map((project) => (
+            <DropdownMenuItem
+              key={project}
+              icon={Folder}
+              label={project}
+              isDisabled={chat.project === project}
+              endContent={chat.project === project ? <Icon icon={Check} /> : undefined}
+              onClick={() => void update({ project }, `Conversation moved to “${project}”`)}
+            />
+          ))}
+          {!projectNames.length && (
+            <DropdownMenuItem isDisabled label="Create a project from Projects first" />
           )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem
-            onSelect={() => {
-              setName(chat.title)
-              setError("")
-              setOpen(true)
-            }}
-          >
-            <Pencil />
-            Rename
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() =>
-              void update(
-                { pinned: !chat.pinned },
-                chat.pinned ? "Conversation unpinned" : "Conversation pinned",
-              )
-            }
-          >
-            {chat.pinned ? <PinOff /> : <Pin />}
-            {chat.pinned ? "Unpin" : "Pin to top"}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="gap-2">
-              <FolderInput className="size-4 shrink-0 text-muted-foreground" />
-              Move to project
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-72 w-56 overflow-y-auto">
-              <DropdownMenuItem
-                disabled={!chat.project}
-                onSelect={() => void update({ project: null }, "Project link removed")}
-              >
-                <Folder />
-                No project{!chat.project && <Check className="ml-auto size-3.5" />}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {projectNames.map((project) => (
-                <DropdownMenuItem
-                  key={project}
-                  disabled={chat.project === project}
-                  onSelect={() => void update({ project }, `Conversation moved to “${project}”`)}
-                >
-                  <Folder />
-                  <span className="truncate">{project}</span>
-                  {chat.project === project && <Check className="ml-auto size-3.5" />}
-                </DropdownMenuItem>
-              ))}
-              {!projectNames.length && (
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Create a project from Projects first.
-                </p>
-              )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={() => void deleteChat(chat)}>
-            <Trash2 />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
+        </DropdownMenuSubMenu>
+        <DropdownMenuDivider />
+        <DropdownMenuItem
+          variant="destructive"
+          icon={Trash2}
+          label="Delete"
+          onClick={() => void deleteChat(chat)}
+        />
       </DropdownMenu>
       <Dialog open={open} onOpenChange={(value) => !busy && setOpen(value)}>
         <DialogContent className="sm:max-w-md">
@@ -159,34 +142,23 @@ export function ChatActions({ chat, children }: { chat: ChatSummary; children?: 
                 Give this conversation a name that’s easy to find.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-2">
-              <Label htmlFor={fieldId}>Conversation name</Label>
-              <Input
-                id={fieldId}
-                autoFocus
-                maxLength={80}
-                value={name}
-                disabled={busy}
-                onChange={(event) => setName(event.target.value)}
-              />
-              {error && (
-                <p role="alert" className="text-xs text-destructive">
-                  {error}
-                </p>
-              )}
-            </div>
+            <TextInput
+              label="Conversation name"
+              hasAutoFocus
+              value={name}
+              isDisabled={busy}
+              onChange={(value) => setName(value.slice(0, 80))}
+              status={error ? { type: "error", message: error } : undefined}
+            />
             <DialogFooter>
+              <Button label="Cancel" variant="secondary" isDisabled={busy} onClick={() => setOpen(false)} />
               <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={busy || !name.trim() || name.trim() === chat.title}>
-                {busy && <Loader2 className="animate-spin" />}Save name
-              </Button>
+                type="submit"
+                variant="primary"
+                label="Save name"
+                isLoading={busy}
+                isDisabled={!name.trim() || name.trim() === chat.title}
+              />
             </DialogFooter>
           </form>
         </DialogContent>

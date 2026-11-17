@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, Check, ChevronDown, Search } from "lucide-react"
+import { Button } from "@astryxdesign/core/Button"
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput"
+import { Icon } from "@astryxdesign/core/Icon"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { BookOpen, Check, ChevronDown } from "lucide-react"
 
 import {
   Dialog,
@@ -11,9 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/animate-ui/components/radix/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "@/components/dialog"
 import type { MeetingRow } from "@/lib/api"
 import { shortDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -68,13 +70,11 @@ export function SourcesPicker({
         <Button
           variant="ghost"
           size="sm"
-          disabled={disabled}
-          className="min-w-0 max-w-64 px-2 text-xs text-muted-foreground"
-        >
-          <BookOpen className="size-3.5 shrink-0" />
-          <span className="truncate">{label}</span>
-          <ChevronDown className="size-3 shrink-0" />
-        </Button>
+          isDisabled={disabled}
+          label={label}
+          icon={<Icon icon={BookOpen} />}
+          endContent={<Icon icon={ChevronDown} />}
+        />
       </DialogTrigger>
       <DialogContent className="bg-card sm:max-w-xl">
         <DialogHeader>
@@ -97,43 +97,26 @@ export function SourcesPicker({
           </span>
           {!chosen.length && <Check className="size-4 text-brand" />}
         </button>
-        <div className="relative">
-          <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
-          <Input
-            aria-label="Find a meeting"
-            placeholder="Find a meeting or project…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        <TextInput
+          label="Find a meeting"
+          isLabelHidden
+          placeholder="Find a meeting or project…"
+          value={query}
+          onChange={setQuery}
+        />
         <div className="max-h-[45svh] space-y-1 overflow-y-auto">
           {filtered.map((meeting) => (
-            <label
-              key={meeting.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 hover:bg-accent"
-            >
-              <input
-                type="checkbox"
-                className="size-4 shrink-0 accent-brand"
-                checked={chosen.includes(meeting.id)}
-                disabled={!chosen.includes(meeting.id) && chosen.length >= 50}
-                onChange={(e) =>
-                  setChosen(
-                    e.target.checked
-                      ? [...chosen, meeting.id]
-                      : chosen.filter((id) => id !== meeting.id),
-                  )
+            <div key={meeting.id} className="rounded-lg px-3 py-2 hover:bg-accent">
+              <CheckboxInput
+                label={meeting.title}
+                description={`${shortDate(meeting.date)}${meeting.project ? ` · ${meeting.project}` : ""}`}
+                value={chosen.includes(meeting.id)}
+                isDisabled={!chosen.includes(meeting.id) && chosen.length >= 50}
+                onChange={(checked) =>
+                  setChosen(checked ? [...chosen, meeting.id] : chosen.filter((id) => id !== meeting.id))
                 }
               />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-medium">{meeting.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {shortDate(meeting.date)}
-                  {meeting.project && ` · ${meeting.project}`}
-                </span>
-              </span>
-            </label>
+            </div>
           ))}
           {!filtered.length && (
             <p className="py-6 text-center text-[13px] text-muted-foreground">No meetings found.</p>
@@ -146,13 +129,13 @@ export function SourcesPicker({
               : `${meetings.length} meetings in your library`}
           </p>
           <Button
+            variant="primary"
+            label="Use these notes"
             onClick={() => {
               onChange(chosen)
               setOpen(false)
             }}
-          >
-            Use these notes
-          </Button>
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

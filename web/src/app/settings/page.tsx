@@ -1,6 +1,8 @@
 "use client"
 
-import { AudioLines, Bot, CheckCircle2, TriangleAlert, Users } from "lucide-react"
+import * as React from "react"
+import { Tab, TabList } from "@astryxdesign/core/TabList"
+import { AudioLines, Bot, Users } from "lucide-react"
 
 import { PageHeader } from "@/components/common"
 import { useInfo } from "@/components/providers"
@@ -8,9 +10,8 @@ import { FormatsCard, SummaryDefaultsCard } from "@/components/format-settings"
 import { SettingsForms } from "@/components/settings-forms"
 import { ModelSettings } from "@/components/model-settings"
 import { NoiseSettingsCard } from "@/components/noise-settings"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function StatusCard({
@@ -38,19 +39,13 @@ function StatusCard({
           <CardTitle>{title}</CardTitle>
           <CardDescription className="truncate font-mono text-xs">{model}</CardDescription>
         </div>
-        {ok ? (
-          <Badge className="gap-1 bg-success/15 text-success">
-            <CheckCircle2 />
-            Ready
-          </Badge>
-        ) : (
-          <Badge className="gap-1 bg-warning-subtle text-warning">
-            <TriangleAlert />
-            Needs attention
-          </Badge>
-        )}
+        <span className="inline-flex items-center gap-1.5 text-xs whitespace-nowrap">
+          <span className={ok ? "size-1.5 rounded-full bg-success" : "size-1.5 rounded-full bg-warning"} aria-hidden />
+          {ok ? "Ready" : "Needs attention"}
+        </span>
       </CardHeader>
-      {(!ok || detail) && (
+      {/* a healthy model needs no extra line; the detail only explains a problem */}
+      {!ok && (
         <CardContent className="text-sm text-muted-foreground">
           {detail && <p>{detail}</p>}
           {!ok && fix && (
@@ -64,8 +59,15 @@ function StatusCard({
   )
 }
 
+type Section = "status" | "models" | "summaries"
+
+/** Settings follows the Astryx settings template: section tabs swap the pane instead of one long scroll. */
 export default function SettingsPage() {
   const { info, reload } = useInfo()
+  const [section, setSection] = React.useState<Section>("status")
+  const attention = info
+    ? [info.status.asr, info.status.diarization, info.status.llm].filter((s) => !s.ok).length
+    : 0
   return (
     <div className="@container/main flex flex-col gap-6">
       <PageHeader
@@ -80,36 +82,53 @@ export default function SettingsPage() {
         <Skeleton className="h-64 rounded-xl" />
       ) : (
         <>
-          <div className="grid gap-4 @4xl/main:grid-cols-3">
-            <StatusCard
-              icon={AudioLines}
-              title="Speech to text"
-              model={info.models.asr}
-              ok={info.status.asr.ok}
-              fix="pip install -e '.[mac]'"
-            />
-            <StatusCard
-              icon={Users}
-              title="Speaker recognition"
-              model={info.models.diarization}
-              ok={info.status.diarization.ok}
-              fix="pip install -e '.[diarize]'"
-            />
-            <StatusCard
-              icon={Bot}
-              title="Summaries (LLM)"
-              model={info.models.llm}
-              ok={info.status.llm.ok}
-              detail={info.status.llm.detail}
-              fix=""
-            />
+          <TabList role="tablist" value={section} onChange={(value) => setSection(value as Section)} hasDivider>
+            <Tab value="status" label="Status" panelId="settings-panel" endContent={attention ? <span className="size-1.5 rounded-full bg-warning" aria-label={`${attention} need attention`} /> : undefined} />
+            <Tab value="models" label="Models & audio" panelId="settings-panel" />
+            <Tab value="summaries" label="Summaries" panelId="settings-panel" />
+          </TabList>
+          <div id="settings-panel" role="tabpanel" className="flex flex-col gap-6">
+            {section === "status" && (
+              <div className="grid gap-4 @4xl/main:grid-cols-3">
+                <StatusCard
+                  icon={AudioLines}
+                  title="Speech to text"
+                  model={info.models.asr}
+                  ok={info.status.asr.ok}
+                  fix="pip install -e '.[mac]'"
+                />
+                <StatusCard
+                  icon={Users}
+                  title="Speaker recognition"
+                  model={info.models.diarization}
+                  ok={info.status.diarization.ok}
+                  fix="pip install -e '.[diarize]'"
+                />
+                <StatusCard
+                  icon={Bot}
+                  title="Summaries (LLM)"
+                  model={info.models.llm}
+                  ok={info.status.llm.ok}
+                  detail={info.status.llm.detail}
+                  fix=""
+                />
+              </div>
+            )}
+            {section === "models" && (
+              <>
+                <ModelSettings />
+                <NoiseSettingsCard />
+              </>
+            )}
+            {section === "summaries" && (
+              <>
+                <SettingsForms>
+                  <SummaryDefaultsCard />
+                </SettingsForms>
+                <FormatsCard />
+              </>
+            )}
           </div>
-          <ModelSettings />
-          <NoiseSettingsCard />
-          <SettingsForms>
-            <SummaryDefaultsCard />
-          </SettingsForms>
-          <FormatsCard />
         </>
       )}
     </div>

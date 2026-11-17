@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react"
 
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import { wsUrl } from "@/lib/api"
 
@@ -46,6 +46,7 @@ let meetingStream: MediaStream | null = null
 let ctx: AudioContext | null = null
 let node: AudioWorkletNode | null = null
 let ws: WebSocket | null = null
+let stopping = false // set by stop(), so the socket closing afterwards is not reported as a loss
 
 function emit(next: Partial<Snapshot>) {
   snapshot = { ...snapshot, ...next }
@@ -56,12 +57,37 @@ function releaseStream(s: MediaStream | null) {
   s?.getTracks().forEach((t) => t.stop())
 }
 
+// Frees the microphone, the shared tab and the audio graph. Safe to call at any point.
+function releaseDevices() {
+  releaseStream(stream)
+  releaseStream(meetingStream)
+  void ctx?.close()
+  stream = null
+  meetingStream = null
+  ctx = null
+  node = null
+}
+
 export const recorder = {
   async start(
     sessionId: string,
     source: RecordingSource = "room",
     options: MeetingAudioOptions = { includeMicrophone: false, reduceBackgroundNoise: true },
   ) {
+    if (snapshot.sessionId) throw new Error("A recording is already in progress.")
+    stopping = false
+    try {
+      await this.open(sessionId, source, options)
+    } catch (e) {
+      // Whatever was opened before the failure (microphone, shared tab) must not stay live.
+      releaseDevices()
+      ws?.close()
+      ws = null
+      throw e
+    }
+  },
+
+  async open(sessionId: string, source: RecordingSource, options: MeetingAudioOptions) {
     const meeting = source === "meeting"
     const includeMicrophone = !meeting || options.includeMicrophone
     if (!navigator.mediaDevices || (includeMicrophone && !navigator.mediaDevices.getUserMedia)) {
@@ -148,6 +174,15 @@ export const recorder = {
     const socket = new WebSocket(wsUrl(`/api/sessions/${sessionId}/audio`))
     socket.binaryType = "arraybuffer"
     socket.onopen = () => queue.splice(0).forEach((b) => socket.send(b))
+    // Without this the UI would keep saying "recording" while every chunk is thrown away:
+    // the server ends the session as soon as its side of the socket closes.
+    const lost = () => {
+      if (ws !== socket || stopping) return
+      toast.error("Connection to Dzomdu was lost. Recording stopped; what was captured is being saved.")
+      recorder.release()
+    }
+    socket.onclose = lost
+    socket.onerror = lost
     ws = socket
     node.port.onmessage = ({ data }: MessageEvent<{ pcm: ArrayBuffer; rms: number }>) => {
       if (socket.readyState === WebSocket.OPEN) socket.send(data.pcm)
@@ -167,6 +202,7 @@ export const recorder = {
 
   async stop() {
     if (!snapshot.sessionId) return
+    stopping = true
     node?.port.postMessage("flush")
     await new Promise((r) => setTimeout(r, 150)) // let the last chunk arrive
     if (ws?.readyState === WebSocket.OPEN) ws.send("stop")
@@ -174,15 +210,9 @@ export const recorder = {
   },
 
   release() {
-    releaseStream(stream)
-    releaseStream(meetingStream)
-    meetingStream = null
-    void ctx?.close()
+    releaseDevices()
     const socket = ws
     setTimeout(() => socket?.close(), 500)
-    stream = null
-    ctx = null
-    node = null
     ws = null
     emit({ sessionId: null, includesMicrophone: false, includesMeetingAudio: false,
       levels: Array(HISTORY).fill(0) })

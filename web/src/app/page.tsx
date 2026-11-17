@@ -2,16 +2,22 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, ListChecks, Mic, Radio, Upload } from "lucide-react"
+import { ArrowRight, ListChecks, Mic, Radio, Upload } from "lucide-react"
+import { Button as AstryxButton } from "@astryxdesign/core/Button"
+import { ClickableCard } from "@astryxdesign/core/ClickableCard"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Icon } from "@astryxdesign/core/Icon"
+import { Selector } from "@astryxdesign/core/Selector"
+import { Text } from "@astryxdesign/core/Text"
 
 import { ActionList } from "@/components/action-list"
 import { Fade } from "@/components/animate-ui/primitives/effects/fade"
-import { EmptyState, PageHeader } from "@/components/common"
+import { EmptyState } from "@/components/common"
 import { ActivityChart, NoActivity, SpeakersChart } from "@/components/dashboard/charts"
 import { KpiCards } from "@/components/dashboard/kpi-cards"
 import { MeetingTable } from "@/components/meeting-table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { RecoveredRecordings } from "@/components/recovered-recordings"
+import { Button } from "@/components/button"
 import {
   Card,
   CardAction,
@@ -19,24 +25,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+} from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import type { Dashboard } from "@/lib/api"
-
-const STATE_LABEL: Record<string, string> = {
-  recording: "Recording",
-  processing: "Processing",
-  review: "Waiting for speaker review",
-  summarizing: "Writing notes",
-}
+import { STATE_LABEL } from "@/lib/format"
 
 export default function DashboardPage() {
   const [days, setDays] = React.useState("30")
@@ -46,35 +39,25 @@ export default function DashboardPage() {
 
   return (
     <div className="@container/main flex flex-col gap-5">
-      <PageHeader
-        title="Overview"
-        description="Your meetings, conversations, and next steps at a glance."
-        actionsClassName="grid w-full grid-cols-2 sm:flex sm:w-auto"
-      >
-        <Select value={days} onValueChange={setDays}>
-          <SelectTrigger aria-label="Period" className="col-span-2 w-full gap-1.5 sm:w-auto">
-            <CalendarDays className="text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" asChild>
-          <Link href="/record/?upload=1">
-            <Upload />
-            Upload audio
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href="/record/">
-            <Mic />
-            New recording
-          </Link>
-        </Button>
-      </PageHeader>
+      <Fade className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+        <Heading level={1}>Overview</Heading>
+        <div className="flex flex-wrap items-center gap-2">
+          <Selector
+            label="Period"
+            isLabelHidden
+            variant="secondary"
+            value={days}
+            onChange={setDays}
+            options={[
+              { value: "7", label: "Last 7 days" },
+              { value: "30", label: "Last 30 days" },
+              { value: "90", label: "Last 90 days" },
+            ]}
+          />
+          <AstryxButton label="Upload audio" icon={<Icon icon={Upload} />} href="/record/?upload=1" />
+          <AstryxButton variant="primary" label="New recording" icon={<Icon icon={Mic} />} href="/record/" />
+        </div>
+      </Fade>
 
       {error && (
         <Card className="border-destructive/40">
@@ -87,17 +70,20 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      <RecoveredRecordings />
+
       {data?.active.map((s) => (
         <Fade key={s.id}>
-          <Link
-            href={`/record/?session=${s.id}`}
-            className="flex items-center gap-3 rounded-xl border border-brand/25 bg-brand/[0.05] px-4 py-3 text-[13px] transition-colors hover:bg-brand/10"
-          >
-            <Radio className="size-4 text-brand" />
-            <span className="font-medium">{s.title}</span>
-            <Badge variant="secondary">{STATE_LABEL[s.state] ?? s.state}</Badge>
-            <ArrowRight className="ml-auto size-4 text-muted-foreground" />
-          </Link>
+          <ClickableCard label={s.title} href={`/record/?session=${s.id}`} padding={3}>
+            <div className="flex items-center gap-3">
+              <Icon icon={Radio} color="accent" />
+              <Text weight="medium">{s.title}</Text>
+              <Text type="supporting">{STATE_LABEL[s.state] ?? s.state}</Text>
+              <span className="ml-auto">
+                <Icon icon={ArrowRight} color="secondary" />
+              </span>
+            </div>
+          </ClickableCard>
         </Fade>
       ))}
 
@@ -130,21 +116,21 @@ export default function DashboardPage() {
                       </Button>
                     </CardAction>
                   </CardHeader>
-                  <CardContent className="border-t px-0">
+                  <CardContent className="border-t px-[11px]">
                     <MeetingTable meetings={data.recent} compact />
                   </CardContent>
                 </Card>
-                <Card className="shadow-none">
-                  <CardHeader>
+                <Card className="gap-0 shadow-none">
+                  <CardHeader className="pb-4">
                     <CardTitle>Action items</CardTitle>
                     <CardDescription>
                       {data.totals.open_actions} open · {data.totals.done_actions} completed
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="border-t pb-3">
                     {data.actions.length ? (
                       <ActionList
-                        items={data.actions.slice(0, 4)}
+                        items={data.actions.slice(0, 3)}
                         showMeeting
                         onChange={reload}
                       />
@@ -172,7 +158,7 @@ function DashboardSkeleton() {
     <>
       <div className="grid grid-cols-2 gap-3 @3xl/main:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[142px] rounded-xl" />
+          <Skeleton key={i} className="h-36 rounded-xl" />
         ))}
       </div>
       <div className="grid gap-3 @5xl/main:grid-cols-3">

@@ -1,25 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { FileAudio, FolderPlus, Loader2, Mic, Upload, Video, X } from "lucide-react"
-import { toast } from "sonner"
+import { Button } from "@astryxdesign/core/Button"
+import { Collapsible } from "@astryxdesign/core/Collapsible"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Icon } from "@astryxdesign/core/Icon"
+import { IconButton } from "@astryxdesign/core/IconButton"
+import { NumberInput } from "@astryxdesign/core/NumberInput"
+import { Selector } from "@astryxdesign/core/Selector"
+import { Switch } from "@astryxdesign/core/Switch"
+import { Text } from "@astryxdesign/core/Text"
+import { TextArea } from "@astryxdesign/core/TextArea"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { Tokenizer } from "@astryxdesign/core/Tokenizer"
+import { createStaticSource } from "@astryxdesign/core/Typeahead"
+import { FileAudio, FolderPlus, Loader2, Mic, Upload, Video } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 import { NewProjectDialog } from "@/components/new-project-dialog"
 import { useInfo } from "@/components/providers"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
 import { recorder, type RecordingSource } from "@/lib/recorder"
 import { cn } from "@/lib/utils"
@@ -33,68 +32,6 @@ type Meta = {
   live: boolean
   summarize: boolean
   instructions: string
-}
-
-function AttendeeInput({
-  value,
-  onChange,
-  suggestions,
-}: {
-  value: string[]
-  onChange: (v: string[]) => void
-  suggestions: string[]
-}) {
-  const [draft, setDraft] = React.useState("")
-  const add = (raw: string) => {
-    const name = raw.trim().replace(/,$/, "").trim()
-    if (name && !value.some((v) => v.toLowerCase() === name.toLowerCase())) {
-      onChange([...value, name])
-    }
-    setDraft("")
-  }
-  return (
-    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border bg-transparent px-2 py-1.5 shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30">
-      {value.map((name) => (
-        <Badge key={name} variant="secondary" className="gap-1 pr-1">
-          {name}
-          <button
-            type="button"
-            className="rounded-full p-0.5 hover:bg-foreground/10"
-            onClick={() => onChange(value.filter((v) => v !== name))}
-            aria-label={`Remove ${name}`}
-          >
-            <X className="size-3" />
-          </button>
-        </Badge>
-      ))}
-      <input
-        id="attendees"
-        list="people-suggestions"
-        value={draft}
-        onChange={(e) => {
-          const v = e.target.value
-          if (suggestions.includes(v)) add(v)
-          else setDraft(v)
-        }}
-        onKeyDown={(e) => {
-          if ((e.key === "Enter" || e.key === ",") && draft.trim()) {
-            e.preventDefault()
-            add(draft)
-          } else if (e.key === "Backspace" && !draft && value.length) {
-            onChange(value.slice(0, -1))
-          } else if (e.key === "Enter") e.preventDefault()
-        }}
-        onBlur={() => draft.trim() && add(draft)}
-        placeholder={value.length ? "" : "Type a name and press Enter"}
-        className="min-w-40 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-      />
-      <datalist id="people-suggestions">
-        {suggestions.map((p) => (
-          <option key={p} value={p} />
-        ))}
-      </datalist>
-    </div>
-  )
 }
 
 const NO_PROJECT = "__none__"
@@ -129,6 +66,7 @@ export function MeetingForm({
 
   const payload = () => ({
     ...meta,
+    title: meta.title.slice(0, 120),
     template,
     num_speakers: meta.num_speakers ? Number(meta.num_speakers) : null,
   })
@@ -141,7 +79,8 @@ export function MeetingForm({
       await recorder.start(id, source, { includeMicrophone, reduceBackgroundNoise })
       onSession(id)
     } catch (e) {
-      recorder.release() // drop any microphone or shared-tab stream that was already open
+      // recorder.start releases whatever it opened when it fails. Releasing here as well would
+      // end a recording already running in this tab when the server answers "already in progress".
       if (id) await api(`/api/sessions/${id}/cancel`, { method: "POST" }).catch(() => {})
       toast.error((e as Error).message)
     } finally {
@@ -165,221 +104,177 @@ export function MeetingForm({
     }
   }
 
+  // attendees: type to filter the people Dzomdu already knows, or add a new name
+  const peopleSource = React.useMemo(
+    () => createStaticSource((info?.people ?? []).map((name) => ({ id: name, label: name }))),
+    [info?.people],
+  )
+  const projects = [...new Set([...(info?.projects ?? []), ...(meta.project ? [meta.project] : [])])]
+
   return (
     <div className="grid gap-6 @5xl/main:grid-cols-5">
-      <Card className="@5xl/main:col-span-3">
-        <CardHeader>
-          <CardTitle>Meeting details</CardTitle>
-          <CardDescription>
+      {/* self-start: the form is as tall as its fields, not stretched to the column beside it */}
+      <div className="self-start rounded-[var(--radius-container)] border bg-card p-5 @5xl/main:col-span-3">
+        <div className="mb-5">
+          <Heading level={3}>Meeting details</Heading>
+          <Text type="supporting">
             All optional. Attendees narrow voice matching to those people, which makes recognition
             more accurate.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-2">
-          <div className="grid gap-2 sm:col-span-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="Leave empty and the AI suggests one"
-              maxLength={120}
+          </Text>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <TextInput
+              label="Title"
+              placeholder="Suggested from the notes if left empty"
               value={meta.title}
-              onChange={(e) => set("title", e.target.value)}
+              onChange={(v) => set("title", v)}
             />
           </div>
-          <div className="grid gap-2">
-            <Label>Project</Label>
-            <div className="flex gap-2">
-              <Select
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <Selector
+                label="Project"
+                hasSearch={projects.length > 6}
                 value={meta.project || NO_PROJECT}
-                onValueChange={(v) => set("project", v === NO_PROJECT ? "" : v)}
-              >
-                <SelectTrigger className="w-full min-w-0 flex-1" aria-label="Project">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_PROJECT}>No project</SelectItem>
-                  {[
-                    ...new Set([
-                      ...(info?.projects ?? []),
-                      ...(meta.project ? [meta.project] : []),
-                    ]),
-                  ].map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <NewProjectDialog onCreated={(name) => set("project", name)}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="New project"
-                  title="New project"
-                >
-                  <FolderPlus />
-                </Button>
-              </NewProjectDialog>
+                onChange={(v) => set("project", !v || v === NO_PROJECT ? "" : v)}
+                options={[{ value: NO_PROJECT, label: "No project" }, ...projects.map((p) => ({ value: p, label: p }))]}
+              />
             </div>
+            <NewProjectDialog onCreated={(name) => set("project", name)}>
+              <IconButton label="New project" tooltip="New project" icon={<Icon icon={FolderPlus} />} />
+            </NewProjectDialog>
           </div>
-          <div className="grid gap-2">
-            <Label>Minutes format</Label>
-            <Select value={template} onValueChange={(v) => set("template", v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {info?.templates.map((t) => (
-                  <SelectItem key={t.key} value={t.key}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2 sm:col-span-2">
-            <Label htmlFor="attendees">Attendees</Label>
-            <AttendeeInput
-              value={meta.attendees}
-              onChange={(v) => set("attendees", v)}
-              suggestions={info?.people ?? []}
+          <Selector
+            label="Minutes format"
+            value={template}
+            onChange={(v) => v && set("template", v)}
+            options={(info?.templates ?? []).map((t) => ({ value: t.key, label: t.name }))}
+          />
+          <div className="sm:col-span-2">
+            <Tokenizer
+              label="Attendees"
+              placeholder="Type a name and press Enter"
+              hasCreate
+              hasEntriesOnFocus
+              searchSource={peopleSource}
+              value={meta.attendees.map((name) => ({ id: name, label: name }))}
+              onChange={(items) => set("attendees", items.map((item) => item.label))}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="speakers">Number of speakers</Label>
-            <Input
-              id="speakers"
-              type="number"
+          <div className="sm:col-span-2">
+            <Collapsible
+              defaultIsOpen={false}
+              trigger={<Text type="label">More options</Text>}
+            >
+              <div className="grid gap-5 pt-4 sm:grid-cols-2">
+            <NumberInput
+              label="Number of speakers"
+              placeholder="Detect automatically"
               min={1}
               max={100}
-              placeholder="Detect automatically"
-              value={meta.num_speakers}
-              onChange={(e) => set("num_speakers", e.target.value)}
+              value={meta.num_speakers ? Number(meta.num_speakers) : null}
+              onChange={(v) => set("num_speakers", Number.isFinite(v) ? String(v) : "")}
             />
+            <div className="flex flex-wrap gap-x-8 gap-y-3 sm:col-span-2">
+              <Switch label="Live transcript" value={meta.live} onChange={(v) => set("live", v)} />
+              <Switch label="Write summary & minutes" value={meta.summarize} onChange={(v) => set("summarize", v)} />
+            </div>
+            <div className="sm:col-span-2">
+              <TextArea
+                label="Extra instructions for the summary"
+                rows={2}
+                placeholder="e.g. Keep it short, bullet points for the director"
+                value={meta.instructions}
+                onChange={(v) => set("instructions", v)}
+              />
+            </div>
+              </div>
+            </Collapsible>
           </div>
-          <div className="grid content-end gap-3">
-            <label className="flex items-center justify-between gap-3 text-sm">
-              Live transcript
-              <Switch checked={meta.live} onCheckedChange={(v) => set("live", v)} />
-            </label>
-            <label className="flex items-center justify-between gap-3 text-sm">
-              Write summary &amp; minutes
-              <Switch checked={meta.summarize} onCheckedChange={(v) => set("summarize", v)} />
-            </label>
-          </div>
-          <div className="grid gap-2 sm:col-span-2">
-            <Label htmlFor="instructions">Extra instructions for the summary</Label>
-            <Textarea
-              id="instructions"
-              rows={2}
-              placeholder="e.g. Keep it short, bullet points for the director"
-              value={meta.instructions}
-              onChange={(e) => set("instructions", e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <div className="flex flex-col gap-6 @5xl/main:col-span-2">
-        <Card className="items-center gap-5 py-10 text-center">
+      {/* stacked (narrow screens): the way to start comes first, the optional details after it */}
+      <div className="order-first flex flex-col gap-6 @5xl/main:order-none @5xl/main:col-span-2">
+        <div className="flex flex-col items-center gap-5 rounded-[var(--radius-container)] border bg-card p-5 text-center">
           <button
             type="button"
             onClick={() => startRecording("room")}
             disabled={busy !== null}
-            className="group relative flex size-28 items-center justify-center rounded-full bg-recording text-white shadow-lg shadow-recording/30 transition-transform hover:scale-105 disabled:opacity-60"
+            className="flex size-28 items-center justify-center rounded-full bg-recording text-white ring-1 ring-black/10 transition-[transform,opacity] duration-150 ease-out active:scale-95 disabled:opacity-60"
             aria-label="Start recording"
           >
-            <span className="absolute -inset-3 animate-pulse rounded-full bg-recording/15 [animation-duration:2.4s]" />
-            {busy === "record" ? (
-              <Loader2 className="size-9 animate-spin" />
-            ) : (
-              <Mic className="size-10" />
-            )}
+            {busy === "record" ? <Loader2 className="size-9 animate-spin" /> : <Mic className="size-10" />}
           </button>
-          <div className="space-y-1 px-6">
-            <p className="text-lg font-semibold">Start recording</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-1">
+            <Heading level={3}>Start recording</Heading>
+            <Text type="supporting">
               Place the laptop or speakerphone in the middle of the table. Audio never leaves this
               computer.
-            </p>
+            </Text>
           </div>
-        </Card>
+        </div>
 
-        <Card className="gap-3 py-6">
-          <CardContent className="flex items-start gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
-              <Video className="size-5 text-muted-foreground" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <p className="font-medium">Record an online meeting</p>
-                <p className="text-sm text-muted-foreground">
-                  Zoom, Google Meet, Teams and others. Join the call as usual, then share its
-                  browser tab with audio. Choose whether to add your microphone below.
-                  Nothing joins the call, and audio stays on this computer.
-                </p>
-              </div>
-              <div className="space-y-3 rounded-lg border p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="meeting-microphone">Include my microphone</Label>
-                    <p id="meeting-microphone-help" className="text-xs text-muted-foreground">
-                      {includeMicrophone
-                        ? "Adds your voice and nearby sounds to the meeting audio."
-                        : "Records only shared meeting audio, without opening your microphone. Your own voice may be missing."}
-                    </p>
-                  </div>
-                  <Switch
-                    id="meeting-microphone"
-                    aria-describedby="meeting-microphone-help"
-                    checked={includeMicrophone}
-                    onCheckedChange={setIncludeMicrophone}
-                    disabled={busy !== null}
-                  />
-                </div>
-                {includeMicrophone && (
-                  <div className="flex items-start justify-between gap-3 border-t pt-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="meeting-noise">Reduce microphone background noise</Label>
-                      <p id="meeting-noise-help" className="text-xs text-muted-foreground">
-                        {reduceBackgroundNoise
-                          ? "Uses browser noise reduction to keep speech clearer. Some nearby sounds may remain."
-                          : "Keeps nearby sounds picked up by your microphone."}
-                      </p>
-                    </div>
-                    <Switch
-                      id="meeting-noise"
-                      aria-describedby="meeting-noise-help"
-                      checked={reduceBackgroundNoise}
-                      onCheckedChange={setReduceBackgroundNoise}
-                      disabled={busy !== null}
-                    />
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => startRecording("meeting")}
-                disabled={busy !== null}
-              >
-                <Video />
-                Choose the meeting to record
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Works in Chrome and Edge. Tell the other participants that you are recording.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4 rounded-[var(--radius-container)] border bg-card p-5">
+          <div className="space-y-1">
+            <Heading level={3}>Record an online meeting</Heading>
+            <Text type="supporting">
+              Join the call as usual, then share its browser tab with audio. Nothing joins the call.
+            </Text>
+          </div>
+          <Switch
+            label="Include my microphone"
+            description={
+              includeMicrophone
+                ? "Adds your voice and nearby sounds to the meeting audio."
+                : "Records only shared meeting audio. Your own voice may be missing."
+            }
+            value={includeMicrophone}
+            onChange={setIncludeMicrophone}
+            isDisabled={busy !== null}
+          />
+          {includeMicrophone && (
+            <Switch
+              label="Reduce microphone background noise"
+              description={
+                reduceBackgroundNoise
+                  ? "Uses browser noise reduction to keep speech clearer. Some nearby sounds may remain."
+                  : "Keeps nearby sounds picked up by your microphone."
+              }
+              value={reduceBackgroundNoise}
+              onChange={setReduceBackgroundNoise}
+              isDisabled={busy !== null}
+            />
+          )}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Button
+              label="Choose the meeting to record"
+              icon={<Icon icon={Video} />}
+              onClick={() => startRecording("meeting")}
+              isDisabled={busy !== null}
+            />
+            <Text type="supporting" size="xsm">
+              Works in Chrome and Edge
+            </Text>
+          </div>
+        </div>
 
-        <Card
+        <div
+          role="button"
+          tabIndex={0}
           className={cn(
-            "cursor-pointer border-dashed py-8 text-center transition-colors",
+            "flex cursor-pointer flex-col items-center gap-3 rounded-[var(--radius-container)] border border-dashed bg-card p-5 text-center transition-colors hover:bg-muted/50",
             dragging && "border-brand bg-brand/5",
             focusUpload && "ring-2 ring-primary/40",
           )}
           onClick={() => fileRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              fileRef.current?.click()
+            }
+          }}
           onDragOver={(e) => {
             e.preventDefault()
             setDragging(true)
@@ -392,35 +287,30 @@ export function MeetingForm({
             if (file) void upload(file)
           }}
         >
-          <CardContent className="flex flex-col items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-full bg-muted">
-              {busy === "upload" ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : dragging ? (
-                <FileAudio className="size-5 text-brand" />
-              ) : (
-                <Upload className="size-5 text-muted-foreground" />
-              )}
-            </div>
-            <div>
-              <p className="font-medium">Upload a recording</p>
-              <p className="text-sm text-muted-foreground">
-                Drop an audio or video file here, or click to choose
-              </p>
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              hidden
-              accept="audio/*,video/*,.m4a,.wav,.mp3,.mp4"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                e.target.value = ""
-                if (file) void upload(file)
-              }}
-            />
-          </CardContent>
-        </Card>
+          <Icon
+            icon={busy === "upload" ? Loader2 : dragging ? FileAudio : Upload}
+            size="lg"
+            color="secondary"
+            className={cn(busy === "upload" && "animate-spin")}
+          />
+          <div>
+            <Text weight="medium" display="block">
+              Upload a recording
+            </Text>
+            <Text type="supporting">Drop an audio or video file here, or click to choose</Text>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            hidden
+            accept="audio/*,video/*,.m4a,.wav,.mp3,.mp4"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ""
+              if (file) void upload(file)
+            }}
+          />
+        </div>
       </div>
     </div>
   )

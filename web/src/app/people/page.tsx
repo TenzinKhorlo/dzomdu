@@ -1,26 +1,15 @@
 "use client"
 
 import * as React from "react"
-import {
-  AudioLines,
-  Briefcase,
-  Building2,
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
-  Clock,
-  FileText,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Search,
-  ShieldCheck,
-  Trash2,
-  User,
-  UserCheck,
-  Users,
-} from "lucide-react"
-import { toast } from "sonner"
+import { Button } from "@astryxdesign/core/Button"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Icon } from "@astryxdesign/core/Icon"
+import { MoreMenu } from "@astryxdesign/core/MoreMenu"
+import { Text } from "@astryxdesign/core/Text"
+import { TextArea } from "@astryxdesign/core/TextArea"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Search, Trash2, Users } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 import {
   Dialog,
@@ -29,22 +18,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/animate-ui/components/radix/dropdown-menu"
-import { EmptyState, PageHeader, SpeakerAvatar, StatTile } from "@/components/common"
+} from "@/components/dialog"
+import { EmptyState, SpeakerAvatar } from "@/components/common"
 import { useConfirm } from "@/components/confirm"
+import { Kpi } from "@/components/dashboard/kpi-cards"
 import { useInfo } from "@/components/providers"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
@@ -54,43 +32,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
 import { useApi } from "@/hooks/use-api"
 import { api, type Voice } from "@/lib/api"
-import { colorFor, duration } from "@/lib/format"
+import { duration } from "@/lib/format"
 import { cn } from "@/lib/utils"
-
-function FieldRow({
-  icon: Icon,
-  label,
-  htmlFor,
-  top,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  htmlFor: string
-  top?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      className={cn(
-        "grid grid-cols-[8.5rem_1fr] gap-3 px-3 py-2.5",
-        top ? "items-start" : "items-center",
-      )}
-    >
-      <Label
-        htmlFor={htmlFor}
-        className={cn("gap-2 text-[13px] font-normal text-muted-foreground", top && "pt-2")}
-      >
-        <Icon className="size-4" />
-        {label}
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 function ProfileForm({
   voice,
@@ -149,48 +94,39 @@ function ProfileForm({
           </DialogDescription>
         </div>
       </DialogHeader>
-      <div className="divide-y rounded-lg border">
-        <FieldRow icon={User} label="Name" htmlFor="p-name">
-          <Input
-            id="p-name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </FieldRow>
-        <FieldRow icon={Briefcase} label="Role" htmlFor="p-role">
-          <Input
-            id="p-role"
+      <div className="grid gap-4">
+        <TextInput label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextInput
+            label="Role"
             placeholder="e.g. Project manager"
             value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
+            onChange={(v) => setForm({ ...form, role: v })}
           />
-        </FieldRow>
-        <FieldRow icon={Building2} label="Organisation" htmlFor="p-org">
-          <Input
-            id="p-org"
+          <TextInput
+            label="Organisation"
             placeholder="e.g. Energy Division"
             value={form.organisation}
-            onChange={(e) => setForm({ ...form, organisation: e.target.value })}
+            onChange={(v) => setForm({ ...form, organisation: v })}
           />
-        </FieldRow>
-        <FieldRow icon={FileText} label="Bio" htmlFor="p-bio" top>
-          <Textarea
-            id="p-bio"
-            rows={4}
-            placeholder="What they work on and are responsible for"
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          />
-        </FieldRow>
+        </div>
+        <TextArea
+          label="Bio"
+          rows={4}
+          placeholder="What they work on and are responsible for"
+          value={form.bio}
+          onChange={(v) => setForm({ ...form, bio: v })}
+        />
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={save} disabled={busy || !form.name.trim()}>
-          {busy && <Loader2 className="animate-spin" />}
-          Save
-        </Button>
+        <Button label="Cancel" onClick={onClose} />
+        <Button
+          variant="primary"
+          label="Save"
+          onClick={save}
+          isLoading={busy}
+          isDisabled={!form.name.trim()}
+        />
       </DialogFooter>
     </>
   )
@@ -266,7 +202,7 @@ export default function PeoplePage() {
 
   function header(key: SortKey, label: string, className?: string) {
     const active = sort.key === key
-    const Icon = !active ? ChevronsUpDown : sort.desc ? ChevronDown : ChevronUp
+    const SortIcon = !active ? ChevronsUpDown : sort.desc ? ChevronDown : ChevronUp
     return (
       <TableHead
         className={className}
@@ -276,12 +212,17 @@ export default function PeoplePage() {
           type="button"
           onClick={() => setSort({ key, desc: active ? !sort.desc : key !== "name" })}
           className={cn(
-            "inline-flex items-center gap-1 rounded hover:text-foreground",
+            "group inline-flex items-center gap-1 rounded hover:text-foreground",
             active && "text-foreground",
           )}
         >
           {label}
-          <Icon className="size-3.5" />
+          <SortIcon
+            className={cn(
+              "size-3.5 transition-opacity duration-150",
+              !active && "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
+            )}
+          />
         </button>
       </TableHead>
     )
@@ -289,15 +230,18 @@ export default function PeoplePage() {
 
   return (
     <div className="@container/main flex flex-col gap-5">
-      <PageHeader
-        title="People"
-        description="Everyone whose voice Dzomdu recognises. Voiceprints are stored only on this computer, outside your notes."
-      />
+      <div className="space-y-1.5">
+        <Heading level={1}>People</Heading>
+        <Text type="supporting" display="block" className="max-w-xl text-pretty">
+          Everyone whose voice Dzomdu recognises. Voiceprints are stored only on this computer,
+          outside your notes.
+        </Text>
+      </div>
       {!data ? (
         <>
           <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[76px] rounded-xl" />
+              <Skeleton key={i} className="h-[104px] rounded-xl" />
             ))}
           </div>
           <Skeleton className="h-80 rounded-xl" />
@@ -311,43 +255,44 @@ export default function PeoplePage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
-            <StatTile label="People" icon={Users} value={data.length} hint="voices recognised" />
-            <StatTile
+            <Kpi index={0} label="People" value={data.length} footer="Saved in your local library" />
+            <Kpi
+              index={1}
               label="Speaking time"
-              icon={Clock}
-              value={duration(totalMinutes * 60)}
-              hint="across all meetings"
+              text={duration(totalMinutes * 60)}
+              footer="Across all meetings"
             />
-            <StatTile
+            <Kpi
+              index={2}
               label="Voice samples"
-              icon={AudioLines}
               value={data.reduce((s, v) => s + v.samples, 0)}
-              hint="more samples, better matches"
+              footer="More samples, better matches"
             />
-            <StatTile
+            <Kpi
+              index={3}
               label="Profiles complete"
-              icon={UserCheck}
-              value={`${complete}/${data.length}`}
-              hint="role and bio filled in"
+              text={`${complete}/${data.length}`}
+              footer="Role and bio filled in"
             />
           </div>
 
-          <Card className="gap-0 overflow-hidden py-0">
+          <div className="overflow-hidden rounded-[var(--radius-container)] border bg-card">
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
               <div>
-                <h2 className="text-[15px] font-semibold tracking-[-0.01em]">All people</h2>
-                <p className="text-[13px] text-muted-foreground">
-                  Click a person to edit their profile
-                </p>
+                <Heading level={3}>All people</Heading>
+                <Text type="supporting">Select a person to edit their profile</Text>
               </div>
-              <div className="relative w-full @xl/main:max-w-64">
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
+              <div className="w-full @xl/main:max-w-64">
+                <TextInput
+                  label="Search people"
+                  isLabelHidden
+                  size="sm"
+                  type="search"
+                  startIcon={Search}
+                  placeholder="Search"
+                  hasClear
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search people…"
-                  aria-label="Search people"
-                  className="h-8 pl-8"
+                  onChange={setQuery}
                 />
               </div>
             </div>
@@ -366,104 +311,109 @@ export default function PeoplePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((v) => (
-                  <TableRow
-                    key={v.name}
-                    tabIndex={0}
-                    className="cursor-pointer"
-                    onClick={() => setEditing(v)}
-                    onKeyDown={(e) => e.key === "Enter" && setEditing(v)}
-                  >
-                    <TableCell className="max-w-[11rem] pl-5 @xl/main:max-w-none">
-                      <div className="flex items-center gap-3">
-                        <SpeakerAvatar name={v.name} className="ring-0" />
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{v.name}</div>
-                          <div className="truncate text-xs text-muted-foreground">
-                            {[v.role, v.organisation].filter(Boolean).join(" · ") || "No role yet"}
+                {rows.map((v) => {
+                  const subtitle = [v.role, v.organisation].filter(Boolean).join(" · ")
+                  return (
+                    <TableRow
+                      key={v.name}
+                      tabIndex={0}
+                      className="cursor-pointer"
+                      onClick={() => setEditing(v)}
+                      onKeyDown={(e) => e.key === "Enter" && setEditing(v)}
+                    >
+                      <TableCell className="max-w-[11rem] pl-5 @xl/main:max-w-none">
+                        <div className="flex h-9 items-center gap-3">
+                          <SpeakerAvatar name={v.name} className="ring-0" />
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">{v.name}</div>
+                            {subtitle && (
+                              <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden max-w-[18rem] @4xl/main:table-cell">
-                      <span
-                        className={cn("block truncate", !v.bio && "text-muted-foreground")}
-                        title={v.bio || undefined}
-                      >
-                        {v.bio || "Add a bio"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums @2xl/main:table-cell">
-                      {v.meetings}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-track @xl/main:block"
-                          aria-hidden
-                        >
+                      </TableCell>
+                      <TableCell className="hidden max-w-[18rem] @4xl/main:table-cell">
+                        {v.bio ? (
+                          <span className="block truncate" title={v.bio}>
+                            {v.bio}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden text-right tabular-nums @2xl/main:table-cell">
+                        {v.meetings}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
                           <span
-                            className="block h-full rounded-r-[4px]"
-                            style={{
-                              width: `${(v.minutes / maxMinutes) * 100}%`,
-                              backgroundColor: colorFor(v.name),
-                            }}
-                          />
-                        </span>
-                        <span className="text-muted-foreground tabular-nums">
-                          {duration(v.minutes * 60)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums @3xl/main:table-cell">
-                      {v.samples}
-                    </TableCell>
-                    <TableCell className="hidden @3xl/main:table-cell">
-                      {v.consent ? (
-                        <Badge className="gap-1 bg-success/10 text-success">
-                          <ShieldCheck />
-                          Given
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Not recorded</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="pr-3" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Actions for ${v.name}`}
+                            className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-track @xl/main:block"
+                            aria-hidden
                           >
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditing(v)}>
-                            <Pencil />
-                            Edit profile
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem variant="destructive" onClick={() => void forget(v)}>
-                            <Trash2 />
-                            Forget voice
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            <span
+                              className={cn(
+                                "block h-full rounded-full",
+                                v.minutes === maxMinutes ? "bg-brand" : "bg-foreground/30",
+                              )}
+                              style={{ width: `${(v.minutes / maxMinutes) * 100}%` }}
+                            />
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                            {duration(v.minutes * 60)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden text-right tabular-nums @3xl/main:table-cell">
+                        {v.samples}
+                      </TableCell>
+                      <TableCell className="hidden @3xl/main:table-cell">
+                        {v.consent ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs">
+                            <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                            Given
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not recorded</span>
+                        )}
+                      </TableCell>
+                      <TableCell
+                        className="pr-3"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <MoreMenu
+                          alignment="end"
+                          size="sm"
+                          label={`Actions for ${v.name}`}
+                          items={[
+                            {
+                              label: "Edit profile",
+                              icon: <Icon icon={Pencil} />,
+                              onClick: () => setEditing(v),
+                            },
+                            { type: "divider" },
+                            {
+                              label: "Forget voice",
+                              icon: <Icon icon={Trash2} />,
+                              variant: "destructive",
+                              onClick: () => void forget(v),
+                            },
+                          ]}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
                 {rows.length === 0 && (
                   <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                      Nobody matches “{query}”.
+                      Nobody matches “{query}”
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
-          </Card>
+          </div>
         </>
       )}
       <ProfileDialog

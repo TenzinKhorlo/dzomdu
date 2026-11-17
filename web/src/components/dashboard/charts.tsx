@@ -3,10 +3,13 @@
 import * as React from "react"
 import { BarChart3, Users } from "lucide-react"
 
-import { EmptyState, SpeakerAvatar } from "@/components/common"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ui-sdk/react/tooltip"
+
+import { EmptyState } from "@/components/common"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
 import type { Dashboard } from "@/lib/api"
-import { colorFor, shortDate } from "@/lib/format"
+import { scatterBubbles } from "@/lib/bubbles"
+import { colorFor, initials, shortDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 const LEVELS = 16 // marks per column; the chart height stays fixed across date ranges
@@ -17,17 +20,18 @@ function niceMax(v: number) {
   return steps.find((s) => s >= v) ?? Math.ceil(v / 240) * 240
 }
 
-function minutesLabel(m: number) {
+// same shape as duration() in lib/format: "15 min", "2 h 05 min"
+export function minutesLabel(m: number) {
   if (m < 60) return `${Math.round(m)} min`
   const h = Math.floor(m / 60)
   const r = Math.round(m - h * 60)
-  return r ? `${h} h ${r} min` : `${h} h`
+  return r ? `${h} h ${String(r).padStart(2, "0")} min` : `${h} h`
 }
 
 /**
  * Time in meetings per day as a dot matrix: each column is a day, each lit mark is a sixteenth of
- * the axis. One series in one hue (the brand accent) on a neutral track, a 3px gap between marks,
- * and a per-column tooltip on hover and keyboard focus.
+ * the axis. One series: the busiest day takes the brand accent, every other day a neutral step, on a
+ * neutral track, with a per-column tooltip on hover and keyboard focus.
  */
 export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
   const [active, setActive] = React.useState<number | null>(null)
@@ -48,25 +52,25 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
         </div>
         <CardAction className="hidden text-right @sm/card-header:block">
           <p className="text-lg leading-tight font-medium tracking-tight tabular-nums">{minutesLabel(total)}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Total meeting time</p>
+          <p className="mt-1 text-xs text-muted-foreground">Total meeting time</p>
         </CardAction>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-3">
+      <CardContent className="flex flex-1 flex-col">
+        <div className="flex flex-1 gap-3">
           {/* y axis: clean round values only */}
           <div
-            className="flex shrink-0 flex-col-reverse justify-between pb-6 text-right text-[11px] text-muted-foreground tabular-nums"
+            className="flex shrink-0 flex-col-reverse justify-between pb-6 text-right text-xs text-muted-foreground tabular-nums"
             aria-hidden
           >
             <span>0</span>
             <span>{minutesLabel(top / 2)}</span>
             <span>{minutesLabel(top)}</span>
           </div>
-          <div className="relative min-w-0 flex-1">
+          <div className="relative flex min-w-0 flex-1 flex-col">
             <div
               role="group"
               aria-label="Minutes in meetings per day"
-              className="grid h-[196px] gap-[3px]"
+              className="grid min-h-[196px] flex-1 gap-0.5"
               style={{
                 gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`,
                 columnGap: data.length > 60 ? 1 : 3,
@@ -84,7 +88,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
                     onFocus={() => setActive(i)}
                     onBlur={() => setActive(null)}
                     className={cn(
-                      "flex h-full min-w-0 flex-col-reverse items-center gap-[3px] rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      "flex h-full min-w-0 flex-col-reverse items-center gap-0.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                       "transition-opacity duration-200",
                       active !== null && active !== i && "opacity-45",
                     )}
@@ -94,7 +98,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
                         key={level}
                         className={cn(
                           "w-full max-w-5 flex-1 rounded-[2px]",
-                          level < lit ? "bg-brand" : "bg-track",
+                          level < lit ? (d === busiest ? "bg-brand" : "bg-foreground/30") : "bg-track",
                         )}
                       />
                     ))}
@@ -104,7 +108,7 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             </div>
             {/* x axis: a few evenly spaced dates, today emphasised */}
             <div
-              className="relative mt-3 h-4 text-[11px] text-muted-foreground"
+              className="relative mt-3 h-4 text-xs text-muted-foreground"
               aria-hidden
             >
               {data.map((d, i) => {
@@ -127,8 +131,8 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
                 style={{ left: `clamp(4.5rem, ${((active + 0.5) / data.length) * 100}%, calc(100% - 4.5rem))` }}
                 role="status"
               >
-                <div className="text-[11px] text-neutral-400">{shortDate(hovered.date)}</div>
-                <div className="mt-0.5 text-base font-semibold text-white tabular-nums">
+                <div className="text-xs text-neutral-400">{shortDate(hovered.date)}</div>
+                <div className="mt-0.5 text-base font-medium text-white tabular-nums">
                   {minutesLabel(hovered.minutes)}
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -139,18 +143,27 @@ export function ActivityChart({ data }: { data: Dashboard["activity"] }) {
             )}
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-sm bg-brand" aria-hidden />Daily meeting time</span>
-          {busiest?.minutes > 0 && <span>Busiest day · {shortDate(busiest.date)}</span>}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
+          {busiest?.minutes > 0 ? (
+            <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-sm bg-brand" aria-hidden />Busiest day · {shortDate(busiest.date)}</span>
+          ) : (
+            <span />
+          )}
+          <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-sm bg-foreground/30" aria-hidden />Other days</span>
         </div>
       </CardContent>
     </Card>
   )
 }
 
-/** Speaking time per person: thin bars in each person's own colour, the value at the tip. */
+/**
+ * Speaking time per person as bubbles: area is proportional to time, so a person with twice the
+ * minutes has twice the area. Each person keeps the colour they have everywhere else (SpeakerAvatar). Circles are scattered
+ * at seeded-random spots and may overlap, but fills are translucent so every circle stays visible; the name, exact time and share open on hover or focus.
+ */
 export function SpeakersChart({ data }: { data: Dashboard["speakers"] }) {
-  const max = Math.max(1, ...data.map((d) => d.minutes))
+  const people = data.slice(0, 6)
+  const bubbles = scatterBubbles(people.map((d) => d.minutes), people.map((d) => d.name).join("|"))
   const sum = data.reduce((s, d) => s + d.minutes, 0)
   const top = data[0]
 
@@ -170,31 +183,49 @@ export function SpeakersChart({ data }: { data: Dashboard["speakers"] }) {
           />
         ) : (
           <>
-            <ul className="space-y-4">
-              {data.slice(0, 6).map((d) => (
-                <li
-                  key={d.name}
-                  className="space-y-2 text-[13px]"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <SpeakerAvatar name={d.name} size="sm" className="size-5 ring-0" />
-                    <span className="min-w-0 flex-1 truncate">{d.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{minutesLabel(d.minutes)}</span>
-                  </div>
-                  <span className="block h-1 overflow-hidden rounded-full bg-track" aria-hidden>
-                    <span
-                      className="block h-full rounded-r-[4px]"
+            <div className="flex flex-1 items-center">
+              <ul className="relative w-full" style={{ aspectRatio: "100 / 72" }}>
+                {people.map((d, i) => {
+                  const b = bubbles[i]
+                  const color = colorFor(d.name)
+                  const share = sum > 0 ? Math.round((d.minutes / sum) * 100) : 0
+                  return (
+                    <li
+                      key={d.name}
+                      className="absolute hover:z-10 focus-within:z-10"
                       style={{
-                        width: `${(d.minutes / max) * 100}%`,
-                        backgroundColor: colorFor(d.name),
+                        left: `${((b.cx - b.d / 2) / 100) * 100}%`,
+                        top: `${((b.cy - b.d / 2) / 72) * 100}%`,
+                        width: `${b.d}%`,
+                        aspectRatio: "1",
                       }}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    >
+                      <Tooltip>
+                        <TooltipTrigger
+                          aria-label={`${d.name}, ${minutesLabel(d.minutes)}`}
+                          className="grid size-full cursor-default place-items-center rounded-full border-0 text-sm font-medium tabular-nums transition-[filter] outline-none hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          style={{
+                            color,
+                            backgroundColor: `color-mix(in oklch, ${color} 22%, transparent)`,
+                            boxShadow: `inset 0 0 0 1.5px color-mix(in oklch, ${color} 55%, transparent)`,
+                          }}
+                        >
+                          {initials(d.name)}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span className="block font-medium">{d.name}</span>
+                          <span className="block whitespace-nowrap tabular-nums">
+                            {`${minutesLabel(d.minutes)} · ${share}% · ${d.meetings} meeting${d.meetings === 1 ? "" : "s"}`}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
             {top && sum > 0 && (
-              <div className="mt-auto border-t pt-3 text-[11px] leading-relaxed text-muted-foreground">
+              <div className="mt-auto border-t pt-3 text-xs leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground">{top.name}</span> contributed {Math.round((top.minutes / sum) * 100)}% of speaking time across {top.meetings} meeting{top.meetings === 1 ? "" : "s"}.
               </div>
             )}

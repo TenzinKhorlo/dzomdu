@@ -1,8 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { Selector } from "@astryxdesign/core/Selector"
+import { TextArea } from "@astryxdesign/core/TextArea"
+import { TextInput } from "@astryxdesign/core/TextInput"
 import { Loader2, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import {
   Dialog,
@@ -11,19 +14,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog"
+} from "@/components/dialog"
 import { useConfirm } from "@/components/confirm"
 import { useInfo } from "@/components/providers"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/badge"
+import { Button } from "@/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+} from "@/components/card"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -31,9 +33,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api"
 
@@ -215,37 +216,28 @@ function FormatForm({
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <Label htmlFor="fmt-name">Name</Label>
-          <Input
-            id="fmt-name"
-            required
-            autoFocus
-            placeholder="e.g. Weekly sync"
-            value={draft.name}
-            onChange={(e) => set("name", e.target.value)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="fmt-desc">Short description</Label>
-          <Input
-            id="fmt-desc"
-            placeholder="Shown in the format list"
-            value={draft.description}
-            onChange={(e) => set("description", e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="fmt-instr">Instructions for the AI</Label>
-        <Textarea
-          id="fmt-instr"
-          rows={4}
-          placeholder="e.g. Audience is the finance team. Keep the summary to three sentences and list every number that was mentioned."
-          value={draft.instructions}
-          onChange={(e) => set("instructions", e.target.value)}
+        <TextInput
+          label="Name"
+          isRequired
+          hasAutoFocus
+          placeholder="e.g. Weekly sync"
+          value={draft.name}
+          onChange={(value) => set("name", value)}
+        />
+        <TextInput
+          label="Short description"
+          placeholder="Shown in the format list"
+          value={draft.description}
+          onChange={(value) => set("description", value)}
         />
       </div>
+      <TextArea
+        label="Instructions for the AI"
+        rows={4}
+        placeholder="e.g. Audience is the finance team. Keep the summary to three sentences and list every number that was mentioned."
+        value={draft.instructions}
+        onChange={(value) => set("instructions", value)}
+      />
       <div className="grid gap-2">
         <Label>Extra things for the AI to pick out</Label>
         <p className="text-xs text-muted-foreground">
@@ -256,13 +248,12 @@ function FormatForm({
         {draft.sections.map((sec, i) => (
           <div key={i} className="grid gap-2 rounded-lg border p-3">
             <div className="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
-              <Input
-                aria-label="Field title"
+              <TextInput
+                label="Field title"
+                isLabelHidden
                 placeholder="e.g. Meeting purpose"
                 value={sec.title}
-                onChange={(e) =>
-                  setSection(i, { ...sec, title: e.target.value })
-                }
+                onChange={(value) => setSection(i, { ...sec, title: value })}
               />
               <Select
                 value={sec.type}
@@ -296,13 +287,12 @@ function FormatForm({
                 <Trash2 />
               </Button>
             </div>
-            <Input
-              aria-label="What to put in this field"
+            <TextInput
+              label="What to put in this field"
+              isLabelHidden
               placeholder="What should the AI write here?"
               value={sec.description}
-              onChange={(e) =>
-                setSection(i, { ...sec, description: e.target.value })
-              }
+              onChange={(value) => setSection(i, { ...sec, description: value })}
             />
             {(sec.key ?? sectionKey(sec.title)) && (
               <p className="text-xs text-muted-foreground">
@@ -333,15 +323,12 @@ function FormatForm({
         </div>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="fmt-body">Layout</Label>
-        <Textarea
-          id="fmt-body"
+        <TextArea
+          label="Layout"
           rows={12}
-          required
-          spellCheck={false}
-          className="font-mono text-xs"
+          isRequired
           value={draft.body}
-          onChange={(e) => set("body", e.target.value)}
+          onChange={(value) => set("body", value)}
         />
         <details className="text-xs text-muted-foreground">
           <summary className="cursor-pointer select-none hover:text-foreground">
@@ -573,35 +560,20 @@ function DefaultsForm({
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="grid gap-2">
-          <Label>Default minutes format</Label>
-          <Select value={template} onValueChange={setTemplate}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {formats.map((f) => (
-                <SelectItem key={f.key} value={f.key}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="standing">Instructions for every summary</Label>
-          <Textarea
-            id="standing"
-            rows={4}
-            placeholder="e.g. Write in British English. Always name the owner of an action item. Keep a neutral tone."
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Added to the format&apos;s own instructions and to anything you type
-            for a single meeting.
-          </p>
-        </div>
+        <Selector
+          label="Default minutes format"
+          value={template}
+          onChange={(value) => value && setTemplate(value)}
+          options={formats.map((f) => ({ value: f.key, label: f.name }))}
+        />
+        <TextArea
+          label="Instructions for every summary"
+          description="Added to the format's own instructions and to anything you type for a single meeting."
+          rows={4}
+          placeholder="e.g. Write in British English. Always name the owner of an action item. Keep a neutral tone."
+          value={instructions}
+          onChange={setInstructions}
+        />
         <div>
           <Button onClick={save} disabled={busy || !dirty}>
             {busy && <Loader2 className="animate-spin" />}

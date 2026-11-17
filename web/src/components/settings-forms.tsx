@@ -1,14 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { TextInput } from "@astryxdesign/core/TextInput"
 import { CheckCircle2, FolderOpen, Loader2, TriangleAlert } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import { useInfo } from "@/components/providers"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api"
@@ -50,17 +49,33 @@ function providerOf(s: Settings["llm"]): Provider {
 }
 
 function Field({
-  id,
   label,
   help,
-  ...props
-}: { id: string; label: string; help?: string } & React.ComponentProps<typeof Input>) {
+  value,
+  onChange,
+  type,
+  placeholder,
+}: {
+  id?: string
+  label: string
+  help?: string
+  value: string
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  type?: "text" | "password"
+  placeholder?: string
+  spellCheck?: boolean
+  autoComplete?: string
+  className?: string
+}) {
   return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} {...props} />
-      {help && <p className="text-xs text-muted-foreground">{help}</p>}
-    </div>
+    <TextInput
+      label={label}
+      description={help}
+      type={type}
+      value={value}
+      placeholder={placeholder}
+      onChange={(_, event) => onChange(event)}
+    />
   )
 }
 

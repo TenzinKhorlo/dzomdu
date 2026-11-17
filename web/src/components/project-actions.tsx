@@ -1,9 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { toast } from "sonner"
+import { Button } from "@astryxdesign/core/Button"
+import { MoreMenu } from "@astryxdesign/core/MoreMenu"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { Pencil, Trash2 } from "lucide-react"
 
+import { useChatHistory } from "@/components/chat/provider"
+import { useConfirm } from "@/components/confirm"
 import {
   Dialog,
   DialogContent,
@@ -11,21 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/animate-ui/components/radix/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/animate-ui/components/radix/dropdown-menu"
-import { useConfirm } from "@/components/confirm"
+} from "@/components/dialog"
 import { useInfo } from "@/components/providers"
 import { useTasks } from "@/components/task-provider"
-import { useChatHistory } from "@/components/chat/provider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { toast } from "@/lib/toast"
 import { api, type Project } from "@/lib/api"
 
 export function ProjectActions({
@@ -43,7 +36,6 @@ export function ProjectActions({
   const [name, setName] = React.useState(project.name)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState("")
-  const fieldId = React.useId()
   const path = `/api/projects/${encodeURIComponent(project.name)}`
 
   async function rename(event: React.FormEvent) {
@@ -107,36 +99,25 @@ export function ProjectActions({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="relative z-10"
-            disabled={busy}
-            aria-label={`Actions for ${project.name}`}
-          >
-            {busy ? <Loader2 className="animate-spin" /> : <MoreHorizontal />}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onSelect={() => {
+      <MoreMenu
+        label={`Actions for ${project.name}`}
+        size="sm"
+        alignment="end"
+        isDisabled={busy}
+        items={[
+          {
+            label: "Rename project",
+            icon: Pencil,
+            onClick: () => {
               setName(project.name)
               setError("")
               setOpen(true)
-            }}
-          >
-            <Pencil />
-            Rename project
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={() => void remove()}>
-            <Trash2 />
-            Delete project
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            },
+          },
+          { type: "divider" },
+          { label: "Delete project", icon: Trash2, variant: "destructive", onClick: () => void remove() },
+        ]}
+      />
       <Dialog open={open} onOpenChange={(value) => !busy && setOpen(value)}>
         <DialogContent className="sm:max-w-md">
           <form onSubmit={rename} className="grid gap-4">
@@ -146,34 +127,23 @@ export function ProjectActions({
                 The project folder and its meeting references will use the new name.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-2">
-              <Label htmlFor={fieldId}>Project name</Label>
-              <Input
-                id={fieldId}
-                autoFocus
-                maxLength={100}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                disabled={busy}
-              />
-              {error && (
-                <p role="alert" className="text-xs text-destructive">
-                  {error}
-                </p>
-              )}
-            </div>
+            <TextInput
+              label="Project name"
+              hasAutoFocus
+              value={name}
+              onChange={(value) => setName(value.slice(0, 100))}
+              isDisabled={busy}
+              status={error ? { type: "error", message: error } : undefined}
+            />
             <DialogFooter>
+              <Button label="Cancel" variant="secondary" isDisabled={busy} onClick={() => setOpen(false)} />
               <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={busy || !name.trim() || name.trim() === project.name}>
-                {busy && <Loader2 className="animate-spin" />}Save name
-              </Button>
+                type="submit"
+                variant="primary"
+                label="Save name"
+                isLoading={busy}
+                isDisabled={!name.trim() || name.trim() === project.name}
+              />
             </DialogFooter>
           </form>
         </DialogContent>

@@ -1,15 +1,15 @@
 "use client"
 
 import * as React from "react"
+import { TextInput } from "@astryxdesign/core/TextInput"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowUpRight, MessageSquare, Pin, Search } from "lucide-react"
 
 import { useChatHistory } from "@/components/chat/provider"
 import { EmptyState, PageHeader } from "@/components/common"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/button"
+import { Card } from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChatActions } from "@/components/chat/actions"
 import { useInfo } from "@/components/providers"
@@ -19,7 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/select"
 import { relative } from "@/lib/format"
 
 function ConversationsList() {
@@ -49,14 +49,16 @@ function ConversationsList() {
         description="Reopen a conversation or manage your chat history."
       />
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
-          <Input
-            aria-label="Search conversations"
+        <div className="w-full max-w-sm">
+          <TextInput
+            label="Search conversations"
+            isLabelHidden
+            type="search"
+            startIcon={Search}
             placeholder="Search conversations…"
+            hasClear
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="pl-9"
+            onChange={setQuery}
           />
         </div>
         <Select

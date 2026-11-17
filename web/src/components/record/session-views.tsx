@@ -1,22 +1,23 @@
 "use client"
 
 import * as React from "react"
-import { Check, Loader2, Merge, Pause, Play, Square, Trash2 } from "lucide-react"
+import { Button } from "@astryxdesign/core/Button"
+import { Card } from "@astryxdesign/core/Card"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Icon } from "@astryxdesign/core/Icon"
+import { Text } from "@astryxdesign/core/Text"
+import { AlertTriangle, Check, Loader2, Merge, Pause, Play, Square, Trash2 } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { Progress } from "@/components/animate-ui/components/radix/progress"
-import { ShimmeringText } from "@/components/animate-ui/primitives/texts/shimmering"
 import { SpeakerAvatar } from "@/components/common"
 import { useConfirm } from "@/components/confirm"
 import { useInfo } from "@/components/providers"
 import { TranscriptEditor } from "@/components/transcript-editor"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { api, apiUrl, type LiveSegment, type Session } from "@/lib/api"
-import { clock, colorFor, duration } from "@/lib/format"
+import { clock, duration } from "@/lib/format"
 import { springSnappy } from "@/lib/motion"
 import { recorder, useRecorder } from "@/lib/recorder"
 import { cn } from "@/lib/utils"
@@ -24,14 +25,71 @@ import { type TranscriptEdit } from "@/lib/transcript-edits"
 
 // -- recording ---------------------------------------------------------------------------------
 
+// A notepad for the person running the meeting. What they type is saved to the session as they
+// go, the summariser is told to cover it, and it is kept word for word in the finished note.
+function SessionNotes({ session }: { session: Session }) {
+  const [text, setText] = React.useState(session.meta.user_notes ?? "")
+  const [status, setStatus] = React.useState<"saved" | "saving" | "failed">("saved")
+  const pending = React.useRef<string | null>(null)
+  const timer = React.useRef<number | undefined>(undefined)
+
+  const save = React.useCallback(async () => {
+    window.clearTimeout(timer.current)
+    const notes = pending.current
+    if (notes === null) return
+    pending.current = null
+    try {
+      await api(`/api/sessions/${session.id}/notes`, { method: "PUT", json: { notes } })
+      if (pending.current === null) setStatus("saved")
+    } catch {
+      // keep it queued; the next keystroke or leaving the page tries again
+      if (pending.current === null) pending.current = notes
+      setStatus("failed")
+    }
+  }, [session.id])
+
+  // leaving the page, or the recording ending, must not drop the last few words typed
+  React.useEffect(() => () => void save(), [save])
+
+  function change(value: string) {
+    setText(value)
+    setStatus("saving")
+    pending.current = value
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(save, 600)
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-[var(--radius-container)] border bg-card p-5 @4xl/main:sticky @4xl/main:top-4 @4xl/main:order-last @4xl/main:self-start">
+      <div className="flex items-baseline justify-between gap-3">
+        <Heading level={3}>My notes</Heading>
+        <Text type="supporting" size="xsm" aria-live="polite">
+          {status === "failed" ? "Not saved yet" : status === "saving" ? "Saving…" : text ? "Saved" : ""}
+        </Text>
+      </div>
+      <Textarea
+        value={text}
+        onChange={(e) => change(e.target.value)}
+        maxLength={20000}
+        placeholder="Jot down what matters as you go"
+        aria-label="My notes"
+        className="min-h-40 @4xl/main:max-h-[60vh] @4xl/main:overflow-y-auto"
+      />
+      <Text type="supporting" size="xsm">
+        The minutes are written to cover these points, and your notes are kept with them
+      </Text>
+    </div>
+  )
+}
+
 function Waveform({ levels }: { levels: number[] }) {
   return (
-    <div className="flex h-10 min-w-24 flex-1 items-center gap-[3px]" aria-hidden>
+    <div className="flex h-10 min-w-24 flex-1 items-center gap-0.5" aria-hidden>
       {levels.map((l, i) => (
         <motion.span
           key={i}
-          className="w-full rounded-full bg-primary"
-          animate={{ height: `${Math.max(6, l * 100)}%`, opacity: 0.35 + l * 0.65 }}
+          className="h-full w-full origin-center rounded-full bg-primary"
+          animate={{ scaleY: Math.max(0.06, l), opacity: 0.35 + l * 0.65 }}
           transition={springSnappy}
         />
       ))}
@@ -122,20 +180,20 @@ export function RecordingView({ session, live, onCorrected }: {
     recorder.release()
   }
 
-  // Controls float on a translucent bar at the bottom; the transcript scrolls underneath.
+  // Controls float on a raised bar at the bottom; the transcript scrolls underneath.
   const controls = (
-    <div className="sticky bottom-4 z-20">
+    <div className="sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-20">
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="material-thick mx-auto flex max-w-3xl flex-wrap items-center gap-4 rounded-2xl border p-3 pl-5 shadow-lg sm:flex-nowrap"
+        className="mx-auto flex max-w-3xl flex-wrap items-center gap-4 rounded-xl border bg-card p-3 pl-5 shadow-[var(--shadow-card)] sm:flex-nowrap"
       >
         <div className="flex items-center gap-3">
           <span className="relative flex size-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-recording opacity-60" />
             <span className="relative inline-flex size-3 rounded-full bg-recording" />
           </span>
-          <span className="font-mono text-2xl font-semibold tabular-nums" aria-label="Elapsed">
+          <span className="font-mono text-2xl font-medium tabular-nums" aria-label="Elapsed">
             {clock(elapsed)}
           </span>
         </div>
@@ -148,19 +206,22 @@ export function RecordingView({ session, live, onCorrected }: {
         )}
         <div className="ml-auto flex items-center gap-2">
           {local && (
-            <Button variant="ghost" onClick={discard} disabled={stopping}>
-              <Trash2 />
-              Discard
-            </Button>
+            <Button
+              variant="ghost"
+              label="Discard"
+              icon={<Icon icon={Trash2} />}
+              onClick={discard}
+              isDisabled={stopping}
+            />
           )}
           <Button
+            variant="primary"
+            label="Stop & process"
+            icon={<Icon icon={Square} className="fill-current" />}
             onClick={stop}
-            disabled={!local || stopping}
-            className="rounded-full"
-          >
-            {stopping ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}
-            Stop &amp; process
-          </Button>
+            isLoading={stopping}
+            isDisabled={!local}
+          />
         </div>
       </motion.div>
     </div>
@@ -169,36 +230,35 @@ export function RecordingView({ session, live, onCorrected }: {
   return (
     <div className="flex flex-col gap-6">
       {session.warning && (
-        <p className="rounded-lg bg-warning-subtle px-4 py-2 text-sm text-warning">{session.warning}</p>
+        <p role="status" className="flex items-start gap-2 rounded-lg bg-warning-subtle px-4 py-2 text-sm text-warning">
+          <Icon icon={AlertTriangle} className="mt-0.5 shrink-0" />
+          {session.warning}
+        </p>
       )}
 
-      <Card className="gap-0">
-        <CardHeader className="border-b pb-4">
-          <CardTitle>{session.meta.title || "Live transcript"}</CardTitle>
-          <CardDescription>
-            A live preview. You can assign names now, or confirm speakers when the meeting ends.
-            Live corrections carry into that final review.
-          </CardDescription>
+      <div className="grid gap-6 @4xl/main:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+      <SessionNotes session={session} />
+      <div className="min-w-0 rounded-[var(--radius-container)] border bg-card">
+        <div className="flex flex-col gap-1 border-b p-5">
+          <Heading level={3}>{session.meta.title || "Live transcript"}</Heading>
           {local && rec.source === "meeting" && (
-            <Badge variant="secondary" className="w-fit">
+            <Text type="supporting" size="xsm">
               {!rec.includesMeetingAudio
                 ? rec.includesMicrophone ? "Microphone only" : "Saving recording"
                 : rec.includesMicrophone ? "Meeting audio + microphone" : "Meeting audio only"}
-            </Badge>
+            </Text>
           )}
-        </CardHeader>
-        <CardContent className="min-h-[40vh] pt-4">
+        </div>
+        <div className="min-h-[40vh] p-5">
           {!session.meta.live ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Live transcript is off for this meeting.
-            </p>
+            <Text type="supporting" display="block" className="py-8 text-center">
+              Live transcript is off for this meeting
+            </Text>
           ) : turns.length === 0 ? (
-            <div className="py-8 text-center">
-              <ShimmeringText
-                text="Listening… words appear as people speak"
-                className="text-sm"
-              />
-            </div>
+            <Text type="supporting" display="block" className="py-8 text-center">
+              <span className="mr-2 inline-block size-1.5 rounded-full bg-recording align-middle" aria-hidden />
+              Listening, words appear as people speak
+            </Text>
           ) : (
             <TranscriptEditor rows={rows} speakers={speakers} people={info?.people}
               live onEdit={correctSpeaker} onEditingChange={setEditingSpeakers} disabled={stopping}>
@@ -213,9 +273,7 @@ export function RecordingView({ session, live, onCorrected }: {
                   <SpeakerAvatar name={t.speaker ?? "…"} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2 text-sm">
-                      <span className="font-semibold" style={{ color: colorFor(t.speaker) }}>
-                        {t.speaker ?? "Speaker"}
-                      </span>
+                      <span className="font-medium">{t.speaker ?? "Speaker"}</span>
                       <span className="font-mono text-xs text-muted-foreground">
                         {clock(t.start)}
                       </span>
@@ -247,8 +305,9 @@ export function RecordingView({ session, live, onCorrected }: {
             </ul>
             </TranscriptEditor>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div>
       {controls}
     </div>
   )
@@ -281,56 +340,73 @@ export function ProcessingView({ session }: { session: Session }) {
   const latest = session.messages[session.messages.length - 1] ?? steps[0].label
 
   return (
-    <Card className="mx-auto w-full max-w-xl">
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl">
-          <ShimmeringText text={notes ? "Writing your notes" : "Processing the recording"} />
-        </CardTitle>
-        <CardDescription>
-          {notes
-            ? `The local LLM (${info?.models.llm ?? "LLM"}) is reading the transcript.`
-            : "Everything runs on this computer. A one-hour meeting takes a few minutes."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <Progress value={((current + 0.5) / steps.length) * 100} />
-        <ol className="space-y-3">
-          {steps.map((s, i) => (
-            <li key={s.label} className="flex items-center gap-3 text-sm">
-              <span
-                className={cn(
-                  "flex size-6 items-center justify-center rounded-full border",
-                  i < current && "border-primary bg-primary text-primary-foreground",
-                  i === current && "border-primary text-primary",
-                )}
-              >
-                {i < current ? (
-                  <Check className="size-3.5" />
-                ) : i === current ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <span className="size-1.5 rounded-full bg-muted-foreground/40" />
-                )}
-              </span>
-              <span className={cn(i > current && "text-muted-foreground", i === current && "font-medium")}>
-                {s.label}
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="truncate text-center font-mono text-xs text-muted-foreground">{latest}</p>
-      </CardContent>
-    </Card>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 rounded-[var(--radius-container)] border bg-card p-5">
+      <Text type="supporting" display="block" className="text-center">
+        {notes
+          ? `The local LLM (${info?.models.llm ?? "LLM"}) is reading the transcript`
+          : "Everything runs on this computer. A one-hour meeting takes a few minutes."}
+      </Text>
+      <ol className="space-y-3">
+        {steps.map((s, i) => (
+          <li key={s.label} className="flex items-center gap-3 text-sm">
+            <span
+              className={cn(
+                "flex size-6 items-center justify-center rounded-full border",
+                i < current && "border-primary bg-primary text-primary-foreground",
+                i === current && "border-primary text-primary",
+              )}
+            >
+              {i < current ? (
+                <Check className="size-3.5" />
+              ) : i === current ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <span className="size-1.5 rounded-full bg-muted-foreground/40" />
+              )}
+            </span>
+            <span className={cn(i > current && "text-muted-foreground", i === current && "font-medium")}>
+              {s.label}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="truncate text-center font-mono text-xs text-muted-foreground">{latest}</p>
+    </div>
   )
 }
 
 // -- speaker review ----------------------------------------------------------------------------
 
+/** Recognition status as a dot and plain words; the match score stays available as a tooltip. */
+function SpeakerStatus({ speaker }: { speaker: NonNullable<Session["speakers"]>[number] }) {
+  const [dot, label] = speaker.live_assigned
+    ? ["bg-brand", "Assigned live"]
+    : speaker.status === "auto"
+      ? ["bg-success", "Recognised"]
+      : speaker.status === "suggested"
+        ? ["bg-warning", `Likely ${speaker.suggestion}`]
+        : ["bg-foreground/30", "New voice"]
+  const match =
+    !speaker.live_assigned && speaker.score != null && speaker.status !== "unknown"
+      ? `${Math.round(speaker.score * 100)}% voice match`
+      : undefined
+  return (
+    <span title={match} className="inline-flex">
+      <Text type="supporting" className="inline-flex items-center gap-1.5 whitespace-nowrap">
+        <span className={cn("size-1.5 rounded-full", dot)} aria-hidden />
+        {label}
+      </Text>
+    </span>
+  )
+}
+
 export function ReviewView({ session }: { session: Session }) {
   const { info } = useInfo()
   const speakers = session.speakers ?? []
   const [names, setNames] = React.useState<Record<string, string>>(() =>
-    Object.fromEntries(speakers.map((s) => [s.cluster, s.name ?? s.suggestion ?? ""])),
+    // only voices the system is sure about start filled in; a suggestion has to be accepted,
+    // because a confirmed name teaches the voiceprint
+    Object.fromEntries(speakers.map((s) => [s.cluster, s.name ?? ""])),
   )
   const [playing, setPlaying] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
@@ -374,6 +450,10 @@ export function ReviewView({ session }: { session: Session }) {
     if (n) counts.set(n, (counts.get(n) ?? 0) + 1)
   }
 
+  const pending = speakers.filter(
+    (s) => s.status === "suggested" && s.suggestion && !names[s.cluster]?.trim(),
+  ).length
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 @3xl/main:grid-cols-2">
@@ -385,38 +465,27 @@ export function ReviewView({ session }: { session: Session }) {
               key={s.cluster}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
+              transition={{ delay: Math.min(i, 5) * 0.05 }}
             >
-              <Card className="h-full">
-                <CardHeader className="flex flex-row items-center gap-3">
-                  <SpeakerAvatar name={name || s.unknown_label} size="lg" />
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="truncate">{name || s.unknown_label}</CardTitle>
-                    <CardDescription>
-                      {duration(s.talk_seconds)} · {s.turns} turn{s.turns === 1 ? "" : "s"}
-                    </CardDescription>
+              <Card padding={5}>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <SpeakerAvatar name={name || s.unknown_label} />
+                    <div className="min-w-0 flex-1">
+                      <Text weight="medium" display="block" maxLines={1}>
+                        {name || s.unknown_label}
+                      </Text>
+                      <Text type="supporting">
+                        {duration(s.talk_seconds)} · {s.turns} turn{s.turns === 1 ? "" : "s"}
+                      </Text>
+                    </div>
+                    <SpeakerStatus speaker={s} />
                   </div>
-                  {s.live_assigned ? (
-                    <Badge className="bg-brand/10 text-brand">Assigned live</Badge>
-                  ) : s.status === "auto" ? (
-                    <Badge className="bg-success/15 text-success">
-                      Recognised · {s.score?.toFixed(2)}
-                    </Badge>
-                  ) : s.status === "suggested" ? (
-                    <Badge className="bg-warning-subtle text-warning">
-                      Maybe {s.suggestion} · {s.score?.toFixed(2)}
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">New voice</Badge>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {s.quotes.map((q) => (
                       <blockquote
                         key={q.start}
-                        className="border-l-2 pl-3 text-sm text-muted-foreground"
-                        style={{ borderColor: colorFor(name || s.unknown_label) }}
+                        className="border-l-2 border-border pl-3 text-sm text-muted-foreground"
                       >
                         <span className="mr-2 font-mono text-xs">{clock(q.start)}</span>“
                         {q.text.length > 200 ? q.text.slice(0, 197) + "…" : q.text}”
@@ -427,26 +496,36 @@ export function ReviewView({ session }: { session: Session }) {
                     <Input
                       list="review-people"
                       value={name}
-                      placeholder={`Name, or leave empty for “${s.unknown_label}”`}
+                      placeholder="Name"
                       onChange={(e) => setNames((n) => ({ ...n, [s.cluster]: e.target.value }))}
                       aria-label={`Name of speaker ${i + 1}`}
                     />
-                    <Button
-                      variant="outline"
-                      onClick={() => play(s.cluster)}
-                      disabled={!s.has_clip}
-                    >
-                      {playing === s.cluster ? <Pause /> : <Play />}
-                      Voice
-                    </Button>
+                    <span className="shrink-0">
+                      <Button
+                        label="Voice"
+                        icon={<Icon icon={playing === s.cluster ? Pause : Play} />}
+                        onClick={() => play(s.cluster)}
+                        isDisabled={!s.has_clip}
+                      />
+                    </span>
                   </div>
+                  {s.status === "suggested" && s.suggestion && !name.trim() && (
+                    <div>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        label={`Use ${s.suggestion}`}
+                        onClick={() => setNames((n) => ({ ...n, [s.cluster]: s.suggestion ?? "" }))}
+                      />
+                    </div>
+                  )}
                   <AnimatePresence initial={false}>
                     {shared && (
                       <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="flex items-center gap-1.5 overflow-hidden text-xs text-muted-foreground"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground"
                       >
                         <Merge className="size-3.5 shrink-0" />
                         Another voice is also named {name.trim()}. They&apos;ll be merged into one
@@ -454,7 +533,7 @@ export function ReviewView({ session }: { session: Session }) {
                       </motion.p>
                     )}
                   </AnimatePresence>
-                </CardContent>
+                </div>
               </Card>
             </motion.div>
           )
@@ -467,12 +546,11 @@ export function ReviewView({ session }: { session: Session }) {
       </datalist>
       <div className="flex items-center justify-end gap-3">
         <p className="text-sm text-muted-foreground">
-          Confirmed voices are remembered for future meetings.
+          {pending > 0
+            ? `${pending} suggested ${pending === 1 ? "voice isn't" : "voices aren't"} named yet`
+            : "Confirmed voices are remembered for future meetings."}
         </p>
-        <Button variant="success" size="lg" onClick={submit} disabled={busy}>
-          {busy && <Loader2 className="animate-spin" />}
-          Confirm &amp; write notes
-        </Button>
+        <Button variant="primary" size="lg" label="Confirm & write notes" onClick={submit} isLoading={busy} />
       </div>
     </div>
   )

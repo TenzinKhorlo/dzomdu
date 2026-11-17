@@ -2,15 +2,15 @@
 
 import * as React from "react"
 import { Check, Download, Loader2, Monitor, Users } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import { useInfo } from "@/components/providers"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/badge"
+import { Button } from "@/components/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Selector } from "@astryxdesign/core/Selector"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api"
@@ -58,21 +58,21 @@ function DefaultsForm({ models, saved, onSaved }: {
     } finally { setBusy(false) }
   }
 
-  function chooser(kind: Model["kind"], value: string, change: (id: string) => void) {
+  function chooser(kind: Model["kind"], label: string, value: string, change: (id: string) => void) {
     return (
-      <Select value={value} onValueChange={change}>
-        <SelectTrigger id={`default-${kind}`} className="w-full">
-          <SelectValue placeholder="Choose a downloaded model" />
-        </SelectTrigger>
-        <SelectContent position="popper">
-          {models.filter((m) => m.kind === kind).map((m) => (
-            <SelectItem key={m.id} value={m.id} disabled={!m.ready}>
-              {m.name}{!m.ready && ` · ${!m.compatible ? "unavailable here" :
-                !m.runtime_installed ? "setup needed" : "download first"}`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Selector
+        label={label}
+        placeholder="Choose a downloaded model"
+        value={value}
+        onChange={(id) => id && change(id)}
+        options={models
+          .filter((m) => m.kind === kind)
+          .map((m) => ({
+            value: m.id,
+            label: `${m.name}${!m.ready ? ` · ${!m.compatible ? "unavailable here" : !m.runtime_installed ? "setup needed" : "download first"}` : ""}`,
+            disabled: !m.ready,
+          }))}
+      />
     )
   }
 
@@ -85,8 +85,7 @@ function DefaultsForm({ models, saved, onSaved }: {
       <CardContent className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="default-asr">Transcription</Label>
-            {chooser("asr", asr, (id) => {
+            {chooser("asr", "Transcription", asr, (id) => {
               setAsr(id)
               const m = models.find((m) => m.id === id)
               if (m && !m.languages.includes(language)) setLanguage("en")
@@ -94,8 +93,7 @@ function DefaultsForm({ models, saved, onSaved }: {
             {!saved.asr_id && <p className="text-xs text-muted-foreground">Current: {saved.asr_model}</p>}
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="default-diarization">Speaker separation</Label>
-            {chooser("diarization", diar, (id) => {
+            {chooser("diarization", "Speaker separation", diar, (id) => {
               setDiar(id)
               const maximum = models.find((m) => m.id === id)?.speaker_limit
               if (maximum != null && (!limit || !Number.isInteger(Number(limit)) ||
@@ -104,15 +102,16 @@ function DefaultsForm({ models, saved, onSaved }: {
             {!saved.diarization_id && <p className="text-xs text-muted-foreground">Current: {saved.diarization_model}</p>}
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="model-language">Meeting language</Label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger id="model-language" className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="ne" disabled={!speech?.languages.includes("ne")}>Nepali</SelectItem>
-                <SelectItem value="auto" disabled={!speech?.languages.includes("auto")}>Detect language automatically</SelectItem>
-              </SelectContent>
-            </Select>
+            <Selector
+              label="Meeting language"
+              value={language}
+              onChange={(value) => value && setLanguage(value)}
+              options={[
+                { value: "en", label: "English" },
+                { value: "ne", label: "Nepali", disabled: !speech?.languages.includes("ne") },
+                { value: "auto", label: "Detect language automatically", disabled: !speech?.languages.includes("auto") },
+              ]}
+            />
             <p className="text-xs text-muted-foreground">Use Whisper for Nepali. Test mixed English and Nepali recordings before choosing a default.</p>
           </div>
           <div className="grid gap-1.5">
@@ -170,8 +169,8 @@ export function ModelSettings() {
   </CardContent></Card>
   if (!data) return <Skeleton className="h-72 rounded-xl" />
   const pending = data.models.filter((m) => m.compatible && !m.downloaded &&
-    m.state !== "queued" && m.state !== "downloading" && (m.kind !== "asr" ||
-      m.runtime_installed || !(m.id.startsWith("moonshine") || m.id === "whistle")))
+    m.state !== "queued" && m.state !== "downloading" && (!["asr", "diarization"].includes(m.kind) ||
+      m.runtime_installed || !(m.id.startsWith("moonshine") || m.id === "whistle" || m.id === "who")))
 
   return (
     <div className="grid gap-4">
@@ -196,7 +195,7 @@ export function ModelSettings() {
           {downloadError && <p role="alert" className="text-sm text-destructive">{downloadError}</p>}
           {(["asr", "diarization", "alignment"] as const).map((kind) => (
             <div key={kind} className="grid gap-2">
-              <h3 className="text-sm font-medium">{kind === "asr" ? "Transcription" :
+              <h3 className="text-[13px] font-medium">{kind === "asr" ? "Transcription" :
                 kind === "diarization" ? "Speaker separation" : "Word timestamps"}</h3>
               <div className="grid gap-3 @4xl/main:grid-cols-2">
                 {data.models.filter((m) => m.kind === kind).map((m) => {
@@ -218,7 +217,7 @@ export function ModelSettings() {
                         {m.downloaded && !active ? <span className="flex items-center gap-1 text-xs text-success">
                           <Check className="size-3.5" />{m.ready ? "Ready" : "Downloaded"}
                         </span> : <Button size="sm" variant="outline" disabled={!!requesting || active || !m.compatible ||
-                          ((m.id.startsWith("moonshine") || m.id === "whistle") && !m.runtime_installed)}
+                          ((m.id.startsWith("moonshine") || m.id === "whistle" || m.id === "who") && !m.runtime_installed)}
                           onClick={() => download([m.id], m.id)}>
                           {active ? <Loader2 className="animate-spin" /> : <Download />}
                           {active ? m.state === "queued" ? "Queued" : "Downloading" : m.state === "error" ? "Retry" : "Download"}

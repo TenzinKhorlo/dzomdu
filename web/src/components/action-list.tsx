@@ -4,13 +4,13 @@ import * as React from "react"
 import Link from "next/link"
 import { CalendarClock } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { Checkbox } from "@/components/animate-ui/components/radix/checkbox"
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput"
 import { SpeakerAvatar } from "@/components/common"
 import { SwipeToComplete } from "@/components/swipe-to-complete"
 import { useTasks } from "@/components/task-provider"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/badge"
 import { api, type Task } from "@/lib/api"
 import { shortDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,7 @@ function dueBadge(due: string | null) {
   return (
     <Badge
       variant="outline"
-      className={cn("gap-1 font-normal", overdue && "border-destructive/40 text-destructive")}
+      destructive={overdue}
     >
       <CalendarClock />
       {overdue ? `Overdue · ${shortDate(due)}` : iso ? shortDate(due) : due}
@@ -99,12 +99,12 @@ export function ActionList({
                 onCommit={() => void setTask(item, !checked)}
               >
                 <div className="flex items-start gap-3 px-2 py-2.5">
-                  <Checkbox
-                    className="mt-0.5 [--primary:var(--success)] [--primary-foreground:var(--success-foreground)]"
-                    checked={checked}
-                    disabled={!item.editable && !item.id}
-                    onCheckedChange={(v) => void setTask(item, v === true)}
-                    aria-label={`Mark "${item.text}" as ${checked ? "open" : "done"}`}
+                  <CheckboxInput
+                    label={`Mark "${item.text}" as ${checked ? "open" : "done"}`}
+                    isLabelHidden
+                    value={checked}
+                    isDisabled={!item.editable && !item.id}
+                    onChange={(v) => void setTask(item, v)}
                   />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p

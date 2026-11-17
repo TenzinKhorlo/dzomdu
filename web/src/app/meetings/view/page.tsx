@@ -1,27 +1,38 @@
 "use client"
 
 import * as React from "react"
+import { ViewTransition } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  ArrowLeft,
   CalendarDays,
-  CircleHelp,
   Clock,
   Copy,
   ExternalLink,
   FolderOpen,
-  Gavel,
   ListChecks,
   Loader2,
   MessagesSquare,
   Search,
-  Sparkles,
+  PenLine,
   Trash2,
   Users,
 } from "lucide-react"
+import { Badge as AstryxBadge } from "@astryxdesign/core/Badge"
+import { Banner } from "@astryxdesign/core/Banner"
+import { Button as AstryxButton } from "@astryxdesign/core/Button"
+import { Card as AstryxCard } from "@astryxdesign/core/Card"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Selector } from "@astryxdesign/core/Selector"
+import { TextArea } from "@astryxdesign/core/TextArea"
+import { TextInput } from "@astryxdesign/core/TextInput"
+import { Icon } from "@astryxdesign/core/Icon"
+import { MoreMenu } from "@astryxdesign/core/MoreMenu"
+import { Tab, TabList } from "@astryxdesign/core/TabList"
+import { Text } from "@astryxdesign/core/Text"
+import { Token } from "@astryxdesign/core/Token"
 import { useReducedMotion } from "motion/react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import { ActionList } from "@/components/action-list"
 import {
@@ -31,45 +42,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/animate-ui/components/radix/dialog"
-import {
-  Tabs,
-  TabsContent,
-  TabsContents,
-  TabsList,
-  TabsTrigger,
-} from "@/components/animate-ui/components/animate/tabs"
-import { AvatarStack, EmptyState, SpeakerAvatar, StatTile } from "@/components/common"
+} from "@/components/dialog"
+import { AvatarStack, EmptyState } from "@/components/common"
 import { useInfo } from "@/components/providers"
 import { TranscriptEditor } from "@/components/transcript-editor"
 import { useTasks } from "@/components/task-provider"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Button } from "@/components/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
 import { useApi } from "@/hooks/use-api"
 import { api, projectHref, type MeetingDetail, type Session } from "@/lib/api"
+import { recallMeeting } from "@/lib/meeting-preview"
 import { PlayerBar, PlayerProvider, turnAt, usePlayer } from "@/components/meeting/player"
 import { RenameMeetingDialog } from "@/components/meeting/rename-dialog"
 import { useConfirm } from "@/components/confirm"
-import { colorFor, duration, longDate } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { duration, longDate } from "@/lib/format"
 import { type TranscriptEdit } from "@/lib/transcript-edits"
 
-function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: () => void }) {
+function RewriteDialog({ meeting, open, setOpen, onDone }: {
+  meeting: MeetingDetail; open: boolean; setOpen: (open: boolean) => void; onDone: () => void
+}) {
   const { info } = useInfo()
-  const [open, setOpen] = React.useState(false)
   const [template, setTemplate] = React.useState(info?.default_template ?? "standard")
   const [instructions, setInstructions] = React.useState("")
   const [busy, setBusy] = React.useState(false)
@@ -130,12 +122,6 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
 
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
-      <DialogTrigger asChild>
-        <Button variant="brand">
-          <Sparkles />
-          Rewrite with AI
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Rewrite these notes</DialogTitle>
@@ -167,31 +153,19 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
               )}
             </div>
           )}
-          <div className="grid gap-2">
-            <Label>Format</Label>
-            <Select value={template} onValueChange={setTemplate}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {info?.templates.map((t) => (
-                  <SelectItem key={t.key} value={t.key}>
-                    <span>{t.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="instr">Instructions</Label>
-            <Textarea
-              id="instr"
-              rows={3}
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              placeholder="e.g. Shorter, in bullet points for the director"
-            />
-          </div>
+          <Selector
+            label="Format"
+            value={template}
+            onChange={(value) => value && setTemplate(value)}
+            options={(info?.templates ?? []).map((t) => ({ value: t.key, label: t.name }))}
+          />
+          <TextArea
+            label="Instructions"
+            rows={3}
+            value={instructions}
+            onChange={setInstructions}
+            placeholder="e.g. Shorter, in bullet points for the director"
+          />
         </div>
         <DialogFooter>
           {busy && (
@@ -200,7 +174,7 @@ function RewriteDialog({ meeting, onDone }: { meeting: MeetingDetail; onDone: ()
             </p>
           )}
           <Button onClick={() => run()} disabled={busy}>
-            {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            {busy ? <Loader2 className="animate-spin" /> : <PenLine />}
             {busy ? "Writing…" : "Rewrite notes"}
           </Button>
         </DialogFooter>
@@ -266,10 +240,17 @@ function Transcript({ meeting, focus, reload, onRewriting, rewriting }: {
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={event => setQ(event.target.value)}
-          placeholder="Search the transcript…" className="pl-9" aria-label="Search the transcript" />
+      <div className="max-w-sm">
+        <TextInput
+          label="Search the transcript"
+          isLabelHidden
+          type="search"
+          startIcon={Search}
+          placeholder="Search the transcript…"
+          hasClear
+          value={q}
+          onChange={setQ}
+        />
       </div>
       <TranscriptEditor rows={meeting.turns} speakers={meeting.speakers.map(speaker => ({ key: speaker.cluster, label: speaker.label }))}
         people={info?.people} query={q.trim().toLowerCase()} activeId={activeId} focusId={focus}
@@ -299,7 +280,20 @@ function MeetingView() {
       </EmptyState>
     )
   }
-  if (!m) return <Skeleton className="h-[70vh] rounded-xl" />
+  if (!m) {
+    // the list passed the title along, so show it while the rest loads
+    const title = recallMeeting(id)
+    return (
+      <>
+        {title && (
+          <ViewTransition name={`meeting-title-${id}`} share="morph" default="none">
+            <Heading level={1}>{title}</Heading>
+          </ViewTransition>
+        )}
+        <Skeleton className="h-[70vh] rounded-xl" />
+      </>
+    )
+  }
 
   return (
     <PlayerProvider key={m.id} meetingId={m.id} fallbackDuration={m.duration}>
@@ -308,9 +302,29 @@ function MeetingView() {
   )
 }
 
+// same hh:mm:ss format as the timestamp chips inside the generated notes
+const stamp = (seconds: number) => {
+  const s = Math.max(0, Math.round(seconds))
+  return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":")
+}
+
+/** Splits trailing citation markers like "(t20)" off a generated sentence. */
+function splitCitations(text: string) {
+  const ids: string[] = []
+  const clean = text.replace(/\s*\((t\d+(?:,\s*t\d+)*)\)/g, (_, list: string) => {
+    ids.push(...list.split(/,\s*/))
+    return ""
+  })
+  return { clean, ids }
+}
+
+// speaking share: the leader takes the accent, everyone else steps down the neutral ramp
+const SHARE_SWATCHES = ["bg-primary", "bg-foreground/40", "bg-foreground/28", "bg-foreground/18", "bg-foreground/12"]
+
 function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
   const { reload: reloadTasks } = useTasks()
   const [tab, setTab] = React.useState("notes")
+  const [rewriteOpen, setRewriteOpen] = React.useState(false)
   const [focus, setFocus] = React.useState<string | null>(null)
   const player = usePlayer()
   const router = useRouter()
@@ -319,20 +333,23 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
   const [rewriteId, setRewriteId] = React.useState<string | null>(null)
   const activeRewrite = rewriteId ?? m.notes_session_id ?? null
   const rewrite = useApi<Session>(activeRewrite ? `/api/sessions/${activeRewrite}` : null, { interval: 1000 })
-  const completedRewrite = React.useRef<string | null>(null)
+  const [completedRewrite, setCompletedRewrite] = React.useState<string | null>(null)
   React.useEffect(() => {
     const session = rewrite.data
-    if (!activeRewrite || !session || session.id !== activeRewrite || completedRewrite.current === activeRewrite) return
+    if (!activeRewrite || !session || session.id !== activeRewrite || completedRewrite === activeRewrite) return
     if (session.state === "done" || session.state === "error") {
-      completedRewrite.current = activeRewrite
+      // reacting to a polled server session finishing: there is no event to hang this on
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setCompletedRewrite(activeRewrite)
       setRewriteId(null)
+      /* eslint-enable react-hooks/set-state-in-effect */
       reload()
       reloadTasks()
       if (session.state === "error") toast.error("Transcript saved; notes could not be updated", { description: session.error })
       else toast.success("Summary and minutes updated")
     }
-  }, [activeRewrite, rewrite.data, reload, reloadTasks])
-  const rewriting = !!activeRewrite && completedRewrite.current !== activeRewrite
+  }, [activeRewrite, completedRewrite, rewrite.data, reload, reloadTasks])
+  const rewriting = !!activeRewrite && completedRewrite !== activeRewrite
 
 
   async function deleteMeeting() {
@@ -376,271 +393,216 @@ function MeetingBody({ m, reload }: { m: MeetingDetail; reload: () => void }) {
     goToTurn(a.getAttribute("href")!.slice(1))
   }
   const identified = m.speakers.filter((s) => s.name).length
+  const ranked = [...m.speakers].sort((x, y) => y.talk_seconds - x.talk_seconds)
+  const timeChip = (turnId: string) => {
+    const turn = m.turns.find((t) => t.id === turnId)
+    if (!turn) return null
+    return (
+      <button key={turnId} type="button" className="time-chip" onClick={() => goToTurn(turnId)}>
+        {stamp(turn.start)}
+      </button>
+    )
+  }
+
+  const copyMarkdown = () =>
+    navigator.clipboard
+      .writeText(m.note!.markdown)
+      .then(() => toast.success("Markdown copied"))
+      .catch(() => toast.error("Copy failed"))
 
   return (
     <>
-      <div className="flex flex-col gap-3">
-        <Link
-          href="/meetings/"
-          className="inline-flex w-fit items-center gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          All meetings
-        </Link>
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-          <div className="min-w-0 space-y-2">
-            <div className="flex items-center gap-2">
-              <h1 className="break-words text-xl font-semibold">{m.title}</h1>
-              <RenameMeetingDialog id={m.id} title={m.title} onRenamed={reload} />
-            </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="size-3.5" />
-                {longDate(m.date)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="size-3.5" />
-                {duration(m.duration)}
-              </span>
-              {m.project && (
-                <Link href={projectHref(m.project)}>
-                  <Badge variant="outline" className="gap-1.5 font-normal hover:bg-accent">
-                    <span
-                      className="size-1.5 rounded-full"
-                      style={{ backgroundColor: colorFor(m.project) }}
-                      aria-hidden
-                    />
-                    {m.project}
-                  </Badge>
-                </Link>
-              )}
-              {m.people.length > 0 && <AvatarStack names={m.people} max={5} />}
-            </div>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-center gap-2">
+            <ViewTransition name={`meeting-title-${m.id}`} share="morph" default="none">
+              <Heading level={1}>{m.title}</Heading>
+            </ViewTransition>
+            <RenameMeetingDialog id={m.id} title={m.title} onRenamed={reload} />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="brand" asChild>
-              <Link href={`/chat/?meeting=${encodeURIComponent(m.id)}`}>
-                <MessagesSquare />
-                Ask about this meeting
-              </Link>
-            </Button>
-            {m.note && (
-              <>
-                <Button variant="outline" asChild>
-                  <a href={m.note.obsidian_url}>
-                    <ExternalLink />
-                    Open in Obsidian
-                  </a>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    navigator.clipboard
-                      .writeText(m.note!.markdown)
-                      .then(() => toast.success("Markdown copied"))
-                      .catch(() => toast.error("Copy failed"))
-                  }
-                >
-                  <Copy />
-                  Copy Markdown
-                </Button>
-              </>
-            )}
-            <RewriteDialog meeting={m} onDone={reload} />
-            <Button variant="outline" onClick={deleteMeeting} disabled={deleting}>
-              <Trash2 />
-              Delete
-            </Button>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Text type="supporting" className="inline-flex items-center gap-1.5">
+              <Icon icon={CalendarDays} size="sm" />
+              {longDate(m.date)}
+            </Text>
+            <Text type="supporting" className="inline-flex items-center gap-1.5">
+              <Icon icon={Clock} size="sm" />
+              {duration(m.duration)} · {m.turns.length} turns
+            </Text>
+            <Text type="supporting" className="inline-flex items-center gap-1.5">
+              <Icon icon={Users} size="sm" />
+              {m.speakers.length} {m.speakers.length === 1 ? "speaker" : "speakers"}
+              {identified < m.speakers.length ? ` (${identified} identified)` : ""}
+            </Text>
+            {m.project && <Token label={m.project} size="sm" href={projectHref(m.project)} />}
+            {m.people.length > 0 && <AvatarStack names={m.people} max={5} />}
           </div>
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <AstryxButton
+            variant="primary"
+            label="Ask about this meeting"
+            icon={<Icon icon={MessagesSquare} />}
+            href={`/chat/?meeting=${encodeURIComponent(m.id)}`}
+          />
+          <AstryxButton
+            label="Rewrite with AI"
+            icon={<Icon icon={PenLine} />}
+            onClick={() => setRewriteOpen(true)}
+          />
+          <MoreMenu
+            alignment="end"
+            items={[
+              ...(m.note
+                ? [
+                    { label: "Open in Obsidian", icon: <Icon icon={ExternalLink} />, href: m.note.obsidian_url },
+                    { label: "Copy Markdown", icon: <Icon icon={Copy} />, onClick: copyMarkdown },
+                    { type: "divider" as const },
+                  ]
+                : []),
+              {
+                label: "Delete meeting",
+                icon: <Icon icon={Trash2} />,
+                variant: "destructive" as const,
+                isDisabled: deleting,
+                onClick: deleteMeeting,
+              },
+            ]}
+          />
+        </div>
       </div>
+      <RewriteDialog meeting={m} open={rewriteOpen} setOpen={setRewriteOpen} onDone={reload} />
 
-      {(rewriting || m.notes_stale) && (
-        <p role="status" className="flex items-start gap-2 rounded-lg border bg-information/5 p-3 text-sm">
-          {rewriting && <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-information" />}
-          {rewriting ? "Transcript corrections saved. Updating the summary and minutes…"
-            : "The transcript has been corrected. The notes still reflect the earlier transcript; use Rewrite with AI to update them."}
-        </p>
+      {rewriting ? (
+        <Banner
+          status="info"
+          collapsible={false}
+          title="Updating the summary and minutes…"
+          description="Transcript corrections are saved."
+        />
+      ) : (
+        m.notes_stale && (
+          <Banner
+            status="warning"
+            collapsible={false}
+            title="The notes reflect the earlier transcript"
+            description="The transcript has been corrected since these notes were written."
+            endContent={<AstryxButton size="sm" label="Rewrite with AI" onClick={() => setRewriteOpen(true)} />}
+          />
+        )
       )}
-      <div className="grid grid-cols-2 gap-3 @4xl/main:grid-cols-4">
-        <StatTile
-          label="Length"
-          icon={Clock}
-          value={duration(m.duration)}
-          hint={`${m.turns.length} turns`}
-        />
-        <StatTile
-          label="Speakers"
-          icon={Users}
-          value={m.speakers.length}
-          hint={identified === m.speakers.length ? "all identified" : `${identified} identified`}
-        />
-        <StatTile
-          label="Decisions"
-          icon={Gavel}
-          value={m.decisions.length}
-          hint={
-            m.topics.length
-              ? `${m.topics.length} topic${m.topics.length === 1 ? "" : "s"}`
-              : undefined
-          }
-        />
-        <StatTile
-          label="Action items"
-          icon={ListChecks}
-          value={openTasks}
-          hint={m.tasks.length ? `open of ${m.tasks.length}` : "none"}
-        />
-      </div>
 
       <div className="grid gap-4 @5xl/main:grid-cols-3">
         <div className="min-w-0 @5xl/main:col-span-2">
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="transcript">Transcript</TabsTrigger>
-              <TabsTrigger value="actions">
-                Action items
-                {openTasks > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 tabular-nums">
-                    {openTasks}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-            <Card className="mt-2">
-              <CardContent>
-                <TabsContents>
-                  <TabsContent value="notes">
-                    {m.note ? (
-                      <div
-                        onClick={onNoteClick}
-                        className="note-prose"
-                        dangerouslySetInnerHTML={{ __html: notesHtml }}
-                      />
-                    ) : (
-                      <EmptyState
-                        icon={FolderOpen}
-                        title="No note file"
-                        description="The note was moved or deleted from the vault."
-                      />
-                    )}
-                  </TabsContent>
-                  <TabsContent value="transcript">
-                    <Transcript meeting={m} focus={focus} reload={reload} onRewriting={setRewriteId} rewriting={rewriting} />
-                  </TabsContent>
-                  <TabsContent value="actions">
-                    {m.tasks.length ? (
-                      <ActionList
-                        items={m.tasks.map((t) => ({ ...t, meeting_id: m.id }))}
-                        onChange={reload}
-                      />
-                    ) : (
-                      <EmptyState icon={ListChecks} title="No action items" className="py-8" />
-                    )}
-                  </TabsContent>
-                </TabsContents>
-              </CardContent>
-            </Card>
-          </Tabs>
+          <TabList role="tablist" value={tab} onChange={setTab} hasDivider>
+            <Tab value="notes" label="Notes" panelId="meeting-panel" />
+            <Tab value="transcript" label="Transcript" panelId="meeting-panel" />
+            <Tab
+              value="actions"
+              label="Action items"
+              panelId="meeting-panel"
+              endContent={openTasks > 0 ? <AstryxBadge label={openTasks} variant="neutral" /> : undefined}
+            />
+          </TabList>
+          <AstryxCard padding={4} className="mt-3">
+            <div id="meeting-panel" role="tabpanel">
+              {tab === "notes" &&
+                (m.note ? (
+                  <div
+                    onClick={onNoteClick}
+                    className="note-prose"
+                    dangerouslySetInnerHTML={{ __html: notesHtml }}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={FolderOpen}
+                    title="No note file"
+                    description="The note was moved or deleted from the vault."
+                  />
+                ))}
+              {tab === "transcript" && (
+                <Transcript meeting={m} focus={focus} reload={reload} onRewriting={setRewriteId} rewriting={rewriting} />
+              )}
+              {tab === "actions" &&
+                (m.tasks.length ? (
+                  <ActionList items={m.tasks.map((t) => ({ ...t, meeting_id: m.id }))} onChange={reload} />
+                ) : (
+                  <EmptyState icon={ListChecks} title="No action items" className="py-8" />
+                ))}
+            </div>
+          </AstryxCard>
           <PlayerBar turns={m.turns} className="mt-4" />
         </div>
 
         <div className="flex flex-col gap-4">
-          {m.summary && (
-            <Card className="gap-3">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-brand" aria-hidden />
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-[13px] leading-relaxed text-muted-foreground">
-                {m.summary}
-              </CardContent>
-            </Card>
-          )}
-          <Card className="gap-4">
-            <CardHeader>
-              <CardTitle>Speakers</CardTitle>
-              <CardDescription>Share of speaking time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {m.speakers.map((s) => {
-                  const share = s.talk_seconds / total
-                  return (
-                    <li
-                      key={s.cluster}
-                      className="grid grid-cols-[minmax(0,1fr)_minmax(3rem,5.5rem)_2.25rem] items-center gap-3 text-[13px]"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <SpeakerAvatar name={s.label} size="sm" className="ring-0" />
-                        <span className={cn("truncate", !s.name && "text-muted-foreground")}>
-                          {s.label}
-                        </span>
-                      </span>
-                      <span className="h-2 overflow-hidden rounded-full bg-track" aria-hidden>
-                        <span
-                          className="block h-full rounded-r-[4px] transition-[width] duration-700"
-                          style={{ width: `${share * 100}%`, backgroundColor: colorFor(s.label) }}
-                        />
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground tabular-nums">
-                        {Math.round(share * 100)}%
-                      </span>
-                    </li>
-                  )
-                })}
+          <AstryxCard padding={4}>
+            <div className="flex flex-col gap-4">
+              <div>
+                <Heading level={3}>Speakers</Heading>
+                <Text type="supporting">Share of speaking time</Text>
+              </div>
+              <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Share of speaking time by speaker">
+                {ranked.map((s, i) => (
+                  <span
+                    key={s.cluster}
+                    className={SHARE_SWATCHES[Math.min(i, SHARE_SWATCHES.length - 1)]}
+                    style={{ width: `${(s.talk_seconds / total) * 100}%` }}
+                  />
+                ))}
+              </div>
+              <ul className="flex flex-col gap-2">
+                {ranked.map((s, i) => (
+                  <li key={s.cluster} className="flex items-center gap-2">
+                    <span
+                      className={`size-2 shrink-0 rounded-full ${SHARE_SWATCHES[Math.min(i, SHARE_SWATCHES.length - 1)]}`}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1">
+                      <Text color={s.name ? "primary" : "secondary"} maxLines={1}>
+                        {s.label}
+                      </Text>
+                    </span>
+                    <Text color={i === 0 ? "accent" : "secondary"} className="tabular-nums">
+                      {Math.round((s.talk_seconds / total) * 100)}%
+                    </Text>
+                  </li>
+                ))}
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </AstryxCard>
           {m.decisions.length > 0 && (
-            <Card className="gap-3">
-              <CardHeader>
-                <CardTitle>Decisions</CardTitle>
-                <CardDescription>Click one to hear where it was decided</CardDescription>
-              </CardHeader>
-              <CardContent className="px-3">
-                <ol className="space-y-0.5">
-                  {m.decisions.map((d, i) => {
-                    const source = d.source_turns[0]
-                    return (
-                      <li key={d.decision}>
-                        <button
-                          type="button"
-                          disabled={!source}
-                          onClick={() => source && goToTurn(source)}
-                          className="pressable flex w-full gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-muted/70 disabled:hover:bg-transparent"
-                        >
-                          <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-md border bg-muted/60 text-[11px] font-medium text-muted-foreground tabular-nums">
-                            {i + 1}
-                          </span>
-                          <span className="leading-snug">{d.decision}</span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ol>
-              </CardContent>
-            </Card>
-          )}
-          {m.open_questions.length > 0 && (
-            <Card className="gap-3">
-              <CardHeader>
-                <CardTitle>Open questions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-[13px]">
-                  {m.open_questions.map((q) => (
-                    <li key={q} className="flex gap-2">
-                      <CircleHelp className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="leading-snug">{q}</span>
+            <AstryxCard padding={4}>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <Heading level={3}>Decisions</Heading>
+                  <Text type="supporting">Select a time to hear where it was decided</Text>
+                </div>
+                <ul className="flex flex-col gap-2.5 text-[13px] leading-snug">
+                  {m.decisions.map((d) => (
+                    <li key={d.decision}>
+                      {d.decision} {d.source_turns.slice(0, 1).map(timeChip)}
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
+              </div>
+            </AstryxCard>
+          )}
+          {m.open_questions.length > 0 && (
+            <AstryxCard padding={4}>
+              <div className="flex flex-col gap-3">
+                <Heading level={3}>Open questions</Heading>
+                <ul className="flex flex-col gap-2.5 text-[13px] leading-snug">
+                  {m.open_questions.map((q) => {
+                    const { clean, ids } = splitCitations(q)
+                    return (
+                      <li key={q}>
+                        {clean} {ids.map(timeChip)}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </AstryxCard>
           )}
         </div>
       </div>

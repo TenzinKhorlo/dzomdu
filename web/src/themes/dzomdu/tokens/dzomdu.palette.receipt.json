@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "recipe": "astryx-oklch-v1",
+  "generatorVersion": "palette-generator-v1",
+  "candidateFormatVersion": "palette-typescript-v1",
+  "candidateSha256": "f363b008663c2b9082c6810d72acffedc52a22ce39f6990d3543bdc36dcc3954",
+  "request": {
+    "recipe": "astryx-oklch-v1",
+    "vibrancy": 50,
+    "neutralProfile": "neutral-v1",
+    "modeStrategy": "light-and-dark",
+    "stops": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      90,
+      95,
+      100
+    ],
+    "families": [
+      {
+        "id": "brand",
+        "name": "brand",
+        "seed": "#004182",
+        "kind": "chromatic",
+        "anchors": []
+      },
+      {
+        "id": "neutral",
+        "name": "neutral",
+        "seed": "#6b6a67",
+        "kind": "chromatic",
+        "anchors": []
+      },
+      {
+        "id": "success",
+        "name": "success",
+        "seed": "#15803d",
+        "kind": "chromatic",
+        "anchors": []
+      }
+    ]
+  },
+  "diagnostics": {
+    "families": {
+      "brand": {
+        "light": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.245703384006418,
+          "maximumAdjacentDeltaE": 19.354634049078946,
+          "maximumHueDrift": 4.813635148397907,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            70,
+            75,
+            80,
+            85,
+            90,
+            95,
+            100
+          ],
+          "anchors": []
+        },
+        "dark": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.153092155597505,
+          "maximumAdjacentDeltaE": 19.03467197597605,
+          "maximumHueDrift": 3.9010305158842584,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            10,
+            15,
+            20,
+            75,
+            80,
+            85,
+            90,
+            95,
+            100
+          ],
+          "anchors": []
+        }
+      },
+      "neutral": {
+        "light": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.2020352153945,
+          "maximumAdjacentDeltaE": 18.229317215645466,
+          "maximumHueDrift": 3.9399964912404926,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            100
+          ],
+          "anchors": []
+        },
+        "dark": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.144712110200607,
+          "maximumAdjacentDeltaE": 18.229317215645466,
+          "maximumHueDrift": 3.544267987998012,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            100
+          ],
+          "anchors": []
+        }
+      },
+      "success": {
+        "light": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.228639738379723,
+          "maximumAdjacentDeltaE": 18.6055856388706,
+          "maximumHueDrift": 3.3874287761949518,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            100
+          ],
+          "anchors": []
+        },
+        "dark": {
+          "monotonic": true,
+          "minimumAdjacentDeltaE": 4.151833489454608,
+          "maximumAdjacentDeltaE": 18.578233433335818,
+          "maximumHueDrift": 2.419129982188906,
+          "hueIdentityRisk": null,
+          "gamutMappedStops": [
+            10,
+            15,
+            20,
+            100
+          ],
+          "anchors": []
+        }
+      }
+    },
+    "coordination": [
+      {
+        "mode": "light",
+        "stop": 50,
+        "closestFamilies": [
+          "neutral",
+          "success"
+        ],
+        "minimumFamilyDeltaE": 11.851060784547343,
+        "strongestFamily": "brand",
+        "weakestFamily": "neutral",
+        "chromaRatio": 1.4316595076920506
+      },
+      {
+        "mode": "dark",
+        "stop": 50,
+        "closestFamilies": [
+          "neutral",
+          "success"
+        ],
+        "minimumFamilyDeltaE": 10.117849949073143,
+        "strongestFamily": "brand",
+        "weakestFamily": "neutral",
+        "chromaRatio": 1.4383605430964512
+      }
+    ]
+  }
+}

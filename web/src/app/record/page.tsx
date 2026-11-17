@@ -4,23 +4,33 @@ import * as React from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
-import { PageHeader } from "@/components/common"
+import { Heading } from "@astryxdesign/core/Heading"
+import { Text } from "@astryxdesign/core/Text"
 import { useInfo } from "@/components/providers"
 import { MeetingForm } from "@/components/record/meeting-form"
 import { ProcessingView, RecordingView, ReviewView } from "@/components/record/session-views"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/button"
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, type LiveSegment, type Session } from "@/lib/api"
+
+function Header({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Heading level={1}>{title}</Heading>
+      {description && <Text type="supporting">{description}</Text>}
+    </div>
+  )
+}
 
 const HEADINGS: Record<string, [string, string]> = {
   new: ["Recording", "Connecting to the microphone…"],
   recording: ["Recording", "Speak naturally; press Stop when the meeting ends."],
   processing: ["Processing", "Separating speakers and transcribing."],
   review: ["Who said what?", "Confirm each voice. Recognised people are filled in already."],
-  summarizing: ["Writing notes", "Almost there."],
+  summarizing: ["Writing notes", ""],
 }
 
 function SessionFlow({ id }: { id: string }) {
@@ -114,7 +124,7 @@ function SessionFlow({ id }: { id: string }) {
   const [title, description] = HEADINGS[session.state] ?? ["Recording", ""]
   return (
     <>
-      <PageHeader title={title} description={description} />
+      <Header title={title} description={description} />
       {(session.state === "new" || session.state === "recording") && (
         <RecordingView session={session} live={live} onCorrected={receiveLive} />
       )}
@@ -144,10 +154,7 @@ function NewMeeting() {
 
   return (
     <>
-      <PageHeader
-        title="New meeting"
-        description="Record live in the room, or upload a recording you already have."
-      />
+      <Header title="New meeting" description="Record live in the room, or upload a recording you already have" />
       <MeetingForm
         key={params.get("project") ?? "no-project"}
         initialProject={params.get("project") ?? ""}
